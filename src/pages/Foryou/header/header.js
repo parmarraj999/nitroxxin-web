@@ -5,6 +5,7 @@ import "./header.css";
 export default function RaceDay() {
     const [active, setActive] = useState(0);
     const total = 5;
+    console.log(active)
 
     return (
         <div className="slider-wrapper">
