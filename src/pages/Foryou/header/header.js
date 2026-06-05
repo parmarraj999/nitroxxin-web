@@ -44,7 +44,7 @@ export default function RaceDay() {
                             src={slide.image} 
                             style={{ 
                                 minWidth: "100%", 
-                                height: "640px", 
+                                height: "70vh", 
                                 objectFit: "cover", 
                                 borderRadius: "12px" 
                             }} 
