@@ -4,7 +4,7 @@
     transform: translateX(-50%);
     top: 0;
     width: 100%;
-    height: 84px;
+    height: 8vh;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     /* inset: 0; */
     backdrop-filter: blur(15px);
@@ -25,7 +25,7 @@
     font-family: 'Inter', sans-serif;
     font-weight: 800;
     font-style: italic;
-    font-size: 32px;
+    font-size: 1.5rem;
     color: white;
     margin: 0;
 }
@@ -44,12 +44,9 @@
 } */
 
 .navbar-login {
-    position: absolute;
-    right: 33px;
-    top: 19px;
     background: #ff1f1f;
     border-radius: 27px;
-    padding: 10px 34px;
+    padding: 8px 28px;
     font-family: 'Inter', sans-serif;
     font-weight: 600;
     font-size: 18px;
@@ -64,11 +61,8 @@
 }
 
 .navbar-search {
-    position: absolute;
-    right: 188px;
-    top: 28px;
-    width: 20px;
-    height: 20px;
+    width: 30px;
+    height: 30px;
     cursor: pointer;
 }
 
@@ -80,6 +74,6 @@
 .navbar-action-btn {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 20px;
 
 }
