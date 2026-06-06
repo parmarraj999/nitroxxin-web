@@ -1,0 +1,145 @@
+.categories-section {
+  width: 100%;
+  height: 120vh;
+  /* background: #05070d; */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+  padding: 60px 0;
+}
+
+.categories-title {
+  text-align: center;
+  color: transparent;
+  -webkit-text-stroke: 1px #fff;
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  margin-bottom: 60px;
+  text-transform: uppercase;
+}
+
+.categories-wrapper {
+  display: flex;
+  height: 65vh;
+  max-height: 60vh;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0 0px;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.categories-wrapper::-webkit-scrollbar {
+  display: none;
+}
+
+.category-card {
+  position: relative;
+  min-width: 300px;
+  width: 300px;
+  flex-shrink: 0;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
+  cursor: pointer;
+
+  transform: skewX(12deg);
+  transition: all 0.4s ease;
+  /* margin-left: -20px; */
+}
+
+.category-card:first-child {
+  margin-left: 0;
+}
+
+.category-card:hover {
+  width: 350px;
+}
+
+.category-card .overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.8),
+    rgba(0, 0, 0, 0.15)
+  );
+}
+
+.category-card h3 {
+  position: absolute;
+  bottom: 0px;
+  left: 25px;
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  z-index: 2;
+  /* transform: skewX(-12deg); */
+}
+
+.category-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: -2px;
+  width: 2px;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.9);
+  z-index: 3;
+}
+
+/* Mobile */
+
+.category-slider-btn {
+  display: flex;
+  gap: 20px;
+  margin: 5rem auto 0 auto;
+}
+
+.category-slider-btn .arrow-btn {
+  width: 40px;
+  height: 40px;
+  border: 2px solid #ffffff;
+  background: transparent;
+  cursor: pointer;
+  outline: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .categories-wrapper {
+    flex-direction: row;
+    height: 400px;
+    gap: 15px;
+    padding: 0 20px;
+    justify-content: flex-start;
+  }
+
+  .category-card {
+    min-width: 250px;
+    width: 250px;
+    height: 100%;
+    transform: none;
+    margin-left: 0;
+  }
+
+  .category-card h3 {
+    transform: none;
+  }
+
+  .category-card:hover {
+    width: 250px;
+  }
+
+  .categories-title {
+    font-size: 32px;
+  }
+}

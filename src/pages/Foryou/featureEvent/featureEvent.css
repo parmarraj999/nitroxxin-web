@@ -1,0 +1,103 @@
+.featured-events {
+  width: 100%;
+  height: 120vh;
+  padding: 0 2rem;
+  margin-top: 5rem;
+}
+
+.section-title {
+  font-family: 'Inter', sans-serif;
+  font-weight: 800;
+  font-style: italic;
+  font-size: 32px;
+  margin: 0 0 108px 0;
+}
+
+.events-title {
+  color: #50d735;
+  text-align: center;
+}
+
+.events-grid {
+    margin: 0 auto;
+  display: grid;
+  width: 90%;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 30px 30px;
+  row-gap: 30px;
+}
+
+.event-card {
+  position: relative;
+  width: 280px;
+  height: 350px;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #1e1e1e;
+  transition: transform 0.3s;
+}
+
+.event-card:hover {
+  transform: translateY(-5px);
+}
+
+.event-image-wrapper {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.event-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 20px;
+}
+
+.event-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  /* height: 65px; */
+  backdrop-filter: blur(15px);
+  background: rgba(6, 6, 6, 0.25);
+  padding: 10px 15px ;
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
+}
+
+.event-title {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+  color: white;
+  margin: 0 0 6px 0;
+}
+
+.event-details {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.event-date {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  color: #b4b4b4;
+}
+
+.event-divider {
+  width: 3px;
+  height: 3px;
+  background: #d9d9d9;
+  border-radius: 50%;
+}
+
+.event-price {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  color: white;
+}
