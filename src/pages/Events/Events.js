@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import "./EventPage.css";
 
+
 /* ── DATA ── */
 
 const featuredEvents = [
@@ -50,14 +51,21 @@ const timeFilters = ["Today", "Tommorow", "Upcoming", "Ongoing"];
 
 /* ── ICONS ── */
 
-function SearchIcon({ color = "white" }: { color?: string }) {
+function SearchIcon({ color = "white" }) {
   return (
-    <svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 22 22" fill="none">
       <circle cx="9" cy="9" r="7" stroke={color} strokeWidth="2" />
-      <path d="M14.5 14.5L20 20" stroke={color} strokeWidth="2" strokeLinecap="round" />
+      <path
+        d="M14.5 14.5L20 20"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
+
+
 
 function ChevronRight() {
   return (
@@ -98,14 +106,14 @@ function SlidersIcon() {
 
 /* ── EVENT CARD ── */
 
-function EventCard({ event }: { event: typeof allEventsData[0] }) {
+function EventCard({ event }) {
   const [liked, setLiked] = useState(false);
 
   return (
     <div className="ep-event-card">
       <div className="ep-event-card__image">
         <span>Image</span>
-    
+
         <button
           className={`ep-event-card__heart${liked ? " ep-event-card__heart--liked" : ""}`}
           onClick={() => setLiked((p) => !p)}
