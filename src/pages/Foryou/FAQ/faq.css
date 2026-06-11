@@ -1,0 +1,93 @@
+.faq-section {
+ width: 100%;
+ height: 110vh;
+ padding: 0 10rem;
+}
+
+.faq-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 150px;
+}
+
+.faq-brand h2 {
+  font-family: 'Inter', sans-serif;
+  font-weight: 900;
+  font-size: 70px;
+  color: white;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.brand-x {
+  color: #ff1f1f;
+}
+
+.faq-emoji {
+  position: relative;
+  margin-top: 230px;
+}
+
+.emoji-base {
+  display: inline-block;
+  background: #525252;
+  border-radius: 15px;
+  padding: 8px 32px;
+  font-size: 29px;
+}
+
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.faq-item {
+  width: 100%;
+}
+
+.faq-question-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.faq-question {
+  font-family: 'Inter', sans-serif;
+  font-weight: 900;
+  font-size: 32px;
+  color: #50d735;
+  margin: 0;
+  white-space: pre-line;
+}
+
+.faq-toggle {
+  width: 60px;
+  height: 60px;
+  background: #50d735;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.faq-toggle:hover {
+  transform: scale(1.1);
+  background: #45c030;
+}
+
+.faq-plus-icon {
+  width: 28px;
+  height: 28px;
+}
+
+.faq-divider {
+  width: 100%;
+  height: 1px;
+  background: #50d735;
+}

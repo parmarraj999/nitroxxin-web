@@ -4,6 +4,9 @@ import Header from './header/header'
 import Marquee from './marquee/marquee'
 import CategoriesSection from './category/category'
 import FeaturedEvents from './featureEvent/featureEvent'
+import ShopByCategory from './shopByCategory/shopByCategory'
+import ShopByBrands from './shopByBrand/shopByBrand'
+import FAQ from './FAQ/faq'
 
 function Foryou() {
     return (
@@ -12,6 +15,9 @@ function Foryou() {
             <Marquee />
             <CategoriesSection />
             <FeaturedEvents />
+            <ShopByCategory />
+            <ShopByBrands />
+            <FAQ />
         </section>
     )
 }

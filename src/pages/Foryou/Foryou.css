@@ -1,7 +1,7 @@
 .foryou-section{
     width: 100%;
-    min-height: 100vh;
-    background: radial-gradient(circle at 50% 0%, #2a2a4a, #1a1a2e 70%);
+    /* min-height: 100vh; */
+    background: linear-gradient( #1a1a2e,#131517 45%);
     background-attachment: fixed;
     background-size: cover;
 }
