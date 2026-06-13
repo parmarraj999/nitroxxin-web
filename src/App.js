@@ -10,7 +10,7 @@ function App() {
   return (
     <Router>
       <div className="app-container">
-        <Navbar />
+        {/* <Navbar /> */}
         <BottomNav />
         <Routes>
           <Route path="/" element={<Foryou />} />
