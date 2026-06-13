@@ -177,6 +177,7 @@ export default function AccessoriesPage() {
         <nav className="ap-header__nav">
           {navLinks.map((link) => (
             <a
+            href="#"
               key={link}
               type="button"
               className="ap-header__nav-link"

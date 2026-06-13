@@ -1,10 +1,15 @@
 import React from 'react';
 import './navbar.css';
+import { useLocation } from 'react-router-dom';
 // import svgPaths from '../../imports/ForYouPgae/svg-o2diz6f004';
 
 const Navbar = () => {
+
+    const { pathname } = useLocation();
+    console.log(pathname)
+
     return (
-        <nav className="navbar">
+        <nav className="navbar" style={pathname === '/accessories' ? {display:'none'} : {}}>
             <div className="navbar-container">
                 <h1 className="navbar-logo">
                     NITRO<span className="logo-x">X</span>X
@@ -15,7 +20,7 @@ const Navbar = () => {
                     </div>
                     <button className="navbar-login">Log In</button>
                 </div>
-            </div>
+            </div>x``
         </nav>
     );
 };
