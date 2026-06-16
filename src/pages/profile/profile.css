@@ -1,7 +1,10 @@
 .profile-layout {
   display: flex;
   min-height: 100vh;
-  background: #f5f5f5;
+  height: 100vh;
+  overflow: scroll;
+  background: #f3f3f3;
+  color: #050505;
 }
 
 .profile-sidebar {
@@ -48,15 +51,34 @@
 
 .profile-content {
   flex: 1;
-  padding: 70px 40px;
+  padding: 66px 40px;
+}
+
+.profile-screen {
+  width: 100%;
+}
+
+.profile-screen h1 {
+  margin: 0 0 16px;
+  font-size: 20px;
+  line-height: 1;
+  font-weight: 800;
+}
+
+.profile-screen--narrow {
+  max-width: 650px;
+}
+
+.profile-screen--wide {
+  max-width: 760px;
 }
 
 .profile-card {
-  width: 320px;
+  width: 330px;
   background: white;
   border: 1px solid #ddd;
-  border-radius: 24px;
-  padding: 20px;
+  border-radius: 22px;
+  padding: 16px 18px 18px;
 }
 
 .profile-card__top {
@@ -66,9 +88,9 @@
 }
 
 .profile-avatar {
-  width: 55px;
-  height: 55px;
-  border-radius: 14px;
+  width: 58px;
+  height: 58px;
+  border-radius: 12px;
   object-fit: cover;
 }
 
@@ -77,4 +99,500 @@
   background: transparent;
   cursor: pointer;
   color: #777;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  font-size: 11px;
+}
+
+.profile-card__body {
+  margin-top: 16px;
+}
+
+.profile-card__body h2,
+.profile-card__body p {
+  margin: 0;
+}
+
+.profile-card__body h2 {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.profile-card__body p {
+  margin-top: 4px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.profile-card__body span {
+  display: block;
+  margin-top: 5px;
+  color: #aaa;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.profile-filter-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 28px;
+}
+
+.profile-filter-pill {
+  height: 27px;
+  min-width: 44px;
+  border: none;
+  border-radius: 999px;
+  padding: 0 17px;
+  background: #ddd;
+  color: #111;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.profile-filter-pill.active {
+  background: #000;
+  color: #fff;
+}
+
+.profile-divider {
+  height: 1px;
+  background: #d3d3d3;
+  margin: 0 0 14px;
+}
+
+.ride-list {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.ride-card {
+  position: relative;
+  display: flex;
+  width: 600px;
+  min-height: 180px;
+  border-radius: 18px;
+  padding: 10px;
+  background: #fff;
+}
+
+.ride-card__image {
+  width: 220px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.ride-card__details {
+  flex: 1;
+  padding: 13px 10px 0 30px;
+}
+
+.ride-card__status {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  border-radius: 999px;
+  padding: 0 12px;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.ride-card__status.upcoming {
+  background: #ffe6bd;
+  color: #ff9900;
+}
+
+.ride-card__status.complete {
+  background: #bfffc1;
+  color: #1cb133;
+}
+
+.ride-card h3 {
+  width: 260px;
+  margin: 10px 0 6px;
+  font-size: 16px;
+  line-height: 1.12;
+  font-weight: 800;
+}
+
+.ride-card p {
+  margin: 4px 0;
+  color: #8f8f8f;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.ride-card__footer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.ride-card__footer > span {
+  min-width: 205px;
+  border-radius: 999px;
+  padding: 8px 18px;
+  background: #ffe4e4;
+  color: #ff3333;
+  font-size: 8px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.profile-qr {
+  width: 66px;
+  height: 66px;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 2px;
+}
+
+.profile-qr span {
+  background: #fff;
+}
+
+.profile-qr span.filled {
+  background: #000;
+}
+
+.ride-date {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #969696;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.ride-date::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #bfbfbf;
+}
+
+.wishlist-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px 26px;
+}
+
+.wishlist-item img {
+  width: 166px;
+  height: 166px;
+  border-radius: 9px;
+  object-fit: cover;
+  background: #ddd;
+}
+
+.wishlist-item h3 {
+  margin: 8px 0 0;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.wallet-balance {
+  width: 310px;
+  border-radius: 14px;
+  padding: 18px;
+  background: #e7e7e7;
+}
+
+.wallet-balance p,
+.wallet-balance strong {
+  display: block;
+  margin: 0;
+}
+
+.wallet-balance p {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.wallet-balance strong {
+  margin-top: 6px;
+  font-size: 33px;
+  line-height: 1;
+}
+
+.wallet-balance div {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.wallet-balance button {
+  border: none;
+  border-radius: 999px;
+  padding: 10px 18px;
+  background: #fff6f6;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.wallet-balance + .profile-divider {
+  width: 260px;
+  margin-top: 22px;
+}
+
+.wallet-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.wallet-row {
+  display: flex;
+  align-items: center;
+  width: 390px;
+  min-height: 50px;
+  border-radius: 999px;
+  padding: 0 22px 0 8px;
+  background: #fff;
+}
+
+.wallet-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  margin-right: 14px;
+  border-radius: 50%;
+  border: 1px solid #c9c9c9;
+  color: #8f8f8f;
+  font-size: 22px;
+}
+
+.wallet-row h3,
+.wallet-row p {
+  margin: 0;
+}
+
+.wallet-row h3 {
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.wallet-row p {
+  color: #aaa;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.wallet-row strong {
+  margin-left: auto;
+  font-size: 15px;
+}
+
+.wallet-row .credit {
+  color: #37d245;
+}
+
+.wallet-row .debit {
+  color: #ff2020;
+}
+
+.orders-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.orders-head h1 {
+  margin-bottom: 0;
+}
+
+.orders-search {
+  display: flex;
+  align-items: center;
+  width: 225px;
+  height: 35px;
+  border-radius: 999px;
+  padding: 0 16px;
+  background: #d7d7d7;
+}
+
+.orders-search span {
+  margin-right: 8px;
+  font-size: 22px;
+  transform: rotate(-20deg);
+}
+
+.orders-search input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 11px;
+}
+
+.orders-head + .profile-divider {
+  margin-top: 16px;
+}
+
+.order-card {
+  display: flex;
+  width: 690px;
+  min-height: 205px;
+  border: 1px solid #ddd;
+  border-radius: 17px;
+  padding: 12px;
+  background: #fff;
+}
+
+.order-card > img {
+  width: 140px;
+  border-radius: 9px;
+  object-fit: cover;
+}
+
+.order-info {
+  flex: 1;
+  padding: 8px 10px 0 18px;
+}
+
+.order-info p,
+.order-info h2,
+.order-info h3 {
+  margin: 0;
+}
+
+.order-info p {
+  color: #8f8f8f;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.order-info h2 {
+  margin-top: 3px;
+  font-size: 16px;
+  line-height: 1.1;
+}
+
+.order-info > strong {
+  display: block;
+  margin-top: 3px;
+  color: #e60000;
+  font-size: 13px;
+}
+
+.order-info h3 {
+  margin-top: 7px;
+  font-size: 16px;
+}
+
+.order-info > span {
+  color: #aaa;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.order-progress {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin-top: 18px;
+}
+
+.order-step {
+  position: relative;
+}
+
+.order-step i {
+  display: block;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #39d63a;
+}
+
+.order-step b {
+  position: absolute;
+  top: 11px;
+  left: 28px;
+  width: calc(100% - 18px);
+  height: 6px;
+  background: #111;
+}
+
+.order-step:nth-child(3) b {
+  background: #bbb;
+}
+
+.order-step strong,
+.order-step span {
+  display: block;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.order-step span {
+  color: #aaa;
+}
+
+.support-card {
+  width: 360px;
+  border-radius: 16px;
+  padding: 22px;
+  background: #fff;
+}
+
+.support-card h2,
+.support-card p {
+  margin: 0;
+}
+
+.support-card h2 {
+  font-size: 18px;
+}
+
+.support-card p {
+  margin-top: 10px;
+  color: #777;
+  line-height: 1.4;
+}
+
+.support-card button {
+  margin-top: 18px;
+  border: none;
+  border-radius: 999px;
+  padding: 11px 18px;
+  background: #000;
+  color: #fff;
+  font-weight: 800;
+}
+
+@media (max-width: 900px) {
+  .profile-layout {
+    display: block;
+  }
+
+  .profile-sidebar {
+    width: auto;
+    border-right: none;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .profile-menu {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-top: 20px;
+  }
+
+  .profile-content {
+    padding: 34px 24px;
+  }
+
+  .ride-card,
+  .order-card {
+    width: 100%;
+  }
+
+  .wishlist-grid {
+    grid-template-columns: repeat(2, 166px);
+  }
 }

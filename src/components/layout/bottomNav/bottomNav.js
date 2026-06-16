@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import './bottomNav.css';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 export default function BottomNav() {
     const [activeTab, setActiveTab] = useState('For You');
 
     const [city, setCity] = useState("");
+    const {pathname} = useLocation();
 
     useEffect(() => {
         getUserCity();
@@ -16,7 +17,7 @@ export default function BottomNav() {
     const getUserCity = async () => {
 
         if (!navigator.geolocation) {
-            console.log("Geolocation is not supported");
+            setCity("Location unavailable");
             return;
         }
 
@@ -40,19 +41,18 @@ export default function BottomNav() {
 
                     setCity(cityName);
 
-                    console.log("City:", cityName);
                 } catch (error) {
-                    console.error("Error fetching city:", error);
+                    setCity("Location unavailable");
                 }
             },
-            (error) => {
-                console.error("Location permission denied:", error);
+            () => {
+                setCity("Location unavailable");
             }
         );
     };
 
     return (
-        <div className="bottom-nav-wrapper">
+        <div className="bottom-nav-wrapper" style={pathname.includes('/profile') ? {display:"none"} : {}}>
             <div className="bottom-nav-tabs">
                 <button
                     className={`nav-tab ${activeTab === 'For You' ? 'active-red' : ''}`}

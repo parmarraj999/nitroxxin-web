@@ -17,11 +17,17 @@ import ProductsPage from './pages/Accessories/productPage/productsPage';
 import BrandPage from './pages/Accessories/brands/brandPage';
 
 import { AuthProvider } from './components/AuthModal/useAuthModal';
+import Profile from './pages/profile/profile';
+import ProfileOverview from './pages/profile/pages/ProfileOverview';
+import MyRides from './pages/profile/pages/MyRides';
+import Wishlist from './pages/profile/pages/Wishlist';
+import Wallet from './pages/profile/pages/Wallet';
+import MyOrders from './pages/profile/pages/MyOrders';
+import Support from './pages/profile/pages/Support';
 
 const AuthModal = lazy(() =>
   import('./components/AuthModal/AuthModal')
 );
-import Profile from './pages/profile/profile';
 
 function App() {
 
@@ -60,15 +66,16 @@ function App() {
               path="/accessories/brands"
               element={<BrandPage />}
             />
+
+            <Route path="/profile" element={<Profile />}>
+              <Route index element={<ProfileOverview />} />
+              <Route path="events" element={<MyRides />} />
+              <Route path="wishlist" element={<Wishlist />} />
+              <Route path="accessories" element={<MyOrders />} />
+              <Route path="wallet" element={<Wallet />} />
+              <Route path="support" element={<Support />} />
+            </Route>
           </Routes>
-           <Route path="/profile" element={<Profile />}>
-            {/* <Route index element={<ProfileHome />} />
-            <Route path="events" element={<MyEvents />} />
-            <Route path="wishlist" element={<Wishlist />} />
-            <Route path="accessories" element={<MyAccessories />} />
-            <Route path="wallet" element={<Wallet />} />
-            <Route path="support" element={<HelpSupport />} /> */}
-          </Route>
 
           <Suspense fallback={null}>
             <AuthModal />
@@ -76,7 +83,6 @@ function App() {
         </div>
       </Router>
     </AuthProvider>
-
   );
 }
 
