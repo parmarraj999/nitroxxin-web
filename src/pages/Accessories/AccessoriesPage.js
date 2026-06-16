@@ -97,7 +97,7 @@ function ChevronRightIcon() {
 
 function ArrowRightIcon() {
   return (
-    <svg viewBox="0 0 16 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 16 14" width='25' fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M1 7H15M9 1L15 7L9 13" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
@@ -177,14 +177,14 @@ export default function AccessoriesPage() {
         {/* Nav links */}
         <nav className="ap-header__nav">
           {navLinks.map((link) => (
-            <a
-            href="/"
+            <Link
+            to={`/accessories/products/${link}`}
               key={link}
               type="button"
               className="ap-header__nav-link"
             >
               {link}
-            </a>
+            </Link>
           ))}
         </nav>
 
@@ -234,12 +234,12 @@ export default function AccessoriesPage() {
 
           <div className="ap-category-track">
             {categoryItems.map((cat) => (
-              <div key={cat.id} className="ap-cat-card">
+              <Link to='/accessories/products' key={cat.id} className="ap-cat-card">
                 <div className="ap-cat-card__image-bg">
                   <span>Image</span>
                 </div>
                 <span className="ap-cat-card__label">{cat.label}</span>
-              </div>
+              </Link>
             ))}
           </div>
 
@@ -276,11 +276,11 @@ export default function AccessoriesPage() {
 
         <div className="ap-brand-grid">
           {brandItems.map((brand) => (
-            <div key={brand.id} className="ap-brand-card">
+            <Link to='/accessories/brands' key={brand.id} className="ap-brand-card">
               <div className="ap-brand-card__box">
                 <span>Image</span>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>

@@ -5,7 +5,7 @@
   background: #fff;
   font-family: 'Inter', sans-serif;
   color: #000;
-  /* padding-bottom: 10rem; */
+  padding-bottom: 10rem;
   padding-top: 7rem;
   overflow-x: hidden;
 }
@@ -275,7 +275,7 @@
   padding: 0 48px;
   /* margin-bottom: 60px; */
   padding-top: 10rem;
-  height: 90vh;
+  min-height: 90vh;
 }
 
 .ap-section__title {
@@ -375,6 +375,7 @@
   flex-direction: column;
   align-items: center;
   gap: 14px;
+  text-decoration: none;
 }
 
 .ap-bike-card__circle {

@@ -39,6 +39,7 @@
 
 .collection-page__card {
   cursor: pointer;
+  text-decoration: none;
 }
 
 .collection-page__image-wrapper {

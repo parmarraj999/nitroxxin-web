@@ -1,67 +1,78 @@
-import { useState } from "react";
-import "./collection.css";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom';
 
 const brands = [
   {
     id: 1,
-    name: "ROYAL ENFIELD",
-    image: "/images/royal-enfield.png",
+    name: "Zana Motorcycles",
+    logo: "/brands/zana.png",
+    slug: "zana-motorcycles",
   },
   {
     id: 2,
-    name: "KTM",
-    image: "/images/hero.png",
+    name: "Moto Torque",
+    logo: "/brands/moto-torque.png",
+    slug: "moto-torque",
   },
   {
     id: 3,
-    name: "SUZUKI",
-    image: "/images/triumph.png",
+    name: "Bandidos Pitstop",
+    logo: "/brands/bandidos.png",
+    slug: "bandidos-pitstop",
   },
   {
     id: 4,
-    name: "TRIUMPH",
-    image: "/images/honda.png",
+    name: "Carbon Racing",
+    logo: "/brands/carbon-racing.png",
+    slug: "carbon-racing",
   },
   {
     id: 5,
-    name: "HARLEY DAVIDSON",
-    image: "/images/yamaha.png",
+    name: "HJG",
+    logo: "/brands/hjg.png",
+    slug: "hjg",
   },
   {
     id: 6,
-    name: "TVS",
-    image: "/images/ktm.png",
+    name: "Rynox",
+    logo: "/brands/rynox.png",
+    slug: "rynox",
   },
   {
     id: 7,
-    name: "YAMAHA",
-    image: "/images/bajaj.png",
+    name: "Viaterra",
+    logo: "/brands/viaterra.png",
+    slug: "viaterra",
   },
   {
     id: 8,
-    name: "KAWASAKI",
-    image: "/images/kawasaki.png",
+    name: "Studds",
+    logo: "/brands/studds.png",
+    slug: "studds",
   },
   {
     id: 9,
-    name: "BAJAJ",
-    image: "/images/kawasaki.png",
+    name: "SMK Helmets",
+    logo: "/brands/smk.png",
+    slug: "smk-helmets",
   },
   {
     id: 10,
-    name: "BMW",
-    image: "/images/kawasaki.png",
+    name: "Axor",
+    logo: "/brands/axor.png",
+    slug: "axor",
   },
   {
     id: 11,
-    name: "HERO",
-    image: "/images/kawasaki.png",
+    name: "Raida",
+    logo: "/brands/raida.png",
+    slug: "raida",
   },
   {
     id: 12,
-    name: "HONDA",
-    image: "/images/kawasaki.png",
+    name: "Autologue Design",
+    logo: "/brands/autologue.png",
+    slug: "autologue-design",
   },
 ];
 
@@ -94,8 +105,7 @@ function MenuIcon() {
   );
 }
 
-export default function CollectionPage() {
-
+const BrandPage = () => {
   const navLinks = ["Rider Wear", "Tech & Gadget", "Performance", "Helmets", "Bike Accessories"];
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
@@ -152,13 +162,13 @@ export default function CollectionPage() {
         </div>
 
         <h1 className="collection-page__title">
-          SHOP BY BIKE
+          SHOP BY BRANDS
         </h1>
 
         <div className="collection-page__grid">
           {brands.map((brand) => (
             <Link
-              to={`/accessories/collection/1232`}
+              to={`/accessories/products`}
               key={brand.id}
               className="collection-page__card"
             >
@@ -181,3 +191,5 @@ export default function CollectionPage() {
     </section>
   );
 }
+
+export default BrandPage
