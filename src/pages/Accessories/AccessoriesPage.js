@@ -1,5 +1,6 @@
 import { useState } from "react";
 import "./AccessoriesPage.css";
+import { Link } from "react-router-dom";
 
 /* ── DATA ── */
 
@@ -214,12 +215,12 @@ export default function AccessoriesPage() {
         <div className="ap-hero__image-slot">
           <span>Image</span>
         </div>
-        <div className="ap-hero__overlay">
+        {/* <div className="ap-hero__overlay">
           <p className="ap-hero__subtitle">
             Shop high-quality riding gear, accessories &amp; smart gadgets for every rider
           </p>
           <button className="ap-hero__btn">Explore Accessories</button>
-        </div>
+        </div> */}
       </div>
 
       {/* ── SHOP BY CATEGORY ── */}
@@ -254,7 +255,7 @@ export default function AccessoriesPage() {
 
         <div className="ap-bike-grid">
           {bikeItems.map((bike) => (
-            <div key={bike.id} className="ap-bike-card">
+            <Link key={bike.id} to="/accessories/collection" className="ap-bike-card">
               <div className="ap-bike-card__circle">
                 <div className="ap-bike-card__inner">
                   <span>Image</span>
@@ -264,7 +265,7 @@ export default function AccessoriesPage() {
               <div className="ap-bike-arrow">
                 Shop now <ArrowRightIcon />
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>

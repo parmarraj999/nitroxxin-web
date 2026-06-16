@@ -1,0 +1,102 @@
+.collection-page {
+  width: 100%;
+  min-height: 100vh;
+  background: #f4f4f4;
+  padding: 30px 0 80px;
+  padding-bottom: 8rem;
+}
+
+.collection-page__container {
+  width: 92%;
+  margin: auto;
+}
+
+.collection-page__breadcrumb {
+  display: flex;
+  gap: 12px;
+  color: #8f8f8f;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 70px;
+}
+
+.collection-page__title {
+  text-align: center;
+  font-size: 72px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #2d2d2d;
+  margin-bottom: 120px;
+  text-transform: uppercase;
+  font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+}
+
+.collection-page__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 30px;
+}
+
+.collection-page__card {
+  cursor: pointer;
+}
+
+.collection-page__image-wrapper {
+  width: 100%;
+  aspect-ratio: 1/1;
+  background: #e8e8e8;
+  border-radius: 16px;
+  overflow: hidden;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  transition: 0.3s;
+}
+
+.collection-page__card:hover
+.collection-page__image-wrapper {
+  transform: translateY(-5px);
+}
+
+.collection-page__image {
+  width: 80%;
+  object-fit: contain;
+}
+
+.collection-page__name {
+  margin-top: 24px;
+  font-size: 26px;
+  font-weight: 700;
+  color: #2d2d2d;
+  text-transform: uppercase;
+  /* font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif; */
+}
+
+/* Tablet */
+@media (max-width: 1100px) {
+  .collection-page__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .collection-page__title {
+    font-size: 54px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .collection-page__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .collection-page__title {
+    font-size: 42px;
+    margin-bottom: 70px;
+  }
+
+  .collection-page__name {
+    font-size: 22px;
+  }
+}

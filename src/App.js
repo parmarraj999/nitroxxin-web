@@ -5,6 +5,10 @@ import Foryou from './pages/Foryou/Foryou';
 import BottomNav from './components/layout/bottomNav/bottomNav';
 import Events from './pages/Events/Events';
 import AccessoriesPage from './pages/Accessories/AccessoriesPage';
+import EventDetail from './pages/Events/eventDetail/eventDetail';
+import AccessoriesDetail from './pages/Accessories/accessoriesDetail/accessoriesDetail';
+import Collection from './pages/Accessories/collection/collection';
+import BikeBrandPage from './pages/Accessories/bikeBrandPage/bikeBrandPage';
 
 function App() {
   return (
@@ -15,7 +19,11 @@ function App() {
         <Routes>
           <Route path="/" element={<Foryou />} />
           <Route path="/events" element={<Events />} />
+          <Route path='/events/:id' element={<EventDetail/>} />
           <Route path="/accessories" element={<AccessoriesPage />} />
+          <Route path='/accessories/:id' element={<AccessoriesDetail/>} />
+          <Route path='/accessories/collection' element={<Collection />} />
+          <Route path='/accessories/collection/:bike' element={<BikeBrandPage/>}/>
         </Routes>
       </div>
     </Router>

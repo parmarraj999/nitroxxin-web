@@ -1,0 +1,25 @@
+.product-detail-page {
+  background: linear-gradient(to bottom, #ffdcdc 0%, #ffffff 20.677%, #ffffff 100%);
+  min-height: 100vh;
+  min-width: 1512px;
+  font-family: 'Inter', sans-serif;
+}
+
+.product-detail-page__main {
+  padding-top: 85px;
+}
+
+.product-detail-page__info-section {
+  display: flex;
+  gap: 0;
+  padding: 60px 121px 60px 121px;
+  align-items: flex-start;
+}
+
+.product-detail-page__divider-v {
+  width: 1px;
+  background: #b4b4b4;
+  align-self: stretch;
+  margin: 0 40px;
+  flex: 0 0 1px;
+}

@@ -9,7 +9,7 @@ const Navbar = () => {
     console.log(pathname)
 
     return (
-        <nav className="navbar" style={pathname === '/accessories' ? {display:'none'} : {}}>
+        <nav className="navbar" style={pathname.includes('/events/') || pathname.includes('/accessories')  ? { display: 'none' } : {}}>
             <div className="navbar-container">
                 <h1 className="navbar-logo">
                     NITRO<span className="logo-x">X</span>X

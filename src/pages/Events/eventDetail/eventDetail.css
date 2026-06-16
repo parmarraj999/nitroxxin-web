@@ -1,0 +1,525 @@
+/* ── Event Detail Page ── */
+.event-detail-page {
+  width: 100%;
+  min-height: 100vh;
+  background: linear-gradient(to bottom, #391738 0%, #19151c 20.677%, #131517 100%);
+  overflow-x: auto;
+}
+
+.event-detail-scroll-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.event-detail-canvas {
+  position: relative;
+  width: 1512px;
+  min-height: 1900px;
+  margin: 0 auto;
+}
+
+.event-detail-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, #391738 0%, #19151c 20.677%, #131517 100%);
+  z-index: 0;
+}
+
+/* ── Navbar ── */
+.ed-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 85px;
+  z-index: 10;
+}
+
+.ed-navbar-blur {
+  position: absolute;
+  inset: 0;
+  background: rgba(19, 21, 23, 0.2);
+  backdrop-filter: blur(7.5px);
+  border-bottom: 1px solid #525252;
+}
+
+.ed-back-btn {
+  position: absolute;
+  left: 28px;
+  top: 18px;
+  width: 50px;
+  height: 50px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  z-index: 1;
+}
+
+.ed-bookmark-btn {
+  position: absolute;
+  right: 50px;
+  top: 18px;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.ed-bookmark-bg {
+  position: absolute;
+  inset: 0;
+  background: rgba(217, 217, 217, 0.2);
+  border-radius: 28px;
+}
+
+.ed-bookmark-icon {
+  position: absolute;
+  left: 13px;
+  top: 13px;
+  width: 23px;
+  height: 23px;
+  object-fit: cover;
+}
+
+/* ── Event Title ── */
+.ed-event-title {
+  position: absolute;
+  left: 182px;
+  top: 132px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 800;
+  font-size: 28px;
+  color: white;
+  white-space: nowrap;
+  z-index: 1;
+}
+
+.ed-event-meta {
+  position: absolute;
+  left: 182px;
+  top: 178px;
+  font-size: 16px;
+  z-index: 1;
+  line-height: normal;
+}
+
+.ed-event-date {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  color: #50d735;
+}
+
+.ed-event-location {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  color: #979797;
+}
+
+/* ── Hero Images ── */
+.ed-images-group {
+  position: absolute;
+  left: 182px;
+  top: 231px;
+  width: 1148px;
+  height: 348px;
+  z-index: 1;
+}
+
+.ed-img-main {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 774px;
+  height: 345px;
+  border-radius: 30px;
+  overflow: hidden;
+}
+
+.ed-img-main-inner {
+  border-radius: 30px;
+}
+
+.ed-img-top-right-1 {
+  position: absolute;
+  left: 788px;
+  top: 0;
+  width: 171.691px;
+  height: 171.691px;
+  border-radius: 30px;
+  overflow: hidden;
+}
+
+.ed-img-top-right-2 {
+  position: absolute;
+  left: 973.57px;
+  top: 0;
+  width: 174.426px;
+  height: 169px;
+  border-radius: 30px;
+  overflow: hidden;
+}
+
+.ed-img-bottom-right-1 {
+  position: absolute;
+  left: 786.76px;
+  top: 179.31px;
+  width: 174.426px;
+  height: 169px;
+  border-radius: 30px;
+  overflow: hidden;
+}
+
+.ed-img-bottom-right-2 {
+  position: absolute;
+  left: 974.94px;
+  top: 176.31px;
+  width: 171.691px;
+  height: 171.691px;
+  border-radius: 30px;
+  overflow: hidden;
+}
+
+.ed-img-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ed-img-fill {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ── Section Headings ── */
+.ed-section-heading {
+  position: absolute;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 26px;
+  color: white;
+  z-index: 1;
+}
+
+.ed-about-heading {
+  left: 182px;
+  top: 620px;
+}
+
+.ed-things-heading {
+  left: 182px;
+  top: 815px;
+}
+
+.ed-more-heading {
+  left: 182px;
+  top: 1002px;
+}
+
+/* ── About Text ── */
+.ed-about-text {
+  position: absolute;
+  left: 182px;
+  top: 662px;
+  width: 754px;
+  height: 100px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  color: #979797;
+  line-height: normal;
+  z-index: 1;
+}
+
+.ed-read-more {
+  position: absolute;
+  left: 182px;
+  top: 740px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: white;
+  cursor: pointer;
+  z-index: 1;
+}
+
+/* ── Things to Know List ── */
+.ed-things-list {
+  position: absolute;
+  left: 182px;
+  top: 865px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: white;
+  line-height: 1.8;
+  list-style: decimal;
+  padding-left: 21px;
+  z-index: 1;
+}
+
+/* ── Info Card ── */
+.ed-info-card {
+  position: absolute;
+  left: 969px;
+  top: 626px;
+  width: 360px;
+  border: 1.5px solid #767676;
+  border-radius: 25px;
+  padding: 18px 20px 14px;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.ed-info-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.ed-info-icon-box {
+  width: 50px;
+  height: 50px;
+  border: 1px solid #979797;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ed-info-icon {
+  width: 25px;
+  height: 25px;
+  object-fit: cover;
+}
+
+.ed-info-text {
+  flex: 1;
+}
+
+.ed-info-label {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  color: white;
+  line-height: normal;
+}
+
+.ed-info-sub {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  color: #979797;
+  line-height: normal;
+}
+
+.ed-info-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ed-divider-thin {
+  height: 1px;
+  background: #767676;
+  margin: 2px 0;
+}
+
+.ed-card-divider {
+  height: 1px;
+  background: #767676;
+  margin: 10px 0 12px;
+}
+
+.ed-price-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ed-price {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 20px;
+  color: white;
+}
+
+.ed-book-btn {
+  background: white;
+  color: black;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 22px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.ed-book-btn:hover {
+  background: #e8e8e8;
+}
+
+/* ── More Card ── */
+.ed-more-card {
+  position: absolute;
+  left: 182px;
+  top: 1052px;
+  width: 636px;
+  border: 1px solid #767676;
+  border-radius: 20px;
+  padding: 0 18px;
+  z-index: 1;
+}
+
+.ed-more-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 0;
+}
+
+.ed-more-icon {
+  width: 30px;
+  height: 30px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.ed-more-label {
+  flex: 1;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: white;
+}
+
+/* ── Recommended Events ── */
+.ed-recommended-heading {
+  position: absolute;
+  left: 44px;
+  top: 1296px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 24px;
+  color: white;
+  z-index: 1;
+}
+
+.ed-recommended-grid {
+  position: absolute;
+  left: 44px;
+  top: 1351px;
+  display: flex;
+  gap: 20px;
+  z-index: 1;
+}
+
+.ed-rec-card {
+  position: relative;
+  width: 328px;
+  height: 500px;
+  border-radius: 30px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.ed-rec-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 30px;
+}
+
+.ed-rec-heart-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 35px;
+  height: 35px;
+  background: rgba(6, 6, 6, 0.2);
+  backdrop-filter: blur(15px);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.ed-rec-heart {
+  width: 20px;
+  height: 21px;
+  object-fit: cover;
+}
+
+.ed-rec-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 79px;
+  background: rgba(6, 6, 6, 0.1);
+  backdrop-filter: blur(15px);
+  border-radius: 0 0 30px 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+}
+
+.ed-rec-info-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ed-rec-name {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 20px;
+  color: white;
+}
+
+.ed-rec-date {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  color: #9f9f9f;
+}
+
+.ed-rec-info-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ed-rec-price {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  color: white;
+}
+
+.ed-rec-dot {
+  width: 3px;
+  height: 4px;
+  background: #d9d9d9;
+  border-radius: 2px;
+}
+
+.ed-rec-arrow {
+  position: absolute;
+  top: 16px;
+  left: calc(50% - 50px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

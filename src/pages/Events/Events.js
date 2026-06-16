@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import "./EventPage.css";
+import { Link } from "react-router-dom";
 
 
 /* ── DATA ── */
@@ -29,22 +30,22 @@ const featuredEvents = [
 ];
 
 const allEventsData = [
-  { id: 1,  name: "Swift Motion",    date: "27 May 2026", price: "₹ 1200", category: "Night Ride"     },
-  { id: 2,  name: "Swift Motion",    date: "27 May 2026", price: "₹ 1200", category: "Mountain Rides" },
-  { id: 3,  name: "Swift Motion",    date: "27 May 2026", price: "₹ 1200", category: "Meetups"        },
-  { id: 4,  name: "Swift Motion",    date: "27 May 2026", price: "₹ 1200", category: "Night Ride"     },
-  { id: 5,  name: "Swift Motion",    date: "27 May 2026", price: "₹ 1200", category: "Bike Festivals" },
-  { id: 6,  name: "Swift Motion",    date: "27 May 2026", price: "₹ 1200", category: "Mountain Rides" },
-  { id: 7,  name: "Swift Motion",    date: "27 May 2026", price: "₹ 1200", category: "Meetups"        },
-  { id: 8,  name: "Swift Motion",    date: "27 May 2026", price: "₹ 1200", category: "Night Ride"     },
+  { id: 1, name: "Swift Motion", date: "27 May 2026", price: "₹ 1200", category: "Night Ride" },
+  { id: 2, name: "Swift Motion", date: "27 May 2026", price: "₹ 1200", category: "Mountain Rides" },
+  { id: 3, name: "Swift Motion", date: "27 May 2026", price: "₹ 1200", category: "Meetups" },
+  { id: 4, name: "Swift Motion", date: "27 May 2026", price: "₹ 1200", category: "Night Ride" },
+  { id: 5, name: "Swift Motion", date: "27 May 2026", price: "₹ 1200", category: "Bike Festivals" },
+  { id: 6, name: "Swift Motion", date: "27 May 2026", price: "₹ 1200", category: "Mountain Rides" },
+  { id: 7, name: "Swift Motion", date: "27 May 2026", price: "₹ 1200", category: "Meetups" },
+  { id: 8, name: "Swift Motion", date: "27 May 2026", price: "₹ 1200", category: "Night Ride" },
 ];
 
 const categories = [
-  { id: 1, label: "Night Ride"     },
+  { id: 1, label: "Night Ride" },
   { id: 2, label: "Mountain Rides" },
-  { id: 3, label: "Meetups"        },
+  { id: 3, label: "Meetups" },
   { id: 4, label: "Bike Festivals" },
-  { id: 5, label: "Night Ride"     },
+  { id: 5, label: "Night Ride" },
 ];
 
 const timeFilters = ["Today", "Tommorow", "Upcoming", "Ongoing"];
@@ -94,12 +95,12 @@ function HeartIcon() {
 function SlidersIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <line x1="4" y1="6"  x2="20" y2="6"  stroke="white" strokeWidth="2" strokeLinecap="round" />
+      <line x1="4" y1="6" x2="20" y2="6" stroke="white" strokeWidth="2" strokeLinecap="round" />
       <line x1="4" y1="12" x2="20" y2="12" stroke="white" strokeWidth="2" strokeLinecap="round" />
       <line x1="4" y1="18" x2="20" y2="18" stroke="white" strokeWidth="2" strokeLinecap="round" />
-      <circle cx="9"  cy="6"  r="2" fill="#17191b" stroke="white" strokeWidth="2" />
+      <circle cx="9" cy="6" r="2" fill="#17191b" stroke="white" strokeWidth="2" />
       <circle cx="15" cy="12" r="2" fill="#17191b" stroke="white" strokeWidth="2" />
-      <circle cx="9"  cy="18" r="2" fill="#17191b" stroke="white" strokeWidth="2" />
+      <circle cx="9" cy="18" r="2" fill="#17191b" stroke="white" strokeWidth="2" />
     </svg>
   );
 }
@@ -110,7 +111,7 @@ function EventCard({ event }) {
   const [liked, setLiked] = useState(false);
 
   return (
-    <div className="ep-event-card">
+    <Link className="ep-event-card" to='/events/123'>
       <div className="ep-event-card__image">
         <span>Image</span>
 
@@ -132,11 +133,11 @@ function EventCard({ event }) {
           </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
-/* ── MAIN PAGE ── */ 
+/* ── MAIN PAGE ── */
 
 export default function Events() {
   /* search */
@@ -169,35 +170,35 @@ export default function Events() {
     <div className="ep-page">
 
       {/* ── HERO: heading + search side by side ── */}
-        <div className="ep-hero__flex">
-      <div className="ep-hero">
-        <h1 className="ep-hero__heading">
-          Discover bike events<br />near you
-        </h1>
+      <div className="ep-hero__flex">
+        <div className="ep-hero">
+          <h1 className="ep-hero__heading">
+            Discover bike events<br />near you
+          </h1>
 
-        <div className="ep-search">
-          <div className="ep-search__input-wrap">
-            <span className="ep-search__icon-left">
-              <SearchIcon />
-            </span>
-            <input
-              className="ep-search__input"
-              type="text"
-              placeholder="Search For Any Event...."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
+          <div className="ep-search">
+            <div className="ep-search__input-wrap">
+              <span className="ep-search__icon-left">
+                <SearchIcon />
+              </span>
+              <input
+                className="ep-search__input"
+                type="text"
+                placeholder="Search For Any Event...."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            </div>
+            <button
+              className="ep-search__btn"
+              aria-label="Search"
+              onClick={() => {/* query already live-filters */ }}
+            >
+              <SearchIcon color="#fff" />
+            </button>
           </div>
-          <button
-            className="ep-search__btn"
-            aria-label="Search"
-            onClick={() => {/* query already live-filters */}}
-          >
-            <SearchIcon color="#fff" />
-          </button>
         </div>
       </div>
-        </div>
 
       {/* ── FEATURED EVENT ── */}
       <div className="ep-featured-wrap">
