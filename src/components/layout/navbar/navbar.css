@@ -43,7 +43,8 @@
   background: #525252;
 } */
 
-.navbar-login {
+.navbar-login,
+.navbar-signup {
     background: #ff1f1f;
     border-radius: 27px;
     padding: 8px 28px;
@@ -58,6 +59,16 @@
 
 .navbar-login:hover {
     background: #e01b1b;
+}
+
+.navbar-signup {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.32);
+    padding: 8px 24px;
+}
+
+.navbar-signup:hover {
+    background: rgba(255, 255, 255, 0.2);
 }
 
 .navbar-search {
@@ -76,4 +87,24 @@
     align-items: center;
     gap: 20px;
 
+}
+
+@media (max-width: 640px) {
+    .navbar-container {
+        padding: 0 16px;
+    }
+
+    .navbar-search {
+        display: none;
+    }
+
+    .navbar-action-btn {
+        gap: 10px;
+    }
+
+    .navbar-login,
+    .navbar-signup {
+        padding: 8px 14px;
+        font-size: 14px;
+    }
 }
