@@ -44,19 +44,19 @@ const products = [
   { id: 8, category: "Rider Wear", name: "Leather Jacket", price: "$1200" },
 ];
 
-const navLinks = ["Rider Wear", "Tech & Gadget", "Performance", "Helmets", "Bike Accessories"];
+// const navLinks = ["Rider Wear", "Tech & Gadget", "Performance", "Helmets", "Bike Accessories"];
 const timeFilters = ["Today", "Tommorow", "Upcoming", "Ongoing"];
 
 /* ── ICONS ── */
 
-function SearchIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="11" cy="11" r="7" stroke="#000" strokeWidth="2" />
-      <path d="M16.5 16.5L22 22" stroke="#000" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
-}
+// function SearchIcon() {
+//   return (
+//     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+//       <circle cx="11" cy="11" r="7" stroke="#000" strokeWidth="2" />
+//       <path d="M16.5 16.5L22 22" stroke="#000" strokeWidth="2" strokeLinecap="round" />
+//     </svg>
+//   );
+// }
 
 function CartIcon({ color = "#000" }) {
   return (
@@ -68,15 +68,15 @@ function CartIcon({ color = "#000" }) {
   );
 }
 
-function MenuIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <line x1="3" y1="6" x2="21" y2="6" stroke="#000" strokeWidth="2" strokeLinecap="round" />
-      <line x1="3" y1="12" x2="21" y2="12" stroke="#000" strokeWidth="2" strokeLinecap="round" />
-      <line x1="3" y1="18" x2="21" y2="18" stroke="#000" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
-}
+// function MenuIcon() {
+//   return (
+//     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+//       <line x1="3" y1="6" x2="21" y2="6" stroke="#000" strokeWidth="2" strokeLinecap="round" />
+//       <line x1="3" y1="12" x2="21" y2="12" stroke="#000" strokeWidth="2" strokeLinecap="round" />
+//       <line x1="3" y1="18" x2="21" y2="18" stroke="#000" strokeWidth="2" strokeLinecap="round" />
+//     </svg>
+//   );
+// }
 
 function HeartIcon() {
   return (
