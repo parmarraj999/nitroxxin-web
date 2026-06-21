@@ -1,9 +1,20 @@
 import FilterPills from "../components/FilterPills";
+import { useAuth } from "../../../context/AuthContext";
+import { useCollection } from "../../../hooks/useFirestore";
+import { COLLECTIONS } from "../../../services/firebase";
+import { normalizeProduct } from "../../../services/normalizers";
 
 const jacketImage =
   "https://i.pinimg.com/736x/db/b1/48/dbb148ec3cfbe0bad158b7fb64d17541.jpg";
 
 export default function MyOrders() {
+  const { user } = useAuth();
+  const { data } = useCollection(COLLECTIONS.orders, {
+    where: [["userId", "==", user?.uid]],
+    orderBy: [["createdAt", "desc"]],
+    limit: 50,
+  });
+
   return (
     <section className="profile-screen profile-screen--wide">
       <div className="orders-head">
@@ -15,27 +26,32 @@ export default function MyOrders() {
       </div>
       <div className="profile-divider" />
       <FilterPills items={["All", "Delivered", "Confirm", "Shipped"]} />
-      <article className="order-card">
-        <img src={jacketImage} alt="AXOR Helmet Apex Solid Black Dull" />
-        <div className="order-info">
-          <p>Rider Wear</p>
-          <h2>AXOR Helmet Apex Solid Black Dull</h2>
-          <strong>ALPINESTER</strong>
-          <p>Order Id #4823832</p>
-          <h3>$1200</h3>
-          <span>Click to see more details</span>
-          <div className="order-progress">
-            {["Ordered", "Confirm", "Shipped", "Delivered"].map((step, index) => (
-              <div className="order-step" key={step}>
-                <i />
-                <strong>{step}</strong>
-                <span>15 Jan</span>
-                {index < 3 && <b />}
+      {data.length ? data.map((order) => {
+        const product = normalizeProduct(order.items?.[0]?.productSnapshot || {});
+        return (
+          <article className="order-card" key={order.id}>
+            <img src={product.image || jacketImage} alt={product.name} />
+            <div className="order-info">
+              <p>{product.category}</p>
+              <h2>{product.name}</h2>
+              <strong>{product.brand}</strong>
+              <p>Order Id #{order.orderId}</p>
+              <h3>{product.offerPriceText || product.priceText || order.total}</h3>
+              <span>{order.status}</span>
+              <div className="order-progress">
+                {["Pending", "Confirmed", "Processing", "Shipped", "Delivered"].map((step, index) => (
+                  <div className="order-step" key={step}>
+                    <i />
+                    <strong>{step}</strong>
+                    <span>{order.status === step ? "Now" : ""}</span>
+                    {index < 4 && <b />}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
-      </article>
+            </div>
+          </article>
+        );
+      }) : <p>No orders yet.</p>}
     </section>
   );
 }

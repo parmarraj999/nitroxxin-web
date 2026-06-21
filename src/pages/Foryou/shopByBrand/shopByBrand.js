@@ -1,19 +1,24 @@
 import React from 'react';
 import './shopByBrand.css';
+import { Link } from 'react-router-dom';
+import { useCollection } from '../../../hooks/useFirestore';
+import { COLLECTIONS } from '../../../services/firebase';
+import { normalizeBrand } from '../../../services/normalizers';
 
 
-const BrandItem = ({ image, alt }) => {
+const BrandItem = ({ id, image, alt }) => {
     return (
-        <div className="brand-item">
+        <Link className="brand-item" to={`/brand/${id}`}>
             <div className="brand-circle">
                 <img src={image} alt={alt} className="brand-logo" />
             </div>
-        </div>
+        </Link>
     );
 };
 
 const ShopByBrands = () => {
-    const brands = [
+    const { data } = useCollection(COLLECTIONS.brands, { limit: 8 });
+    const fallbackBrands = [
         { image: 'assets/images/brand-1.png', alt: 'Alpinestars' },
         { image: 'assets/images/brand-2.png', alt: 'Brand' },
         { image: 'assets/images/brand-3.png', alt: 'Brand' },
@@ -21,6 +26,7 @@ const ShopByBrands = () => {
         { image: 'assets/images/brand-5.png', alt: 'DJI' },
         { image: 'assets/images/brand-6.png', alt: 'Cardo Systems' }
     ];
+    const brands = data.length ? data.map(normalizeBrand) : fallbackBrands;
 
     return (
         <section className="shop-by-brands">
@@ -31,7 +37,7 @@ const ShopByBrands = () => {
 
             <div className="brands-row">
                 {brands.map((brand, index) => (
-                    <BrandItem key={index} {...brand} />
+                    <BrandItem key={brand.id || index} {...brand} />
                 ))}
             </div>
             <div className="category-slider-btn" style={{marginTop:'150px'}}>

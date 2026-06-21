@@ -1,20 +1,25 @@
 import React from 'react';
 import './shopByCategory.css';
+import { Link } from 'react-router-dom';
+import { useCollection } from '../../../hooks/useFirestore';
+import { COLLECTIONS } from '../../../services/firebase';
+import { normalizeCategory } from '../../../services/normalizers';
 
 
-const CategoryItem = ({ image, title }) => {
+const CategoryItem = ({ id, image, title }) => {
     return (
-        <div className="category-item">
+        <Link className="category-item" to={`/category/${id}`}>
             <div className="category-circle">
                 <img src={image} alt={title} className="category-image" />
                 <p className="category-label">{title}</p>
             </div>
-        </div>
+        </Link>
     );
 };
 
 const ShopByCategory = () => {
-    const categories = [
+    const { data } = useCollection(COLLECTIONS.categories, { limit: 8 });
+    const fallbackCategories = [
         {
             image: '/assets/images/category-jacket.png',
             title: 'Rider Wear'
@@ -36,6 +41,9 @@ const ShopByCategory = () => {
             title: 'Accessories'
         }
     ];
+    const categories = data.length
+        ? data.map(normalizeCategory).map((category) => ({ ...category, title: category.title || category.label }))
+        : fallbackCategories;
 
     return (
         <section className="shop-by-category">
@@ -46,7 +54,7 @@ const ShopByCategory = () => {
 
             <div className="categories-row">
                 {categories.map((category, index) => (
-                    <CategoryItem key={index} {...category} />
+                    <CategoryItem key={category.id || index} {...category} />
                 ))}
             </div>
             <div className="category-slider-btn">

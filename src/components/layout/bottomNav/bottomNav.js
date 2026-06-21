@@ -52,7 +52,7 @@ export default function BottomNav() {
     };
 
     return (
-        <div className="bottom-nav-wrapper" style={pathname.includes('/profile') ? {display:"none"} : {}}>
+        <div className="bottom-nav-wrapper" style={pathname.includes('/profile') || pathname.includes('/book') ? {display:"none"} : {}}>
             <div className="bottom-nav-tabs">
                 <button
                     className={`nav-tab ${activeTab === 'For You' ? 'active-red' : ''}`}

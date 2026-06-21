@@ -35,6 +35,8 @@
   overflow: hidden;
   background: #1e1e1e;
   transition: transform 0.3s;
+  color: inherit;
+  text-decoration: none;
 }
 
 .event-card:hover {

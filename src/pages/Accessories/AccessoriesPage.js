@@ -1,6 +1,13 @@
 import { useState } from "react";
 import "./AccessoriesPage.css";
 import { Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { useAuthModal } from "../../components/AuthModal/useAuthModal";
+import { useCollection } from "../../hooks/useFirestore";
+import { COLLECTIONS } from "../../services/firebase";
+import { addToCart, saveWishlistItem } from "../../services/commerceService";
+import { normalizeBrand, normalizeCategory, normalizeProduct } from "../../services/normalizers";
+import AccessoriesHeader from "./accessoriesNav/AccessoriesHeader";
 
 /* ── DATA ── */
 
@@ -120,14 +127,29 @@ function SlidersIcon() {
 
 function ProductCard({ product }) {
   const [liked, setLiked] = useState(false);
+  const { user } = useAuth();
+  const { openLogin } = useAuthModal();
+
+  const handleCart = async (event) => {
+    event.preventDefault();
+    if (!user) return openLogin();
+    await addToCart({ userId: user.uid, product, quantity: 1 });
+  };
+
+  const handleWishlist = async (event) => {
+    event.preventDefault();
+    setLiked((p) => !p);
+    if (!user) return openLogin();
+    await saveWishlistItem({ userId: user.uid, product });
+  };
 
   return (
-    <div className="ap-product-card">
+    <Link className="ap-product-card" to={`/product/${product.id}`}>
       <div className="ap-product-card__image">
-        <span>Image</span>
+        {product.image ? <img src={product.image} alt={product.name} /> : <span>Image</span>}
         <button
           className={`ap-product-card__heart${liked ? " ap-product-card__heart--liked" : ""}`}
-          onClick={() => setLiked((p) => !p)}
+          onClick={handleWishlist}
           aria-label="Like"
         >
           <HeartIcon />
@@ -137,83 +159,52 @@ function ProductCard({ product }) {
       <div className="ap-product-card__info">
         <div className="ap-product-card__top-row">
           <span className="ap-product-card__category">{product.category}</span>
-          <span className="ap-product-card__price">{product.price}</span>
+          <span className="ap-product-card__price">{product.offerPriceText || product.priceText || product.price}</span>
         </div>
         <div className="ap-product-card__name">{product.name}</div>
-        <button className="ap-product-card__cart-btn">
+        <button className="ap-product-card__cart-btn" onClick={handleCart}>
           <CartIcon color="#fff" />
           Add to Cart
         </button>
       </div>
-    </div>
+    </Link>
   );
 }
 
 /* ── MAIN PAGE ── */
 
 export default function AccessoriesPage() {
+  const productsQuery = useCollection(COLLECTIONS.products, { limit: 50 });
+  const categoriesQuery = useCollection(COLLECTIONS.categories, { limit: 12 });
+  const brandsQuery = useCollection(COLLECTIONS.brands, { limit: 12 });
+  const bannersQuery = useCollection(COLLECTIONS.banners, { limit: 5 });
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("Today");
+  const liveProducts = productsQuery.data.map(normalizeProduct);
+  const liveCategories = categoriesQuery.data.map(normalizeCategory);
+  const liveBrands = brandsQuery.data.map(normalizeBrand);
+  const displayProducts = liveProducts.length ? liveProducts : products;
+  const displayCategories = liveCategories.length ? liveCategories : categoryItems;
+  const displayBrands = liveBrands.length ? liveBrands : brandItems;
+  const heroBanner = bannersQuery.data[0];
 
-  const filteredProducts = products.filter(
+  const filteredProducts = displayProducts.filter(
     (p) =>
       !search.trim() ||
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.category.toLowerCase().includes(search.toLowerCase())
+      String(p.name).toLowerCase().includes(search.toLowerCase()) ||
+      String(p.category).toLowerCase().includes(search.toLowerCase())
   );
 
   return (
     <div className="ap-page">
 
       {/* ── HEADER ── */}
-      <header className="ap-header">
-        {/* Logo */}
-        <div className="ap-header__logo">
-          NITRO<span>X</span><span className="ap-header__logo-suffix">X</span>
-        </div>
-
-        <div className="ap-header__divider" />
-
-        {/* Nav links */}
-        <nav className="ap-header__nav">
-          {navLinks.map((link) => (
-            <Link
-            to={`/accessories/products/${link}`}
-              key={link}
-              type="button"
-              className="ap-header__nav-link"
-            >
-              {link}
-            </Link>
-          ))}
-        </nav>
-
-        {/* Right side: search + cart + menu */}
-        <div className="ap-header__right">
-          <div className="ap-header__search">
-            <SearchIcon />
-            <input
-              type="text"
-              placeholder="Search Accessories.."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <button className="ap-header__icon-btn" aria-label="Cart">
-            <CartIcon />
-          </button>
-          <button className="ap-header__icon-btn" aria-label="Menu">
-            <MenuIcon />
-          </button>
-        </div>
-      </header>
-
-
+      <AccessoriesHeader search={search} onSearchChange={setSearch} />
 
       {/* ── HERO BANNER ── */}
       <div className="ap-hero">
         <div className="ap-hero__image-slot">
-          <span>Image</span>
+          {heroBanner?.image || heroBanner?.imageUrl ? <img src={heroBanner.image || heroBanner.imageUrl} alt={heroBanner.title || "Banner"} /> : <span>Image</span>}
         </div>
         {/* <div className="ap-hero__overlay">
           <p className="ap-hero__subtitle">
@@ -233,10 +224,10 @@ export default function AccessoriesPage() {
           </button>
 
           <div className="ap-category-track">
-            {categoryItems.map((cat) => (
-              <Link to='/accessories/products' key={cat.id} className="ap-cat-card">
+            {displayCategories.map((cat) => (
+              <Link to={`/category/${cat.id}`} key={cat.id} className="ap-cat-card">
                 <div className="ap-cat-card__image-bg">
-                  <span>Image</span>
+                  {cat.image ? <img src={cat.image} alt={cat.label} /> : <span>Image</span>}
                 </div>
                 <span className="ap-cat-card__label">{cat.label}</span>
               </Link>
@@ -275,10 +266,10 @@ export default function AccessoriesPage() {
         <h2 className="ap-section__title">SHOP BY BRAND</h2>
 
         <div className="ap-brand-grid">
-          {brandItems.map((brand) => (
-            <Link to='/accessories/brands' key={brand.id} className="ap-brand-card">
+          {displayBrands.map((brand) => (
+            <Link to={`/brand/${brand.id}`} key={brand.id} className="ap-brand-card">
               <div className="ap-brand-card__box">
-                <span>Image</span>
+                {brand.image ? <img src={brand.image} alt={brand.label} /> : <span>Image</span>}
               </div>
             </Link>
           ))}

@@ -1,14 +1,20 @@
 import { memo, useState } from "react";
 import { FaFacebookF, FaGoogle, FaEye, FaEyeSlash } from "react-icons/fa";
 import AuthFormWrapper from "./AuthFormWrapper";
+import { useAuth } from "../../context/AuthContext";
+import { useAuthModal } from "./useAuthModal";
 
 const SignupModal = ({ onSwitchToLogin }) => {
+  const { signUp } = useAuth();
+  const { closeAuth } = useAuthModal();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
     password: "",
   });
   const [errors, setErrors] = useState({});
+  const [submitError, setSubmitError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const validateField = (name, value) => {
@@ -41,7 +47,7 @@ const SignupModal = ({ onSwitchToLogin }) => {
     setErrors((prev) => ({ ...prev, [name]: validateField(name, value) }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     const newErrors = {
@@ -53,8 +59,16 @@ const SignupModal = ({ onSwitchToLogin }) => {
     setErrors(newErrors);
 
     if (!Object.values(newErrors).some(Boolean)) {
-      // Replace with the app's auth API call when it is available.
-      console.log("Signup successful:", formData);
+      try {
+        setIsSubmitting(true);
+        setSubmitError("");
+        await signUp(formData);
+        closeAuth();
+      } catch (error) {
+        setSubmitError(error.message);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -159,8 +173,10 @@ const SignupModal = ({ onSwitchToLogin }) => {
           )}
         </div>
 
-        <button type="submit" className="auth-submit-btn">
-          Start
+        {submitError && <span className="auth-error-message" role="alert">{submitError}</span>}
+
+        <button type="submit" className="auth-submit-btn" disabled={isSubmitting}>
+          {isSubmitting ? "Starting..." : "Start"}
         </button>
       </form>
 

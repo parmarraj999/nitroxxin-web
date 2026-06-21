@@ -1,6 +1,9 @@
 import { useState, useMemo } from "react";
 import "./EventPage.css";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useCollection } from "../../hooks/useFirestore";
+import { COLLECTIONS } from "../../services/firebase";
+import { normalizeCategory, normalizeEvent } from "../../services/normalizers";
 
 
 /* ── DATA ── */
@@ -109,11 +112,12 @@ function SlidersIcon() {
 
 function EventCard({ event }) {
   const [liked, setLiked] = useState(false);
+  const image = event.image || event.banner;
 
   return (
-    <Link className="ep-event-card" to='/events/123'>
+    <Link className="ep-event-card" to={`/event/${event.id}`}>
       <div className="ep-event-card__image">
-        <span>Image</span>
+        {image ? <img src={image} alt={event.name || event.title} /> : <span>Image</span>}
 
         <button
           className={`ep-event-card__heart${liked ? " ep-event-card__heart--liked" : ""}`}
@@ -140,12 +144,29 @@ function EventCard({ event }) {
 /* ── MAIN PAGE ── */
 
 export default function Events() {
+  const navigate = useNavigate();
+  const eventsQuery = useCollection(COLLECTIONS.events, {
+    orderBy: [["date", "asc"]],
+    limit: 50,
+  });
+  const categoriesQuery = useCollection(COLLECTIONS.categories, { limit: 12 });
+
   /* search */
   const [query, setQuery] = useState("");
 
   /* featured slider */
   const [activeSlide, setActiveSlide] = useState(0);
-  const total = featuredEvents.length;
+  const liveEvents = eventsQuery.data.map(normalizeEvent);
+  const displayEvents = liveEvents.length ? liveEvents : allEventsData;
+  const featured = liveEvents.filter((event) => event.featured).length
+    ? liveEvents.filter((event) => event.featured)
+    : liveEvents.slice(0, 3).length
+      ? liveEvents.slice(0, 3)
+      : featuredEvents;
+  const eventCategories = categoriesQuery.data.length
+    ? categoriesQuery.data.map(normalizeCategory)
+    : categories;
+  const total = featured.length;
 
   const prev = () => setActiveSlide((p) => (p - 1 + total) % total);
   const next = () => setActiveSlide((p) => (p + 1) % total);
@@ -155,16 +176,16 @@ export default function Events() {
 
   /* search filtering */
   const filteredEvents = useMemo(() => {
-    if (!query.trim()) return allEventsData;
+    if (!query.trim()) return displayEvents;
     const q = query.toLowerCase();
-    return allEventsData.filter(
+    return displayEvents.filter(
       (e) =>
-        e.name.toLowerCase().includes(q) ||
-        e.category.toLowerCase().includes(q)
+        String(e.name || e.title || "").toLowerCase().includes(q) ||
+        String(e.category || "").toLowerCase().includes(q)
     );
-  }, [query]);
+  }, [displayEvents, query]);
 
-  const currentEvent = featuredEvents[activeSlide];
+  const currentEvent = featured[activeSlide] || featured[0];
 
   return (
     <div className="ep-page">
@@ -215,9 +236,9 @@ export default function Events() {
               className="ep-featured__track"
               style={{ transform: `translateX(-${activeSlide * 302}px)` }}
             >
-              {featuredEvents.map((_, i) => (
+              {featured.map((event, i) => (
                 <div key={i} className="ep-featured__slide">
-                  Image {i + 1}
+                  {event.image || event.banner ? <img src={event.image || event.banner} alt={event.title || event.name} /> : `Image ${i + 1}`}
                 </div>
               ))}
             </div>
@@ -225,17 +246,22 @@ export default function Events() {
 
           {/* Event info — updates with slide */}
           <div className="ep-featured__info">
-            <p className="ep-featured__date">{currentEvent.date}</p>
+            <p className="ep-featured__date">{currentEvent.dateTimeText || currentEvent.date}</p>
             <h2 className="ep-featured__title">
-              {currentEvent.title.split("\n").map((line, i) => (
+              {String(currentEvent.title || currentEvent.name || "").split("\n").map((line, i) => (
                 <span key={i}>{line}{i === 0 && <br />}</span>
               ))}
             </h2>
             <p className="ep-featured__location">{currentEvent.location}</p>
             <p className="ep-featured__price">
-              <span>{currentEvent.price}</span> onwards
+              <span>{currentEvent.priceText || currentEvent.price}</span> onwards
             </p>
-            <button className="ep-featured__book-btn">Book Ticket</button>
+            <button
+              className="ep-featured__book-btn"
+              onClick={() => navigate(`/event/${currentEvent.id}/book`)}
+            >
+              Book Ticket
+            </button>
           </div>
 
           {/* Right button */}
@@ -246,7 +272,7 @@ export default function Events() {
 
         {/* Dot indicators */}
         <div className="ep-dots">
-          {featuredEvents.map((_, i) => (
+          {featured.map((_, i) => (
             <button
               key={i}
               className={`ep-dot${i === activeSlide ? " ep-dot--active" : ""}`}
@@ -261,11 +287,11 @@ export default function Events() {
       <div className="ep-section">
         <p className="ep-section__title">Events Category</p>
         <div className="ep-categories">
-          {categories.map((cat) => (
-            <div key={cat.id} className="ep-cat-card">
-              <div className="ep-cat-card__image-slot">Image</div>
+          {eventCategories.map((cat) => (
+            <Link to={`/category/${cat.id}`} key={cat.id} className="ep-cat-card">
+              <div className="ep-cat-card__image-slot">{cat.image ? <img src={cat.image} alt={cat.label} /> : "Image"}</div>
               <div className="ep-cat-card__label">{cat.label}</div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>
@@ -274,7 +300,7 @@ export default function Events() {
       <div className="ep-section">
         <p className="ep-section__title">Recommended Events</p>
         <div className="ep-events-grid">
-          {allEventsData.map((event) => (
+          {displayEvents.map((event) => (
             <EventCard key={event.id} event={event} />
           ))}
         </div>

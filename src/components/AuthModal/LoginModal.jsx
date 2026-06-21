@@ -1,14 +1,20 @@
 import { memo, useState } from "react";
 import { FaFacebookF, FaGoogle, FaEye, FaEyeSlash } from "react-icons/fa";
 import AuthFormWrapper from "./AuthFormWrapper";
+import { useAuth } from "../../context/AuthContext";
+import { useAuthModal } from "./useAuthModal";
 
 const LoginModal = ({ onSwitchToSignup }) => {
+  const { login, forgotPassword } = useAuth();
+  const { closeAuth } = useAuthModal();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     rememberMe: false,
   });
   const [errors, setErrors] = useState({});
+  const [submitError, setSubmitError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const validateField = (name, value) => {
@@ -38,7 +44,7 @@ const LoginModal = ({ onSwitchToSignup }) => {
     }
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     const newErrors = {
@@ -49,8 +55,32 @@ const LoginModal = ({ onSwitchToSignup }) => {
     setErrors(newErrors);
 
     if (!Object.values(newErrors).some(Boolean)) {
-      // Replace with the app's auth API call when it is available.
-      console.log("Login successful:", formData);
+      try {
+        setIsSubmitting(true);
+        setSubmitError("");
+        await login(formData);
+        closeAuth();
+      } catch (error) {
+        setSubmitError(error.message);
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    const emailError = validateField("email", formData.email);
+    if (emailError) {
+      setErrors((prev) => ({ ...prev, email: emailError }));
+      return;
+    }
+
+    try {
+      setSubmitError("");
+      await forgotPassword(formData.email);
+      setSubmitError("Password reset email sent.");
+    } catch (error) {
+      setSubmitError(error.message);
     }
   };
 
@@ -141,13 +171,15 @@ const LoginModal = ({ onSwitchToSignup }) => {
             />
             <span>Remember me</span>
           </label>
-          <button type="button" className="auth-link-button">
+          <button type="button" className="auth-link-button" onClick={handleForgotPassword}>
             Forgot Password?
           </button>
         </div>
 
-        <button type="submit" className="auth-submit-btn">
-          Log In
+        {submitError && <span className="auth-error-message" role="alert">{submitError}</span>}
+
+        <button type="submit" className="auth-submit-btn" disabled={isSubmitting}>
+          {isSubmitting ? "Logging In..." : "Log In"}
         </button>
       </form>
 

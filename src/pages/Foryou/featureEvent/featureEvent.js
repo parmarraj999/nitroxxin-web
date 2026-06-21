@@ -1,10 +1,14 @@
 import React from 'react';
 import './featureEvent.css';
+import { Link } from 'react-router-dom';
+import { useCollection } from '../../../hooks/useFirestore';
+import { COLLECTIONS } from '../../../services/firebase';
+import { normalizeEvent } from '../../../services/normalizers';
 
 
-const EventCard= ({ image, title, date, price }) => {
+const EventCard= ({ id, image, title, date, price }) => {
   return (
-    <div className="event-card">
+    <Link className="event-card" to={`/event/${id}`}>
       <div className="event-image-wrapper">
         <img src={image} alt={title} className="event-image" />
       </div>
@@ -16,12 +20,13 @@ const EventCard= ({ image, title, date, price }) => {
           <span className="event-price">{price}</span>
         </div>
       </div>
-    </div>
+    </Link>
   );
 };
 
 const FeaturedEvents = () => {
-  const events = [
+  const { data } = useCollection(COLLECTIONS.events, { limit: 8 });
+  const fallbackEvents = [
     {
       id: 1,
       image: 'https://i.pinimg.com/736x/2c/69/3c/2c693c3f24c4642755f69fade9b71091.jpg',
@@ -79,6 +84,7 @@ const FeaturedEvents = () => {
       price: '₹ 900'
     }
   ];
+  const events = data.length ? data.map(normalizeEvent) : fallbackEvents;
 
   return (
     <section className="featured-events">
@@ -86,7 +92,7 @@ const FeaturedEvents = () => {
 
       <div className="events-grid">
         {events.map((event) => (
-          <EventCard key={event.id} {...event} />
+          <EventCard key={event.id} {...event} date={event.dateText || event.date} price={event.priceText || event.price} />
         ))}
       </div>
     </section>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import "./collection.css";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import AccessoriesHeader from "../accessoriesNav/AccessoriesHeader";
 
 const brands = [
   {
@@ -65,83 +66,13 @@ const brands = [
   },
 ];
 
-function SearchIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="11" cy="11" r="7" stroke="#000" strokeWidth="2" />
-      <path d="M16.5 16.5L22 22" stroke="#000" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function CartIcon({ color = "#000" }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <line x1="3" y1="6" x2="21" y2="6" stroke={color} strokeWidth="2" strokeLinecap="round" />
-      <path d="M16 10a4 4 0 0 1-8 0" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function MenuIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <line x1="3" y1="6" x2="21" y2="6" stroke="#000" strokeWidth="2" strokeLinecap="round" />
-      <line x1="3" y1="12" x2="21" y2="12" stroke="#000" strokeWidth="2" strokeLinecap="round" />
-      <line x1="3" y1="18" x2="21" y2="18" stroke="#000" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 export default function CollectionPage() {
 
-  const navLinks = ["Rider Wear", "Tech & Gadget", "Performance", "Helmets", "Bike Accessories"];
-  const navigate = useNavigate();
   const [search, setSearch] = useState("");
 
   return (
     <section className="collection-page">
-      <header className="ap-header">
-        <div onClick={() => navigate(-1)} style={{ width: '30px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: "pointer" }}>
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-left-icon lucide-arrow-left"><path d="m12 19-7-7 7-7" /><path d="M19 12H5" /></svg>
-        </div>
-
-        <div className="ap-header__divider" />
-
-        {/* Nav links */}
-        <nav className="ap-header__nav">
-          {navLinks.map((link) => (
-            <a
-              href="/"
-              key={link}
-              type="button"
-              className="ap-header__nav-link"
-            >
-              {link}
-            </a>
-          ))}
-        </nav>
-
-        {/* Right side: search + cart + menu */}
-        <div className="ap-header__right">
-          <div className="ap-header__search">
-            <SearchIcon />
-            <input
-              type="text"
-              placeholder="Search Accessories.."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <button className="ap-header__icon-btn" aria-label="Cart">
-            <CartIcon />
-          </button>
-          <button className="ap-header__icon-btn" aria-label="Menu">
-            <MenuIcon />
-          </button>
-        </div>
-      </header>
+      <AccessoriesHeader showBack search={search} onSearchChange={setSearch} />
       <div className="collection-page__container">
 
 

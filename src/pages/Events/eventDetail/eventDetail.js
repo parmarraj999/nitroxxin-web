@@ -1,12 +1,38 @@
 import React from 'react';
 import './eventDetail.css';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useDocument } from '../../../hooks/useFirestore';
+import { COLLECTIONS } from '../../../services/firebase';
+import { normalizeEvent } from '../../../services/normalizers';
+import { saveFavoriteEvent } from '../../../services/commerceService';
+import { useAuth } from '../../../context/AuthContext';
+import { useAuthModal } from '../../../components/AuthModal/useAuthModal';
 
 
 
 export default function EventDetail({ onBack }) {
 
     const navigate = useNavigate();
+    const { id } = useParams();
+    const { data } = useDocument(COLLECTIONS.events, id);
+    const event = data ? normalizeEvent(data) : null;
+    const { user } = useAuth();
+    const { openLogin } = useAuthModal();
+    const activeEvent = event || {
+        id: id || "1",
+        title: "Live Concert of Seedhe Maut",
+        dateTimeText: "Sat, 23 May, 8:00 PM",
+        location: "Jawaharlal Nehru Stadium, New Delhi",
+        image: "https://i.pinimg.com/736x/f4/19/f9/f419f9ee2c94bf67c5ccb2985295db2f.jpg",
+        images: ["https://i.pinimg.com/736x/f4/19/f9/f419f9ee2c94bf67c5ccb2985295db2f.jpg"],
+        description: "Ye lands in India for a one-night cultural reset. A full-scale sonic experience curated by the visionary formerly known as Kanye West architect of eras, disruptor of norms, and creator of some of the most defining soundtracks of our generation.",
+        priceText: "₹7,500",
+    };
+    const gallery = activeEvent.images?.length ? activeEvent.images : [activeEvent.image];
+    const handleFavorite = async () => {
+        if (!user) return openLogin();
+        await saveFavoriteEvent({ userId: user.uid, event: activeEvent });
+    };
 
     return (
         <div className="event-detail-page">
@@ -21,42 +47,42 @@ export default function EventDetail({ onBack }) {
                         <button className="ed-back-btn" onClick={()=>navigate(-1)} aria-label="Go back">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" color='white' height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-left-icon lucide-chevron-left"><path d="m15 18-6-6 6-6" /></svg>
                         </button>
-                        <div className="ed-bookmark-btn">
+                        <div className="ed-bookmark-btn" onClick={handleFavorite} role="button" tabIndex={0} onKeyDown={(event) => event.key === "Enter" && handleFavorite()}>
                             <div className="ed-bookmark-bg" />
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" color='white' viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-bookmark-icon lucide-bookmark"><path d="M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z" /></svg>
                         </div>
                     </div>
 
                     {/* Event title + subtitle */}
-                    <p className="ed-event-title">Live Concert of Seedhe Maut</p>
+                    <p className="ed-event-title">{activeEvent.title || activeEvent.name}</p>
                     <p className="ed-event-meta">
-                        <span className="ed-event-date">Sat, 23 May, 8:00 PM </span>
-                        <span className="ed-event-location">| Jawaharlal Nehru Stadium, New Delhi</span>
+                        <span className="ed-event-date">{activeEvent.dateTimeText || activeEvent.dateText} </span>
+                        <span className="ed-event-location">| {activeEvent.location}</span>
                     </p>
 
                     {/* Hero images group */}
                     <div className="ed-images-group">
                         <div className="ed-img-main">
-                            <img alt="Concert main" src={'https://i.pinimg.com/736x/f4/19/f9/f419f9ee2c94bf67c5ccb2985295db2f.jpg'} className="ed-img-cover ed-img-main-inner" />
+                            <img alt={activeEvent.title || activeEvent.name} src={gallery[0]} className="ed-img-cover ed-img-main-inner" />
                         </div>
                         <div className="ed-img-top-right-1">
-                            <img alt="Concert" src={'https://i.pinimg.com/736x/f4/19/f9/f419f9ee2c94bf67c5ccb2985295db2f.jpg'} className="ed-img-cover ed-img-fill" />
+                            <img alt={activeEvent.title || activeEvent.name} src={gallery[1] || gallery[0]} className="ed-img-cover ed-img-fill" />
                         </div>
                         <div className="ed-img-top-right-2">
-                            <img alt="Concert" src={'https://i.pinimg.com/736x/f4/19/f9/f419f9ee2c94bf67c5ccb2985295db2f.jpg'} className="ed-img-cover ed-img-fill" />
+                            <img alt={activeEvent.title || activeEvent.name} src={gallery[2] || gallery[0]} className="ed-img-cover ed-img-fill" />
                         </div>
                         <div className="ed-img-bottom-right-1">
-                            <img alt="Concert" src={'https://i.pinimg.com/736x/f4/19/f9/f419f9ee2c94bf67c5ccb2985295db2f.jpg'} className="ed-img-cover ed-img-fill" />
+                            <img alt={activeEvent.title || activeEvent.name} src={gallery[3] || gallery[0]} className="ed-img-cover ed-img-fill" />
                         </div>
                         <div className="ed-img-bottom-right-2">
-                            <img alt="Concert" src={'https://i.pinimg.com/736x/f4/19/f9/f419f9ee2c94bf67c5ccb2985295db2f.jpg'} className="ed-img-cover ed-img-fill" />
+                            <img alt={activeEvent.title || activeEvent.name} src={gallery[4] || gallery[0]} className="ed-img-cover ed-img-fill" />
                         </div>
                     </div>
 
                     {/* About section */}
                     <p className="ed-section-heading ed-about-heading">About</p>
                     <p className="ed-about-text">
-                        Ye lands in India for a one-night cultural reset. A full-scale sonic experience curated by the visionary formerly known as Kanye West architect of eras, disruptor of norms, and creator of some of the most defining soundtracks of our generation. Experience the anthems that defined a generation Heartless, Runaway, Gold Digger, Jesus Walks, Famous alongside reimagined classics and raw, unfiltered energy.
+                        {activeEvent.description || activeEvent.about || ""}
                     </p>
                     <p className="ed-read-more">Read More... </p>
 
@@ -76,7 +102,7 @@ export default function EventDetail({ onBack }) {
                                 <svg xmlns="http://www.w3.org/2000/svg"color='white' width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-map-pin-icon lucide-map-pin"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" /><circle cx="12" cy="10" r="3" /></svg>
                             </div>
                             <div className="ed-info-text">
-                                <p className="ed-info-label">Jawaharlal Nehru Stadium</p>
+                                <p className="ed-info-label">{activeEvent.location}</p>
                                 <p className="ed-info-sub">129 KM</p>
                             </div>
                             <div className="ed-info-arrow">
@@ -121,8 +147,8 @@ export default function EventDetail({ onBack }) {
 
                         {/* Price + Book */}
                         <div className="ed-price-row">
-                            <p className="ed-price">₹7,500</p>
-                            <button className="ed-book-btn">Book Ticket</button>
+                            <p className="ed-price">{activeEvent.priceText || activeEvent.price}</p>
+                            <button className="ed-book-btn" onClick={() => navigate(`/event/${activeEvent.id}/book`)}>Book Ticket</button>
                         </div>
                     </div>
 

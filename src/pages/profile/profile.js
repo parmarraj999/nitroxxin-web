@@ -1,8 +1,10 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import "./profile.css";
+import { useAuth } from "../../context/AuthContext";
 
 export default function Profile() {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const linkClass = ({ isActive }) =>
     isActive ? "profile-link active" : "profile-link";
 
@@ -38,7 +40,7 @@ export default function Profile() {
             Help & Support
           </NavLink>
 
-          <button className="logout-btn">Log Out</button>
+          <button className="logout-btn" onClick={logout}>Log Out</button>
         </div>
       </div>
 

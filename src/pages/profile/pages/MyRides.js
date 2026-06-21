@@ -1,22 +1,24 @@
 import FilterPills from "../components/FilterPills";
 import QrCode from "../components/QrCode";
+import { useAuth } from "../../../context/AuthContext";
+import { useCollection } from "../../../hooks/useFirestore";
+import { COLLECTIONS } from "../../../services/firebase";
 
 const eventImage =
   "https://i.pinimg.com/736x/f4/19/f9/f419f9ee2c94bf67c5ccb2985295db2f.jpg";
-const eventImageAlt =
-  "https://i.pinimg.com/736x/2c/69/3c/2c693c3f24c4642755f69fade9b71091.jpg";
 
-function RideCard({ image, status }) {
+function RideCard({ booking }) {
+  const event = booking.eventSnapshot || {};
   return (
     <article className="ride-card">
-      <img src={image} alt="Adventure bike event" className="ride-card__image" />
+      <img src={event.image || eventImage} alt={event.title || event.name || "Event"} className="ride-card__image" />
       <div className="ride-card__details">
-        <span className={`ride-card__status ${status.toLowerCase()}`}>{status}</span>
-        <h3>Adventure Begins Dirty Bike Event | Bhopal</h3>
-        <p>Jawaharlal Nehru Stadium, New Delhi</p>
-        <p>Sat, 23 May, 8:00 PM</p>
+        <span className={`ride-card__status ${String(booking.status).toLowerCase()}`}>{booking.status}</span>
+        <h3>{event.title || event.name}</h3>
+        <p>{event.location}</p>
+        <p>{event.dateTimeText || event.dateText}</p>
         <p>
-          Ticket Price : <strong>&#8377;1200</strong>
+          Ticket Price : <strong>{event.priceText || booking.total}</strong>
         </p>
         <div className="ride-card__footer">
           <span>Cancellation Available before 24 hours</span>
@@ -28,14 +30,19 @@ function RideCard({ image, status }) {
 }
 
 export default function MyRides() {
+  const { user } = useAuth();
+  const { data } = useCollection(COLLECTIONS.bookings, {
+    where: [["userId", "==", user?.uid]],
+    orderBy: [["createdAt", "desc"]],
+    limit: 50,
+  });
+
   return (
     <section className="profile-screen profile-screen--narrow">
       <h1>My Rides</h1>
       <FilterPills items={["All", "Complete", "Ongoing"]} />
       <div className="ride-list">
-        <RideCard image={eventImage} status="Upcoming" />
-        <div className="ride-date">2 May 2025</div>
-        <RideCard image={eventImageAlt} status="Complete" />
+        {data.length ? data.map((booking) => <RideCard key={booking.id} booking={booking} />) : <p>No event bookings yet.</p>}
       </div>
     </section>
   );

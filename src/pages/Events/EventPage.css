@@ -182,6 +182,13 @@ BAR (heading + search side by side) ===== */
   font-size: 14px;
 }
 
+.ep-featured__slide img,
+.ep-event-card__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .ep-featured__info {
   flex: 1;
 }
