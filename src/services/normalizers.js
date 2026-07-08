@@ -22,7 +22,7 @@ export const normalizeProduct = (doc) => {
     priceText: formatPrice(price, data.priceText),
     offerPriceText: formatPrice(offerPrice, data.offerPriceText),
     stock: Number(data.inventory?.stockQuantity ?? data.stock ?? data.quantity ?? 0),
-    status: data.status || "active",
+    status: String(data.status || "published").toLowerCase(),
   };
 };
 
@@ -36,9 +36,9 @@ export const normalizeEvent = (doc) => {
     id,
     name: data.name || data.title || "Event",
     title: data.title || data.name || "Event",
-    image: firstImage(data),
-    images: data.images || data.gallery || [firstImage(data)].filter(Boolean),
-    banner: data.banner || data.bannerUrl || firstImage(data),
+    image: data.bannerImage || firstImage(data),
+    images: data.galleryImages || data.images || data.gallery || [data.bannerImage || firstImage(data)].filter(Boolean),
+    banner: data.bannerImage || data.banner || data.bannerUrl || firstImage(data),
     date: data.date || data.eventDate || data.startsAt || data.startDate,
     dateText: data.dateText || formatDate(data.date || data.eventDate || data.startsAt || data.startDate),
     dateTimeText: data.dateTimeText || formatDateTime(data.date || data.eventDate || data.startsAt || data.startDate),
@@ -46,7 +46,8 @@ export const normalizeEvent = (doc) => {
     price,
     priceText: formatPrice(price, data.priceText),
     category: data.categoryName || data.category || data.categoryId || "",
-    status: data.status || "upcoming",
+    hostId: data.hostId || data.organizerId || "",
+    status: String(data.status || "Published"),
   };
 };
 

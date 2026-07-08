@@ -16,25 +16,34 @@ import { normalizeProduct } from "../../../services/normalizers";
 
 export default function AccessoriesDetail() {
   const { id } = useParams();
-  const { data } = useDocument(COLLECTIONS.products, id);
+  const { data, loading } = useDocument(COLLECTIONS.products, id);
   const product = data ? normalizeProduct(data) : null;
+
+  // console.log(product)
 
   return (
     <div className="product-detail-page">
       <AccessoriesNav />
 
       <main className="product-detail-page__main">
-        <AccessoriesHero product={product} />
+        {loading ? (
+          <div className="nx-empty-state nx-empty-state--light">
+            <h3>Loading product</h3>
+            <p>Fetching product details from Firestore.</p>
+          </div>
+        ) : (
+          <AccessoriesHero product={product} />
+        )}
 
-        <div className="product-detail-page__info-section">
-          <AdditionalInfo />
+        {product && <div className="product-detail-page__info-section">
+          <AdditionalInfo product={product} />
           <div className="product-detail-page__divider-v" />
-          <FeaturesSection />
-        </div>
+          <FeaturesSection product={product} />
+        </div>}
 
         <ReviewSection />
 
-        <RelatedProducts />
+        <RelatedProducts product={product} />
       </main>
     </div>
   );

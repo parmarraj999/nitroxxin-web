@@ -451,6 +451,21 @@
   object-fit: cover;
 }
 
+.order-card__image-empty,
+.ride-card__image-empty {
+  display: grid;
+  place-items: center;
+  background: #eceff3;
+  color: #7b8190;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.order-card__image-empty {
+  width: 140px;
+  border-radius: 9px;
+}
+
 .order-info {
   flex: 1;
   padding: 8px 10px 0 18px;
@@ -507,6 +522,10 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
+  background: #cfd3da;
+}
+
+.order-step i.is-complete {
   background: #39d63a;
 }
 

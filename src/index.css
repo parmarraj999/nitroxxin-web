@@ -12,3 +12,32 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.nx-empty-state {
+  width: min(760px, calc(100% - 40px));
+  margin: 110px auto 40px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  padding: 34px;
+  background: rgba(20, 22, 25, 0.78);
+  color: #fff;
+  text-align: center;
+}
+
+.nx-empty-state--light {
+  border-color: #e1e4ea;
+  background: #fff;
+  color: #111;
+}
+
+.nx-empty-state h3 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.nx-empty-state p {
+  margin: 10px auto 0;
+  max-width: 560px;
+  color: #8b919d;
+  line-height: 1.55;
+}

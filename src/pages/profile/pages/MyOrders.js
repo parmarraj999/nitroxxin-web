@@ -4,9 +4,6 @@ import { useCollection } from "../../../hooks/useFirestore";
 import { COLLECTIONS } from "../../../services/firebase";
 import { normalizeProduct } from "../../../services/normalizers";
 
-const jacketImage =
-  "https://i.pinimg.com/736x/db/b1/48/dbb148ec3cfbe0bad158b7fb64d17541.jpg";
-
 export default function MyOrders() {
   const { user } = useAuth();
   const { data } = useCollection(COLLECTIONS.orders, {
@@ -28,22 +25,28 @@ export default function MyOrders() {
       <FilterPills items={["All", "Delivered", "Confirm", "Shipped"]} />
       {data.length ? data.map((order) => {
         const product = normalizeProduct(order.items?.[0]?.productSnapshot || {});
+        const status = String(order.status || "pending").toLowerCase();
+        const timeline = ["pending", "confirmed", "packed", "shipped", "out for delivery", "delivered"];
+        const currentIndex = Math.max(0, timeline.indexOf(status));
         return (
           <article className="order-card" key={order.id}>
-            <img src={product.image || jacketImage} alt={product.name} />
+            {product.image ? <img src={product.image} alt={product.name} /> : <div className="order-card__image-empty">No image</div>}
             <div className="order-info">
               <p>{product.category}</p>
               <h2>{product.name}</h2>
               <strong>{product.brand}</strong>
-              <p>Order Id #{order.orderId}</p>
-              <h3>{product.offerPriceText || product.priceText || order.total}</h3>
-              <span>{order.status}</span>
+              <p>Order ID #{order.orderId || order.id}</p>
+              <p>Payment: {order.paymentStatus || "pending"} | Method: {order.paymentMethod || "online"}</p>
+              <p>Courier: {order.courier || order.deliveryPartner || "Awaiting assignment"}</p>
+              <p>Tracking: {order.trackingNumber || "Generated after shipping"}</p>
+              <h3>Rs. {Number(order.totalAmount || order.total || 0).toLocaleString("en-IN")}</h3>
+              <span>{status.replace(/\b\w/g, (letter) => letter.toUpperCase())}</span>
               <div className="order-progress">
-                {["Pending", "Confirmed", "Processing", "Shipped", "Delivered"].map((step, index) => (
+                {timeline.slice(0, 5).map((step, index) => (
                   <div className="order-step" key={step}>
-                    <i />
-                    <strong>{step}</strong>
-                    <span>{order.status === step ? "Now" : ""}</span>
+                    <i className={index <= currentIndex ? "is-complete" : ""} />
+                    <strong>{step.replace(/\b\w/g, (letter) => letter.toUpperCase())}</strong>
+                    <span>{status === step ? "Now" : ""}</span>
                     {index < 4 && <b />}
                   </div>
                 ))}

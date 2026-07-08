@@ -11,7 +11,10 @@ function ProductsPage({ filterType }) {
     const { id } = useParams();
     const [search, setSearch] = useState("");
     const productsQuery = useCollection(COLLECTIONS.products, { limit: 100 });
+    console.log("products",productsQuery);
+
     const products = productsQuery.data.map(normalizeProduct).filter((product) => {
+        if (!["published", "active"].includes(product.status)) return false;
         const term = search.toLowerCase();
         const matchesSearch = !term || String(product.name).toLowerCase().includes(term) || String(product.category).toLowerCase().includes(term) || String(product.brand).toLowerCase().includes(term);
         if (!matchesSearch) return false;
@@ -21,6 +24,8 @@ function ProductsPage({ filterType }) {
         if (filterType === "vendor") return String(product.vendorId || "").toLowerCase() === matchValue;
         return [product.categoryId, product.category].some((value) => String(value || "").toLowerCase() === matchValue);
     });
+
+    
 
     return (
         <div className="products-page">

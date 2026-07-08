@@ -4,90 +4,88 @@ import { useAuth } from "../../../../context/AuthContext";
 import { useAuthModal } from "../../../../components/AuthModal/useAuthModal";
 import { addToCart, saveWishlistItem } from "../../../../services/commerceService";
 
-const thumbnails = [
-  'https://i.pinimg.com/1200x/a4/ce/ee/a4ceee635c93ec66fd7e02f098011202.jpg',
-  'https://i.pinimg.com/1200x/7a/1b/f4/7a1bf4af0939cc78bb4cff8a06bbe76b.jpg',
-  'https://i.pinimg.com/736x/16/93/e4/1693e4a3d01af97d5d1fbaab98516ee1.jpg',
-  'https://i.pinimg.com/736x/9d/40/ba/9d40ba856ab1c616c406aa420c9c384f.jpg',
-];
-
 export function AccessoriesHero({ product }) {
   const [qty, setQty] = useState(1);
-  const [selectedSize, setSelectedSize] = useState("M");
+  const sizeOptions = product?.variants?.sizes || product?.sizes || product?.availableSizes || [];
+  const [selectedSize, setSelectedSize] = useState(sizeOptions[0] || "");
   const { user } = useAuth();
   const { openLogin } = useAuthModal();
-  const sizes = ["S", "M", "L", "XL", "XXL"];
 
-  const activeProduct = product || {
-    name: "AXOR Helmet Apex Solid Black Dull",
-    category: "Rider Wear",
-    brand: "ALPINESTER",
-    description:
-      "Apex, the new sport touring helmet, born to satisfy the needs of the riders looking for maximum stability and aerodynamic performance.",
-    price: "$1200",
-    offerPrice: "$999",
-    images: thumbnails,
-    image: "https://i.pinimg.com/736x/9d/40/ba/9d40ba856ab1c616c406aa420c9c384f.jpg",
-  };
+  if (!product) {
+    return (
+      <section className="product-hero product-hero--empty">
+        <div className="nx-empty-state nx-empty-state--light">
+          <h3>Product not available</h3>
+          <p>This product is not published or could not be found in Firestore.</p>
+        </div>
+      </section>
+    );
+  }
 
-  const productImages = activeProduct.images?.length ? activeProduct.images : thumbnails;
+  const productImages = product.images?.length ? product.images : [product.image].filter(Boolean);
 
   const handleAddToCart = async () => {
     if (!user) return openLogin();
-    await addToCart({ userId: user.uid, product: activeProduct, quantity: qty, options: { size: selectedSize } });
+    await addToCart({ userId: user.uid, product, quantity: qty, options: { size: selectedSize } });
   };
 
   const handleWishlist = async () => {
     if (!user) return openLogin();
-    await saveWishlistItem({ userId: user.uid, product: activeProduct });
+    await saveWishlistItem({ userId: user.uid, product });
   };
 
   return (
     <section className="product-hero">
       {/* Thumbnail strip */}
       <div className="product-hero__thumbnails">
-        {productImages.map((src, i) => (
-          <img key={i} className="product-hero__thumbnail" src={src} alt={`Product view ${i + 1}`} />
-        ))}
+        {productImages.map((src, i) => <img key={src || i} className="product-hero__thumbnail" src={src} alt={`Product view ${i + 1}`} />)}
       </div>
 
       {/* Main image */}
       <div className="product-hero__main-image-wrap">
-        <img className="product-hero__main-image" src={activeProduct.image || productImages[0]} alt={activeProduct.name} />
+        {product.image || productImages[0] ? (
+          <img className="product-hero__main-image" src={product.image || productImages[0]} alt={product.name} />
+        ) : (
+          <span>No image</span>
+        )}
       </div>
 
       {/* Product info */}
       <div className="product-hero__info">
-        <p className="product-hero__category">{activeProduct.category}</p>
-        <p className="product-hero__brand">{activeProduct.brand}</p>
-        <p className="product-hero__title">{activeProduct.name}</p>
-        <p className="product-hero__description">{activeProduct.description}</p>
+        <p className="product-hero__category">{product.category || "Accessory"}</p>
+        <p className="product-hero__brand">{product.brand || product.vendorName}</p>
+        <p className="product-hero__title">{product.name}</p>
+        <p className="product-hero__description">{typeof (product.description || product.shortDescription || product.highlights) === 'object' ? JSON.stringify(product.description || product.shortDescription || product.highlights) : (product.description || product.shortDescription || product.highlights)}</p>
 
         {/* Price */}
         <div className="product-hero__price-row">
-          <span className="product-hero__price-old">{activeProduct.priceText || activeProduct.price}</span>
+          <span className="product-hero__price-old">{product.priceText || product.price}</span>
           <span className="product-hero__price-new">
-            {activeProduct.offerPriceText || activeProduct.offerPrice || activeProduct.priceText || activeProduct.price}
+            {product.offerPriceText || product.offerPrice || product.priceText || product.price}
           </span>
-          {activeProduct.offerPrice && activeProduct.price && activeProduct.offerPrice !== activeProduct.price && (
+          {product.offerPrice && product.price && product.offerPrice !== product.price && (
             <span className="product-hero__discount">(Sale)</span>
           )}
         </div>
 
         {/* Size */}
-        <p className="product-hero__size-label">Size:</p>
-        <div className="product-hero__sizes">
-          {sizes.map((s) => (
-            <button
-              key={s}
-              className={`product-hero__size-btn${s === "XXL" ? " product-hero__size-btn--xl" : ""}`}
-              onClick={() => setSelectedSize(s)}
-              style={selectedSize === s ? { background: "#000", color: "#fff" } : {}}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
+        {sizeOptions.length > 0 && (
+          <>
+            <p className="product-hero__size-label">Size:</p>
+            <div className="product-hero__sizes">
+              {sizeOptions.map((size) => (
+                <button
+                  key={size}
+                  className={`product-hero__size-btn${String(size).length > 2 ? " product-hero__size-btn--xl" : ""}`}
+                  onClick={() => setSelectedSize(size)}
+                  style={selectedSize === size ? { background: "#000", color: "#fff" } : {}}
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
         {/* Quantity */}
         <p className="product-hero__qty-label">Quantity</p>

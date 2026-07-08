@@ -4,10 +4,8 @@ import {
   useCallback,
   useEffect,
   useRef,
-  useState,
 } from "react";
 import { createPortal } from "react-dom";
-import { AnimatePresence, motion } from "framer-motion";
 import { FaTimes } from "react-icons/fa";
 import AuthImagePanel from "./AuthImagePanel";
 import { useAuthModal } from "./useAuthModal";
@@ -25,23 +23,11 @@ const focusableSelector = [
   "[tabindex]:not([tabindex='-1'])",
 ].join(",");
 
-const panelTransition = {
-  duration: 0.68,
-  ease: [0.22, 1, 0.36, 1],
-};
-
-const getSlideState = (isActive, direction) => ({
-  x: isActive ? 0 : direction,
-  opacity: isActive ? 1 : 0,
-  pointerEvents: isActive ? "auto" : "none",
-});
-
 const AuthModal = () => {
   const { isAuthOpen, activeView, openLogin, openSignup, closeAuth } =
     useAuthModal();
   const dialogRef = useRef(null);
   const previousFocusRef = useRef(null);
-  const [isStackedLayout, setIsStackedLayout] = useState(false);
   const isSignup = activeView === "signup";
 
   const dialogTitle = isSignup ? "Create an account" : "Log in to your account";
@@ -119,116 +105,51 @@ const AuthModal = () => {
     };
   }, [isAuthOpen]);
 
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(max-width: 900px)");
-    const handleMediaChange = () => setIsStackedLayout(mediaQuery.matches);
-
-    handleMediaChange();
-    mediaQuery.addEventListener("change", handleMediaChange);
-
-    return () => {
-      mediaQuery.removeEventListener("change", handleMediaChange);
-    };
-  }, []);
-
-  const loginSlideState = isStackedLayout
-    ? { y: !isSignup ? 0 : "-18%", x: 0, opacity: !isSignup ? 1 : 0 }
-    : getSlideState(!isSignup, "28%");
-  const signupSlideState = isStackedLayout
-    ? { y: isSignup ? 0 : "18%", x: 0, opacity: isSignup ? 1 : 0 }
-    : getSlideState(isSignup, "-28%");
-  const visualSlideState = {
-    x: !isStackedLayout && isSignup ? "calc(100% + 16px)" : 0,
-    y: 0,
-  };
+  if (!isAuthOpen) {
+    return null;
+  }
 
   return createPortal(
-    <AnimatePresence>
-      {isAuthOpen && (
-      <motion.div
-        className="auth-modal-backdrop"
-        onMouseDown={handleBackdropMouseDown}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.22, ease: "easeOut" }}
+    <div className="auth-modal-backdrop" onMouseDown={handleBackdropMouseDown}>
+      <div
+        className={`auth-modal-shell ${isSignup ? "is-signup" : "is-login"}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={dialogTitle}
+        ref={dialogRef}
+        tabIndex={-1}
+        onKeyDown={handleKeyDown}
       >
-        <motion.div
-          className={`auth-modal-shell ${isSignup ? "is-signup" : "is-login"}`}
-          role="dialog"
-          aria-modal="true"
-          aria-label={dialogTitle}
-          ref={dialogRef}
-          tabIndex={-1}
-          onKeyDown={handleKeyDown}
-          initial={{ opacity: 0, y: 18, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 18, scale: 0.98 }}
-          transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+        <button
+          type="button"
+          className="auth-close-btn"
+          onClick={closeAuth}
+          aria-label="Close authentication modal"
         >
-          <button
-            type="button"
-            className="auth-close-btn"
-            onClick={closeAuth}
-            aria-label="Close authentication modal"
-          >
-            <FaTimes />
-          </button>
+          <FaTimes />
+        </button>
 
-          <div className="auth-panel-grid">
-            <div
-              className="auth-form-zone auth-form-zone-login"
-              aria-hidden={isSignup}
-              inert={isSignup ? "" : undefined}
-            >
-              <motion.div
-                className="auth-form-slide"
-                layout
-                animate={{
-                  ...loginSlideState,
-                  pointerEvents: !isSignup ? "auto" : "none",
-                }}
-                transition={panelTransition}
+        <div className="auth-panel-grid">
+          <div className="auth-form-zone">
+            <div className="auth-form-slide">
+              <Suspense
+                fallback={<div className="auth-form-loading">Loading...</div>}
               >
-                <Suspense fallback={<div className="auth-form-loading">Loading...</div>}>
-                  <LoginModal onSwitchToSignup={openSignup} />
-                </Suspense>
-              </motion.div>
-            </div>
-
-            <div
-              className="auth-form-zone auth-form-zone-signup"
-              aria-hidden={!isSignup}
-              inert={!isSignup ? "" : undefined}
-            >
-              <motion.div
-                className="auth-form-slide"
-                layout
-                animate={{
-                  ...signupSlideState,
-                  pointerEvents: isSignup ? "auto" : "none",
-                }}
-                transition={panelTransition}
-              >
-                <Suspense fallback={<div className="auth-form-loading">Loading...</div>}>
+                {isSignup ? (
                   <SignupModal onSwitchToLogin={openLogin} />
-                </Suspense>
-              </motion.div>
+                ) : (
+                  <LoginModal onSwitchToSignup={openSignup} />
+                )}
+              </Suspense>
             </div>
-
-            <motion.div
-              className="auth-visual-zone"
-              layout
-              animate={visualSlideState}
-              transition={panelTransition}
-            >
-              <AuthImagePanel />
-            </motion.div>
           </div>
-        </motion.div>
-      </motion.div>
-      )}
-    </AnimatePresence>,
+
+          <div className="auth-visual-zone">
+            <AuthImagePanel />
+          </div>
+        </div>
+      </div>
+    </div>,
     document.body
   );
 };
