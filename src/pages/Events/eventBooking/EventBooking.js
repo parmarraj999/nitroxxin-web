@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   FaArrowLeft,
@@ -20,6 +20,7 @@ import { normalizeEvent } from '../../../services/normalizers';
 import { bookEvent } from '../../../services/commerceService';
 import { useAuth } from '../../../context/AuthContext';
 import { useAuthModal } from '../../../components/AuthModal/useAuthModal';
+import { formatCategoryValue, getCategoryDetails } from '../eventCategoryConfig';
 
 const STEPS = [
   { id: 1, label: 'Tickets', icon: FaTicketAlt },
@@ -42,12 +43,6 @@ const ADD_ONS = [
   { key: 'insurance', title: 'Ride protection', price: 199, text: 'Basic accidental assistance and priority support.' },
 ];
 
-const DEFAULT_COUNTS = {
-  standard: 1,
-  premium: 0,
-  pillion: 0,
-};
-
 const makeAttendee = (index = 0) => ({
   name: index === 0 ? '' : '',
   phone: '',
@@ -59,11 +54,6 @@ const makeAttendee = (index = 0) => ({
 });
 
 const formatMoney = (amount) => `Rs. ${Math.round(Number(amount || 0)).toLocaleString('en-IN')}`;
-
-const numericPrice = (event) => {
-  const parsed = Number(event?.price || event?.ticketPrice || event?.startingPrice || 0);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
-};
 
 function Field({ label, children }) {
   return (
@@ -131,7 +121,7 @@ function TicketStep({ counts, setCount, tiers, seatsLeft }) {
         <span>{seatsLeft} seats available in this batch</span>
       </div>
       <div className="eb-ticket-list">
-        {tiers.map((tier) => (
+        {tiers.length ? tiers.map((tier) => (
           <article key={tier.key} className="eb-ticket">
             <div>
               <p className="eb-ticket__name">{tier.name}</p>
@@ -142,16 +132,27 @@ function TicketStep({ counts, setCount, tiers, seatsLeft }) {
             </div>
             <div className="eb-ticket__action">
               <strong>{formatMoney(tier.price)}</strong>
-              <Counter value={counts[tier.key]} onChange={(value) => setCount(tier.key, value)} max={seatsLeft} />
+              <Counter value={counts[tier.key] || 0} onChange={(value) => setCount(tier.key, value)} max={Math.min(seatsLeft, tier.availableSeats)} />
             </div>
           </article>
-        ))}
+        )) : <div className="eb-no-packages"><strong>Tickets are not available yet</strong><span>The host has not published a ticket package for this event.</span></div>}
       </div>
     </section>
   );
 }
 
-function AttendeesStep({ totalTickets, attendees, updateAttendee, contact, setContact, emergency, setEmergency }) {
+function CategoryBookingBrief({ event }) {
+  const { config, details } = getCategoryDetails(event);
+  if (!config) return null;
+  return <section className="eb-category-brief">
+    <div><p className="eb-kicker">Before you book</p><h3>{config.category} details</h3></div>
+    {details.length ? <div className="eb-category-brief__grid">{details.map((field) =>
+      <div key={field.id}><span>{field.label}</span><strong>{formatCategoryValue(field.value, field)}</strong></div>
+    )}</div> : <p>The organizer will share category-specific instructions before the event.</p>}
+  </section>;
+}
+
+function AttendeesStep({ totalTickets, attendees, updateAttendee, contact, setContact, emergency, setEmergency, bookingForSelf, onBookingForSelf, user }) {
   return (
     <section className="eb-panel">
       <div className="eb-panel__head">
@@ -159,6 +160,10 @@ function AttendeesStep({ totalTickets, attendees, updateAttendee, contact, setCo
         <h2>Attendee and contact details</h2>
         <span>Names should match the ID shown at check-in.</span>
       </div>
+      <label className="eb-self-booking">
+        <input type="checkbox" checked={bookingForSelf} onChange={(event) => onBookingForSelf(event.target.checked)} />
+        <span><strong>Booking for myself</strong><small>{user ? 'Use my saved profile for attendee 1 and booking contact.' : 'Sign in to use your saved profile details.'}</small></span>
+      </label>
       <div className="eb-form-grid eb-form-grid--wide">
         <Field label="Booking contact name">
           <input value={contact.name} onChange={(e) => setContact({ ...contact, name: e.target.value })} placeholder="Full name" />
@@ -183,7 +188,7 @@ function AttendeesStep({ totalTickets, attendees, updateAttendee, contact, setCo
             <article key={index} className="eb-attendee">
               <div className="eb-attendee__title">
                 <FaIdCard />
-                <strong>Attendee {index + 1}</strong>
+                <strong>{index === 0 && bookingForSelf ? 'Attendee 1 — You' : `Attendee ${index + 1}`}</strong>
               </div>
               <div className="eb-form-grid">
                 <Field label="Full name">
@@ -427,12 +432,12 @@ export default function EventBooking() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { data, loading } = useDocument(COLLECTIONS.events, id);
-  const event = data ? normalizeEvent(data) : null;
+  const event = useMemo(() => data ? normalizeEvent(data) : null, [data]);
   const { user, profile } = useAuth();
   const { openLogin } = useAuthModal();
 
   const [step, setStep] = useState(1);
-  const [counts, setCounts] = useState(DEFAULT_COUNTS);
+  const [counts, setCounts] = useState({});
   const [attendees, setAttendees] = useState([makeAttendee(0)]);
   const [contact, setContact] = useState({ name: '', phone: '', email: '' });
   const [emergency, setEmergency] = useState({ name: '', phone: '' });
@@ -452,36 +457,54 @@ export default function EventBooking() {
   const [coupon, setCoupon] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [bookingForSelf, setBookingForSelf] = useState(false);
 
-  const basePrice = numericPrice(event);
-  const tiers = useMemo(() => ([
-    {
-      key: 'standard',
-      name: 'Standard ride pass',
-      price: basePrice,
-      description: 'General entry, group briefing, route access, parking, and digital ticket.',
-      perks: ['Entry', 'Route access', 'Parking'],
-    },
-    {
-      key: 'premium',
-      name: 'Premium pit pass',
-      price: basePrice + 1200,
-      description: 'Priority check-in, front pit access, meal pass, and Nitroxx event badge.',
-      perks: ['Priority gate', 'Pit zone', 'Meal'],
-    },
-    {
-      key: 'pillion',
-      name: 'Pillion pass',
-      price: Math.max(499, Math.round(basePrice * 0.55)),
-      description: 'Passenger entry with shared rider slot and venue access.',
-      perks: ['Passenger', 'Venue entry', 'Shared slot'],
-    },
-  ]), [basePrice]);
+  const tiers = useMemo(() => {
+    const source = event?.ticketPackages || event?.packages || event?.ticketTiers || event?.tickets || event?.pricing?.packages || [];
+    const packages = Array.isArray(source) ? source : Object.entries(source || {}).map(([id, value]) => ({ id, ...value }));
+    return packages.map((item, index) => {
+      const benefits = item.benefits || item.perks || item.inclusions || [];
+      const perks = Array.isArray(benefits) ? benefits : String(benefits).split(/[,\n]/).map((value) => value.trim()).filter(Boolean);
+      const availableSeats = Number(item.availableSeats ?? item.seats ?? item.capacity ?? item.quantity ?? 0);
+      return {
+        key: String(item.id || item.key || item.packageId || `package-${index}`),
+        name: item.packageName || item.name || item.title || `Package ${index + 1}`,
+        price: Number(item.price ?? item.amount ?? 0),
+        availableSeats,
+        description: item.description || (perks.length ? perks.join(', ') : 'Event access as specified by the host.'),
+        perks,
+      };
+    });
+  }, [event]);
+
+  useEffect(() => {
+    setCounts((current) => tiers.reduce((next, tier, index) => ({ ...next, [tier.key]: current[tier.key] ?? (index === 0 ? 1 : 0) }), {}));
+  }, [tiers]);
 
   const capacity = Number(event?.capacity || event?.ticketCapacity || 0);
   const registered = Number(event?.registeredCount || 0);
   const seatsLeft = capacity ? Math.max(0, capacity - registered) : 999;
   const totalTickets = Object.values(counts).reduce((sum, value) => sum + Number(value || 0), 0);
+
+  const handleBookingForSelf = (checked) => {
+    if (checked && !user) {
+      openLogin();
+      return;
+    }
+    setBookingForSelf(checked);
+    if (!checked) return;
+    const self = {
+      name: profile?.fullName || profile?.displayName || user?.displayName || '',
+      phone: profile?.phone || user?.phoneNumber || '',
+      email: profile?.email || user?.email || '',
+      age: profile?.age || profile?.dateOfBirth || '',
+      gender: profile?.gender || '',
+      idType: profile?.idType || 'Aadhaar',
+      idLast4: profile?.idLast4 || '',
+    };
+    setContact({ name: self.name, phone: self.phone, email: self.email });
+    setAttendees((current) => [{ ...(current[0] || makeAttendee(0)), ...self }, ...current.slice(1)]);
+  };
 
   const summary = useMemo(() => {
     const tierTotals = tiers.reduce((next, tier) => ({ ...next, [tier.key]: tier.price * counts[tier.key] }), {});
@@ -546,7 +569,7 @@ export default function EventBooking() {
     if (step === 2) {
       if (!contact.name || !contact.phone || !contact.email) return 'Add booking contact name, phone, and email.';
       if (!emergency.name || !emergency.phone) return 'Add an emergency contact.';
-      if (attendees.slice(0, totalTickets).some((item) => !item?.name || !item?.phone || !item?.age)) {
+      if (attendees.slice(0, totalTickets).some((item, index) => !item?.name || !item?.phone || (!item?.age && !(index === 0 && bookingForSelf)))) {
         return 'Each attendee needs name, phone, and age.';
       }
     }
@@ -591,7 +614,7 @@ export default function EventBooking() {
         bikeDetails: [{ ...bike, joinAs }],
         joinAs,
         total: summary.total,
-        ticketPlan: { counts, tiers: tiers.map(({ key, name, price }) => ({ key, name, price })) },
+        ticketPlan: { counts, tiers: tiers.map(({ key, name, price, availableSeats }) => ({ key, name, price, availableSeats })) },
         addOns: ADD_ONS.filter((item) => selectedAddOns.includes(item.key)),
         fees: { convenience: summary.fees, discount: summary.discount },
         bookingContact: contact,
@@ -625,6 +648,9 @@ export default function EventBooking() {
           setContact={setContact}
           emergency={emergency}
           setEmergency={setEmergency}
+          bookingForSelf={bookingForSelf}
+          onBookingForSelf={handleBookingForSelf}
+          user={user}
         />
       );
     }
@@ -660,6 +686,7 @@ export default function EventBooking() {
         <Stepper step={step} />
         <div className="eb-content">
           <main>
+            {step === 1 && <CategoryBookingBrief event={event} />}
             {renderStep()}
             {error && <p className="eb-error">{error}</p>}
             <div className="eb-actions">

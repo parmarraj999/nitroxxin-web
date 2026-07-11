@@ -39,15 +39,10 @@ export default function RaceDay() {
                     }}
                 >
                     {slides.map((slide) => (
-                        <img 
+                        <img
                             key={slide.id} 
                             src={slide.image} 
-                            style={{ 
-                                minWidth: "100%", 
-                                height: "70vh", 
-                                objectFit: "cover", 
-                                borderRadius: "12px" 
-                            }} 
+                            className="slide-image"
                             alt={`Slide ${slide.id}`} 
                         />
                     ))}
@@ -58,11 +53,12 @@ export default function RaceDay() {
             </div>
             <div className="slide-dots">
                 {slides.map((_, index) => (
-                    <div
+                    <button
                         key={index}
                         className={`dot ${index === active ? 'active' : ''}`}
                         onClick={() => setActive(index)}
-                        style={{ cursor: "pointer" }}
+                        aria-label={`Show slide ${index + 1}`}
+                        aria-current={index === active ? 'true' : undefined}
                     />
                 ))}
             </div>

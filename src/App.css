@@ -1,7 +1,7 @@
 .app-container {
   position: relative;
   width: 100%;
-  min-height: 1200px;
+  min-height: 100vh;
   background: linear-gradient(
     to bottom,
     #211739 0%,
@@ -9,6 +9,15 @@
     #131517 100%
   );
   overflow-x: hidden;
+}
+.app-container::-webkit-scrollbar{
+  display: none;
+}
+
+@media (min-width: 901px) {
+  .app-container {
+    zoom: 0.8;
+  }
 }
 
 * {

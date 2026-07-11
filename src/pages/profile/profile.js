@@ -31,6 +31,10 @@ export default function Profile() {
           <NavLink to="/profile/accessories" className={linkClass}>
             My Accessories
           </NavLink>
+          
+          <NavLink to="/cart" className={linkClass}>
+            My Cart
+          </NavLink>
 
           <NavLink to="/profile/wallet" className={linkClass}>
             Wallet

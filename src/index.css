@@ -1,3 +1,9 @@
+html {
+  width: 100%;
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
   overflow-x: hidden;
@@ -6,6 +12,18 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+html, body, #root {
+  min-height: 100%;
+}
+
+img, video, svg {
+  max-width: 100%;
+}
+
+button, input, select, textarea {
+  font: inherit;
 }
 
 code {

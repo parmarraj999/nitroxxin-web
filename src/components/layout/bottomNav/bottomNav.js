@@ -3,8 +3,6 @@ import './bottomNav.css';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 export default function BottomNav() {
-    const [activeTab, setActiveTab] = useState('For You');
-
     const [city, setCity] = useState("");
     const {pathname} = useLocation();
 
@@ -55,9 +53,8 @@ export default function BottomNav() {
         <div className="bottom-nav-wrapper" style={pathname.includes('/profile') || pathname.includes('/book') ? {display:"none"} : {}}>
             <div className="bottom-nav-tabs">
                 <button
-                    className={`nav-tab ${activeTab === 'For You' ? 'active-red' : ''}`}
+                    className={`nav-tab ${pathname === '/' ? 'active-red' : ''}`}
                     onClick={() => {
-                        setActiveTab('For You');
                         navigate('/');  
                     }}
                 >
@@ -66,9 +63,8 @@ export default function BottomNav() {
                 </button>
 
                 <button
-                    className={`nav-tab ${activeTab === 'Events' ? 'active-red' : ''}`}
+                    className={`nav-tab ${pathname.startsWith('/event') ? 'active-red' : ''}`}
                     onClick={() => {
-                        setActiveTab('Events');
                         navigate('/events');    
                     }}
                 >
@@ -77,9 +73,8 @@ export default function BottomNav() {
                 </button>
 
                 <button
-                    className={`nav-tab ${activeTab === 'Accessories' ? 'active-red' : ''}`}
+                    className={`nav-tab ${pathname.startsWith('/accessories') || pathname.startsWith('/product') || pathname.startsWith('/category') || pathname.startsWith('/brand') || pathname.startsWith('/vendor') ? 'active-red' : ''}`}
                     onClick={() => {
-                        setActiveTab('Accessories');
                         navigate('/accessories');
                     }}
                 >

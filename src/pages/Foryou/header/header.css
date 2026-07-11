@@ -38,6 +38,16 @@
   z-index: 2;
 }
 
+.slide-image {
+  display: block;
+  flex: 0 0 100%;
+  width: 100%;
+  min-width: 100%;
+  height: clamp(420px, 70vh, 760px);
+  object-fit: cover;
+  border-radius: 12px;
+}
+
 
 /* Nav arrows */
 .nav-arrow {
@@ -97,10 +107,21 @@
   border-radius: 5px;
   background: rgba(169, 169, 169, 0.35);
   transition: background 0.2s;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
 }
 
 .dot.active {
   background: #ffffff;
   width: 30px;
   border-radius: 4px;
+}
+
+@media (max-width: 900px) {
+  .slide-image { height: clamp(360px, 62vh, 560px); }
+}
+
+@media (max-width: 600px) {
+  .slide-image { height: clamp(300px, 56vh, 460px); }
 }

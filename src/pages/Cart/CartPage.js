@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { FiArrowLeft } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 import { useCollection } from "../../hooks/useFirestore";
 import { COLLECTIONS } from "../../services/firebase";
@@ -72,9 +73,14 @@ export default function CartPage() {
   return (
     <div className="cart-page">
       <header className="cart-page__header">
-        <div>
-          <p>Nitroxx checkout</p>
-          <h1>Shopping Cart</h1>
+        <div className="cart-page__title-group">
+          <button className="cart-page__back-btn" onClick={() => navigate(-1)} aria-label="Go back">
+            <FiArrowLeft size={24} />
+          </button>
+          <div>
+            <p>Nitroxx checkout</p>
+            <h1>Shopping Cart</h1>
+          </div>
         </div>
         <Link to="/accessories">Continue shopping</Link>
       </header>

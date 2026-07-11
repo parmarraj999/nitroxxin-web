@@ -7,6 +7,7 @@ import { normalizeEvent } from "../../../services/normalizers";
 import { saveFavoriteEvent } from "../../../services/commerceService";
 import { useAuth } from "../../../context/AuthContext";
 import { useAuthModal } from "../../../components/AuthModal/useAuthModal";
+import { formatCategoryValue, getCategoryDetails } from "../eventCategoryConfig";
 
 const listFrom = (...values) =>
   values.flatMap((value) => {
@@ -70,6 +71,7 @@ export default function EventDetail() {
     .filter((item) => item.category === event.category || item.hostId === event.hostId)
     .slice(0, 4);
   const seatsLeft = Math.max(0, Number(event.capacity || 0) - Number(event.registeredCount || 0));
+  const categoryDetails = getCategoryDetails(event);
 
   return (
     <div className="event-detail-page">
@@ -104,6 +106,17 @@ export default function EventDetail() {
 
           <p className="ed-section-heading ed-about-heading">About</p>
           <p className="ed-about-text">{event.description || event.about || "Organizer has not added a description yet."}</p>
+
+          {categoryDetails.config && (
+            <section className="ed-category-section">
+              <div className="ed-category-head"><span>Event category</span><h2>{categoryDetails.config.category}</h2></div>
+              {categoryDetails.details.length ? <div className="ed-category-grid">
+                {categoryDetails.details.map((field) => <article className={`ed-category-item${field.type === 'textarea' || field.type === 'array' ? ' ed-category-item--wide' : ''}`} key={field.id}>
+                  <span>{field.label}</span><strong>{formatCategoryValue(field.value, field)}</strong>
+                </article>)}
+              </div> : <p className="ed-category-empty">Detailed category information will be published by the organizer soon.</p>}
+            </section>
+          )}
 
           <p className="ed-section-heading ed-things-heading">Things to know</p>
           <ol className="ed-things-list">

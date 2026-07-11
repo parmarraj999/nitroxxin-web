@@ -1,5 +1,7 @@
 .review-section {
-  padding: 60px 135px 60px 135px;
+  width: min(1270px, 100%);
+  margin: 0 auto;
+  padding: 60px clamp(20px, 6vw, 80px);
 }
 
 .review-section__title {
@@ -19,8 +21,8 @@
 
 /* Left: rating summary */
 .review-section__left {
-  width: 630px;
-  flex: 0 0 630px;
+  width: 50%;
+  flex: 0 0 50%;
 }
 
 .review-section__rating-summary {
@@ -99,7 +101,7 @@
 }
 
 .review-section__comment-box {
-  width: 590px;
+  width: min(590px, 100%);
   height: 142px;
   background: #f2f2f2;
   border: 1px solid #b4b4b4;
@@ -111,4 +113,15 @@
   color: #979797;
   resize: none;
   box-sizing: border-box;
+}
+
+@media (max-width: 800px) {
+  .review-section { padding-top: 36px; }
+  .review-section__content { flex-direction: column; gap: 30px; }
+  .review-section__left { width: 100%; flex-basis: auto; }
+  .review-section__divider { display: none; }
+  .review-section__right { width: 100%; padding-left: 0; }
+  .review-section__reviews-image { height: auto; max-height: 420px; object-fit: contain; }
+  .review-section__your-review { margin-top: 36px; }
+  .review-section__star { width: 40px; height: 40px; }
 }

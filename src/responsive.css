@@ -1,0 +1,188 @@
+/* Final cross-site responsive layer. Keep this import after App so these rules
+   consistently override page-level desktop styles. */
+
+@media (max-width: 900px) {
+  body { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+
+  .navbar { height: 64px; }
+  .navbar-logo { font-size: 1.25rem; }
+  .navbar-signup { display: none; }
+
+  .bottom-nav-wrapper {
+    left: 10px;
+    right: 10px;
+    bottom: max(8px, env(safe-area-inset-bottom));
+    transform: none;
+    gap: 8px;
+    justify-content: center;
+  }
+  .bottom-nav-tabs { flex: 1; justify-content: space-around; min-width: 0; }
+  .nav-tab { flex: 1; justify-content: center; min-width: 0; padding: 10px 8px; gap: 6px; font-size: 12px; }
+  .nav-tab svg { width: 20px; height: 20px; flex: 0 0 auto; }
+  .bottom-nav-location, .bottom-nav-wrapper > .location-btn { display: none; }
+
+  /* Home hero */
+  .slider-wrapper { min-height: auto; padding: 84px 16px 32px; }
+  .slide-container { max-width: 100%; border-radius: 16px; }
+  .slide-inner { min-height: 0; }
+  .slider-wrapper > .nav-arrow { width: 42px; height: 42px; top: auto; bottom: 18px; transform: none; }
+  .slider-wrapper > .nav-arrow.left { left: 28px; }
+  .slider-wrapper > .nav-arrow.right { right: 28px; }
+  .slide-dots { top: auto; bottom: 34px; gap: 6px; }
+  .dot { width: 16px; }
+  .dot.active { width: 22px; }
+
+  /* All horizontally scrollable home/catalog rails */
+  .categories-row, .brands-row, .ap-category-row {
+    justify-content: flex-start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .categories-row::-webkit-scrollbar, .brands-row::-webkit-scrollbar,
+  .ap-category-row::-webkit-scrollbar { display: none; }
+  .category-item, .brand-item, .ap-cat-card { scroll-snap-align: start; }
+
+  .shop-by-category, .shop-by-brands, .featured-events, .faq-section,
+  .categories-section { height: auto; min-height: 0; padding-top: 64px; padding-bottom: 64px; }
+  .category-section-title, .brands-section-title, .section-title {
+    font-size: clamp(28px, 8vw, 38px);
+    margin-bottom: 40px;
+  }
+  .categories-row, .brands-row { padding: 0 20px 12px; gap: 16px; }
+  .category-circle { width: 230px; height: 290px; margin-bottom: 18px; }
+  .brand-circle { width: 170px; height: 170px; }
+  .category-navigation, .brands-navigation { display: none; }
+
+  .featured-events { margin-top: 0; padding-left: 20px; padding-right: 20px; }
+  .events-grid { width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .event-card { width: 100%; height: clamp(260px, 48vw, 350px); }
+
+  .faq-section { padding-left: 20px; padding-right: 20px; }
+  .faq-header { margin-bottom: 54px; }
+  .faq-brand h2 { font-size: clamp(42px, 12vw, 62px); }
+  .faq-emoji { margin-top: 60px; }
+  .faq-list { gap: 28px; }
+  .faq-question { font-size: clamp(20px, 6vw, 28px); padding-right: 14px; }
+  .faq-toggle { width: 46px; height: 46px; flex: 0 0 46px; }
+
+  .categories-section { padding-top: 60px; }
+  .categories-wrapper { height: 400px; max-height: none; scroll-snap-type: x mandatory; }
+  .category-card { scroll-snap-align: center; }
+
+  /* Events listing */
+  .ep-hero { padding-top: 96px; gap: 22px; }
+  .ep-hero__flex { padding-top: 0; padding-bottom: 24px; }
+  .ep-featured-wrap { padding-top: 24px; }
+  .ep-featured__viewport { overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+  .ep-featured__card { scroll-snap-align: start; }
+  .ep-filter-btn { padding: 10px 16px; font-size: 15px; }
+
+  /* Accessories listing/header */
+  .ap-page { padding-top: 64px; padding-bottom: 96px; }
+  .ap-header { height: 64px; gap: 10px; }
+  .ap-header__divider, .ap-header__search { display: none; }
+  .ap-header__right { margin-left: auto; }
+  .ap-header__icon-btn { width: 42px; height: 42px; }
+  .ap-tabs-bar { overflow-x: auto; padding: 10px 16px; scrollbar-width: none; }
+  .ap-tabs { flex: 0 0 auto; }
+  .ap-tab { padding: 8px 13px; font-size: 14px; }
+
+  /* Profile */
+  .profile-layout { height: auto; min-height: 100vh; overflow: visible; padding-bottom: 88px; }
+  .profile-sidebar { padding: 16px; position: relative; }
+  .profile-menu { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; }
+  .profile-link, .logout-btn { flex: 0 0 auto; white-space: nowrap; padding: 8px 10px; }
+  .profile-content { padding: 28px 16px; }
+  .profile-screen--narrow, .profile-screen--wide { max-width: 100%; }
+  .profile-card, .support-card, .wallet-card, .ride-card, .order-card { width: 100%; max-width: 100%; }
+  .wallet-actions, .profile-form-row { flex-wrap: wrap; }
+  .calendar-card { width: 100%; overflow-x: auto; }
+  .wishlist-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .wishlist-card { width: 100%; }
+
+  /* Cart and checkout */
+  .cart-page { padding: 88px 16px 96px; }
+  .cart-item { grid-template-columns: 100px minmax(0, 1fr); }
+  .cart-coupon { grid-template-columns: 1fr; }
+  .eb-page { padding-bottom: 96px; }
+}
+
+@media (max-width: 600px) {
+  .nx-empty-state { width: calc(100% - 32px); margin-top: 88px; padding: 24px 18px; }
+  .navbar-action-btn { gap: 6px; }
+  .navbar-login { padding: 8px 12px; }
+
+  .nav-tab { flex-direction: column; gap: 1px; padding: 6px 3px; font-size: 10px; }
+  .bottom-nav-tabs { border-radius: 24px; }
+
+  .slide-inner { min-height: 0; }
+  .category-circle { width: 200px; height: 250px; }
+  .brand-circle { width: 145px; height: 145px; }
+  .events-grid { display: flex; width: auto; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+  .event-card { flex: 0 0 78vw; height: 330px; scroll-snap-align: center; }
+
+  .faq-header { display: block; }
+  .faq-emoji { margin-top: 24px; }
+  .emoji-base { padding: 6px 22px; font-size: 24px; }
+  .faq-question-row { align-items: flex-start; }
+
+  .ep-search__input-wrap { height: 48px; }
+  .ep-search__btn { width: 48px; height: 48px; }
+  .ep-events-grid { gap: 20px; }
+  .ep-event-card__image { height: min(118vw, 430px); }
+
+  .ap-header__logo { font-size: 22px; }
+  .ap-header__icon-btn:first-of-type { display: none; }
+  .ap-hero__overlay { padding: 20px; }
+  .ap-hero__title { font-size: clamp(26px, 9vw, 38px); }
+  .ap-section { padding-left: 16px; padding-right: 16px; }
+
+  .additional-info__row { align-items: flex-start; gap: 14px; }
+  .additional-info__key, .additional-info__value { font-size: 14px; }
+  .review-section__stars { gap: 6px; }
+
+  .cart-page__header { align-items: flex-start; gap: 10px; }
+  .cart-item { grid-template-columns: 1fr; }
+  .cart-item__image { width: 100%; height: 220px; }
+  .cart-item__controls { flex-wrap: wrap; }
+
+  .wishlist-grid { grid-template-columns: 1fr; }
+  .ride-card, .order-card { display: block; }
+  .ride-card img, .order-card img { width: 100%; max-width: 100%; }
+  .profile-content { min-width: 0; }
+  .profile-card, .support-card, .wallet-card { padding: 20px 16px; }
+  .eb-actions { padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
+}
+
+@media (max-width: 380px) {
+  .navbar-logo { font-size: 1.05rem; }
+  .navbar-login { font-size: 12px; }
+  .ap-header__icon-btn { width: 38px; height: 38px; }
+  .nav-tab span { font-size: 9px; }
+  .faq-brand h2 { font-size: 32px; }
+  .ap-hero__title { font-size: 24px; }
+  .ap-hero__subtitle { font-size: 18px; }
+  .section-title { font-size: 24px; }
+  .ap-cat-card, .ap-brand-card, .ap-bike-card { max-width: 100%; }
+}
+
+/* Ensure no elements break the viewport width */
+@media (max-width: 600px) {
+  img, svg, video, canvas, audio, iframe, embed, object {
+    max-width: 100%;
+    height: auto;
+  }
+  .category-circle, .brand-circle, .slide-container, .event-card, 
+  .ep-event-card__image, .ap-cat-card__image-bg, .ap-bike-card__circle, 
+  .ap-brand-card__box, .cart-item__image {
+    max-width: 100%;
+  }
+  .category-section-title, .brands-section-title, .section-title {
+    font-size: clamp(22px, 6vw, 28px);
+  }
+  .faq-brand h2 { font-size: clamp(32px, 10vw, 42px); }
+}

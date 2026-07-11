@@ -1,6 +1,15 @@
 .related-products {
-  padding: 60px 36px;
+  width: min(1440px, 100%);
+  margin: 0 auto;
+  padding: 60px clamp(16px, 3vw, 36px);
   padding-bottom: 10rem;
+}
+
+@media (max-width: 1000px) { .related-products__grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) {
+  .related-products { padding-top: 36px; }
+  .related-products__grid { grid-template-columns: 1fr; }
+  .product-card__image-wrap { height: min(110vw, 440px); }
 }
 
 .related-products__grid {
