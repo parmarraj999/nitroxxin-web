@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React from "react";
 import "./eventDetail.css";
 import { Link, useNavigate, useParams } from "react-router-dom";
