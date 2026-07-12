@@ -457,12 +457,12 @@
   z-index: 1;
 }
 
-.ed-recommended-grid {
+.ed-recommended-grid,
+.event-detail-canvas > .ep-events-grid {
   position: absolute;
   left: 44px;
   top: 1351px;
-  display: flex;
-  gap: 20px;
+  right: 44px;
   z-index: 1;
 }
 
