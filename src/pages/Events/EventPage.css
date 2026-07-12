@@ -338,12 +338,14 @@ BAR (heading + search side by side) ===== */
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 24px;
+  /* margin-top: 310px;ad */
+  position: relative;
 }
 
 .ep-event-card {
   border-radius: 30px;
-  overflow: hidden;
-  position: relative;
+  /* overflow: hidden; */
+  position: absolute;
   cursor: pointer;
 }
 

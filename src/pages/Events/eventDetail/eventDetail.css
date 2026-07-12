@@ -38,7 +38,7 @@
   .ed-event-title, .ed-event-meta, .ed-images-group, .ed-section-heading,
   .ed-about-text, .ed-things-list, .ed-info-card, .ed-more-card,
   .ed-recommended-heading, .event-detail-canvas > .ep-events-grid {
-    position: relative; inset: auto; width: 100%; height: auto; z-index: 1;
+     inset: auto; width: 100%; height: auto; z-index: 1;
   }
   .ed-event-title { font-size: clamp(24px, 6vw, 32px); white-space: normal; margin: 0; }
   .ed-event-meta { margin: 8px 0 24px; line-height: 1.5; }
