@@ -31,3 +31,14 @@
     transform: translateX(-50%);
   }
 }
+
+
+@media screen and (max-width:654px) {
+  .marquee-container{
+    padding: 14px 0;
+  }
+
+  .marquee-text{
+    font-size: 28px;
+  }
+}

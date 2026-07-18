@@ -20,10 +20,12 @@ export default function RaceDay() {
         return () => clearInterval(interval);
     }, [total]);
 
+    const heigh = window.innerHeight;
+
     return (
         <div className="slider-wrapper">
             {/* Left Arrow */}
-            <button className="nav-arrow left" onClick={() => setActive((a) => (a - 1 + total) % total)}>
+            <button className="nav-arrow-header left" onClick={() => setActive((a) => (a - 1 + total) % total)}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-left-icon lucide-chevron-left"><path d="m15 18-6-6 6-6" /></svg>
             </button>
 
@@ -63,7 +65,7 @@ export default function RaceDay() {
                 ))}
             </div>
             {/* Right Arrow */}
-            <button className="nav-arrow right" onClick={() => setActive((a) => (a + 1) % total)}>
+            <button className="nav-arrow-header right" onClick={() => setActive((a) => (a + 1) % total)}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
             </button>
 

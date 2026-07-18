@@ -17,6 +17,7 @@ import './EventBooking.css';
 import { useDocument } from '../../../hooks/useFirestore';
 import { COLLECTIONS } from '../../../services/firebase';
 import { normalizeEvent } from '../../../services/normalizers';
+import { useEventsContext } from '../../../context/EventsContext';
 import { bookEvent } from '../../../services/commerceService';
 import { useAuth } from '../../../context/AuthContext';
 import { useAuthModal } from '../../../components/AuthModal/useAuthModal';
@@ -33,7 +34,7 @@ const STEPS = [
 const JOIN_OPTIONS = [
   { key: 'biker', title: 'Biker', text: 'I am riding my motorcycle to the event.' },
   { key: 'pillion', title: 'Pillion', text: 'I need to be paired with an approved rider.' },
-  { key: 'group', title: 'Group ride', text: 'I am booking for a riding crew.' },
+  // { key: 'group', title: 'Group ride', text: 'I am booking for a riding crew.' },
 ];
 
 const ADD_ONS = [
@@ -126,9 +127,22 @@ function TicketStep({ counts, setCount, tiers, seatsLeft }) {
             <div>
               <p className="eb-ticket__name">{tier.name}</p>
               <p className="eb-ticket__desc">{tier.description}</p>
-              <div className="eb-ticket__chips">
-                {tier.perks.map((perk) => <span key={perk}>{perk}</span>)}
-              </div>
+              {tier.perks?.length > 0 && (
+                <div className="eb-ticket__details-group">
+                  <span className="eb-ticket__details-title">Includes:</span>
+                  <div className="eb-ticket__chips" style={{ marginTop: '4px' }}>
+                    {tier.perks.map((perk, i) => <span key={`inc-${i}`}>{perk}</span>)}
+                  </div>
+                </div>
+              )}
+              {tier.exclusions?.length > 0 && (
+                <div className="eb-ticket__details-group">
+                  <span className="eb-ticket__details-title">Excludes:</span>
+                  <div className="eb-ticket__chips" style={{ marginTop: '4px' }}>
+                    {tier.exclusions.map((exc, i) => <span key={`exc-${i}`} className="eb-chip--exc">{exc}</span>)}
+                  </div>
+                </div>
+              )}
             </div>
             <div className="eb-ticket__action">
               <strong>{formatMoney(tier.price)}</strong>
@@ -411,7 +425,7 @@ function BookingSummary({ event, summary, counts, selectedAddOns, currentStep })
         {selected.map((item) => (
           <div key={item.key}><span>{item.title}</span><strong>{formatMoney(item.price)}</strong></div>
         ))}
-        <div><span>Platform and gateway fee</span><strong>{formatMoney(summary.fees)}</strong></div>
+        {/* <div><span>Platform and gateway fee</span><strong>{formatMoney(summary.fees)}</strong></div> */}
         {summary.discount > 0 && <div><span>Coupon discount</span><strong>-{formatMoney(summary.discount)}</strong></div>}
       </div>
       <div className="eb-summary__total">
@@ -431,8 +445,15 @@ function BookingSummary({ event, summary, counts, selectedAddOns, currentStep })
 export default function EventBooking() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { data, loading } = useDocument(COLLECTIONS.events, id);
-  const event = useMemo(() => data ? normalizeEvent(data) : null, [data]);
+
+  const { events, eventsLoading } = useEventsContext();
+  const eventFromContext = events.find((e) => e.id === id);
+
+  const fallbackQuery = useDocument(COLLECTIONS.events, !eventFromContext && !eventsLoading ? id : null);
+
+  const event = useMemo(() => eventFromContext || (fallbackQuery.data ? normalizeEvent(fallbackQuery.data) : null), [eventFromContext, fallbackQuery.data]);
+  const loading = eventsLoading || (fallbackQuery.loading && !eventFromContext);
+
   const { user, profile } = useAuth();
   const { openLogin } = useAuthModal();
 
@@ -463,16 +484,19 @@ export default function EventBooking() {
     const source = event?.ticketPackages || event?.packages || event?.ticketTiers || event?.tickets || event?.pricing?.packages || [];
     const packages = Array.isArray(source) ? source : Object.entries(source || {}).map(([id, value]) => ({ id, ...value }));
     return packages.map((item, index) => {
-      const benefits = item.benefits || item.perks || item.inclusions || [];
+      const benefits = item.benefits || item.perks || item.inclusions || item.inclusion || [];
       const perks = Array.isArray(benefits) ? benefits : String(benefits).split(/[,\n]/).map((value) => value.trim()).filter(Boolean);
+      const exclusionsRaw = item.exclusions || item.exclusion || [];
+      const exclusions = Array.isArray(exclusionsRaw) ? exclusionsRaw : String(exclusionsRaw).split(/[,\n]/).map((value) => value.trim()).filter(Boolean);
       const availableSeats = Number(item.availableSeats ?? item.seats ?? item.capacity ?? item.quantity ?? 0);
       return {
         key: String(item.id || item.key || item.packageId || `package-${index}`),
         name: item.packageName || item.name || item.title || `Package ${index + 1}`,
         price: Number(item.price ?? item.amount ?? 0),
         availableSeats,
-        description: item.description || (perks.length ? perks.join(', ') : 'Event access as specified by the host.'),
+        description: item.shortDescription || item.description || (perks.length ? perks.join(', ') : 'Event access as specified by the host.'),
         perks,
+        exclusions,
       };
     });
   }, [event]);

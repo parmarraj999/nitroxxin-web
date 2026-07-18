@@ -1,6 +1,6 @@
 import './App.css';
 import { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 
 import Navbar from './components/layout/navbar/navbar';
 import BottomNav from './components/layout/bottomNav/bottomNav';
@@ -20,6 +20,7 @@ import CartPage from './pages/Cart/CartPage';
 
 import { AuthProvider } from './components/AuthModal/useAuthModal';
 import { FirebaseAuthProvider } from './context/AuthContext';
+import { EventsProvider } from './context/EventsContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Profile from './pages/profile/profile';
 import ProfileOverview from './pages/profile/pages/ProfileOverview';
@@ -33,15 +34,29 @@ const AuthModal = lazy(() =>
   import('./components/AuthModal/AuthModal')
 );
 
+const Navigation = () => {
+  const location = useLocation();
+  const isBookingPage = location.pathname.includes('/book');
+  
+  if (isBookingPage) return null;
+  
+  return (
+    <>
+      <Navbar />
+      <BottomNav />
+    </>
+  );
+};
+
 function App() {
 
   return (
     <AuthProvider>
       <FirebaseAuthProvider>
-        <Router>
-          <div className="app-container">
-            <Navbar />
-            <BottomNav />
+        <EventsProvider>
+          <Router>
+            <div className="app-container">
+            <Navigation />
 
             <Routes>
               <Route path="/" element={<Foryou />} />
@@ -90,11 +105,12 @@ function App() {
               </Route>
             </Routes>
 
-            <Suspense fallback={null}>
-              <AuthModal />
-            </Suspense>
-          </div>
-        </Router>
+              <Suspense fallback={null}>
+                <AuthModal />
+              </Suspense>
+            </div>
+          </Router>
+        </EventsProvider>
       </FirebaseAuthProvider>
     </AuthProvider>
   );

@@ -1,10 +1,11 @@
 /* eslint-disable no-unused-vars */
-import React from "react";
+import React, { useEffect, useState } from "react";
 import "./eventDetail.css";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useCollection, useDocument } from "../../../hooks/useFirestore";
+import { useDocument } from "../../../hooks/useFirestore";
 import { COLLECTIONS } from "../../../services/firebase";
 import { normalizeEvent } from "../../../services/normalizers";
+import { useEventsContext } from "../../../context/EventsContext";
 import { saveFavoriteEvent } from "../../../services/commerceService";
 import { useAuth } from "../../../context/AuthContext";
 import { useAuthModal } from "../../../components/AuthModal/useAuthModal";
@@ -21,18 +22,73 @@ const listFrom = (...values) =>
 export default function EventDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { data, loading } = useDocument(COLLECTIONS.events, id);
-  const relatedQuery = useCollection(COLLECTIONS.events, { limit: 12 });
-  const event = data ? normalizeEvent(data) : null;
+  
+  const { events, eventsLoading } = useEventsContext();
+  const eventFromContext = events.find((e) => e.id === id);
+  
+  const fallbackQuery = useDocument(COLLECTIONS.events, !eventFromContext && !eventsLoading ? id : null);
+  
+  const event = eventFromContext || (fallbackQuery.data ? normalizeEvent(fallbackQuery.data) : null);
+  const loading = eventsLoading || (fallbackQuery.loading && !eventFromContext);
+  
+  const relatedEvents = events;
   const { user } = useAuth();
   const { openLogin } = useAuthModal();
 
-  console.log(data )
+  const [lightboxIndex, setLightboxIndex] = useState(null);
+  const [showTerms, setShowTerms] = useState(false);
 
   const handleFavorite = async () => {
     if (!event) return;
     if (!user) return openLogin();
     await saveFavoriteEvent({ userId: user.uid, event });
+  };
+
+  
+  
+  const gallery = event?.images?.length ? event.images : [event?.image || event?.banner].filter(Boolean);
+
+  useEffect(() => {
+    if (lightboxIndex === null && !showTerms) {
+      document.body.style.overflow = "";
+      return;
+    }
+    document.body.style.overflow = "hidden";
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setLightboxIndex(null);
+        setShowTerms(false);
+      }
+      if (e.key === "ArrowLeft" && gallery.length > 1) {
+        setLightboxIndex((prev) => (prev === 0 ? gallery.length - 1 : prev - 1));
+      }
+      if (e.key === "ArrowRight" && gallery.length > 1) {
+        setLightboxIndex((prev) => (prev === gallery.length - 1 ? 0 : prev + 1));
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "";
+    };
+  }, [lightboxIndex, showTerms, gallery.length]);
+
+  const openLightbox = (index) => {
+    setLightboxIndex(index);
+  };
+
+  const closeLightbox = () => {
+    setLightboxIndex(null);
+  };
+
+  const prevImage = (e) => {
+    e.stopPropagation();
+    setLightboxIndex((prev) => (prev === 0 ? gallery.length - 1 : prev - 1));
+  };
+
+  const nextImage = (e) => {
+    e.stopPropagation();
+    setLightboxIndex((prev) => (prev === gallery.length - 1 ? 0 : prev + 1));
   };
 
   if (loading) {
@@ -58,23 +114,22 @@ export default function EventDetail() {
     );
   }
 
-  const gallery = event.images?.length ? event.images : [event.image || event.banner].filter(Boolean);
   const thingsToKnow = listFrom(
-    event.duration && `Duration: ${event.duration}`,
-    event.ageLimit && `Age limit: ${event.ageLimit}`,
-    event.parking && `Parking: ${event.parking}`,
-    event.rules,
-    event.highlights
+    event?.duration && `Duration: ${event?.duration}`,
+    event?.ageLimit && `Age limit: ${event?.ageLimit}`,
+    event?.parking && `Parking: ${event?.parking}`,
+    event?.rules,
+    event?.highlights
   );
   const agenda = listFrom(event.agenda, event.timeline);
   const faqs = listFrom(event.faqs);
-  const related = relatedQuery.data
-    .map(normalizeEvent)
+  const related = relatedEvents
     .filter((item) => item.id !== event.id)
     .filter((item) => item.category === event.category || item.hostId === event.hostId)
     .slice(0, 4);
   const seatsLeft = Math.max(0, Number(event.capacity || 0) - Number(event.registeredCount || 0));
   const categoryDetails = getCategoryDetails(event);
+
 
   return (
     <div className="event-detail-page">
@@ -94,6 +149,7 @@ export default function EventDetail() {
 
           <p className="ed-event-title">{event.title || event.name}</p>
           <p className="ed-event-meta">
+            {event.category && <span className="ed-event-category">{event.category}</span>}
             <span className="ed-event-date">{event.dateTimeText || event.dateText}</span>
             <span className="ed-event-location"> | {event.location}</span>
           </p>
@@ -102,23 +158,23 @@ export default function EventDetail() {
           <div className="ed-gallery-wrap">
             {/* Banner – first image full width */}
             {gallery[0] && (
-              <div className="ed-gallery-banner">
-                <img src={event.bannerImage} alt={event.title || event.name} className="ed-gallery-banner-img" />
+              <div className="ed-gallery-banner" onClick={() => openLightbox(0)}>
+                <img src={event.bannerImage || gallery[0]} alt={event?.title || event?.name} className="ed-gallery-banner-img" />
                 <div className="ed-gallery-banner-overlay" />
               </div>
             )}
 
             {/* Thumbnail grid – remaining images */}
             {gallery.length > 1 && (
-              <div className={`ed-gallery-grid ed-gallery-grid--${Math.min(gallery.length - 1, 5)}`}>
-                {gallery.slice(1, 6).map((src, i) => {
-                  const isLast = i === 4 && gallery.length > 6;
+              <div className={`ed-gallery-grid ed-gallery-grid--${Math.min(gallery.length - 1, 4)}`}>
+                {gallery.slice(1, 5).map((src, i) => {
+                  const isLast = i === 3 && gallery.length > 5;
                   return (
-                    <div key={i} className="ed-gallery-thumb">
-                      <img src={src} alt={`${event.title || event.name} ${i + 2}`} className="ed-gallery-thumb-img" />
+                    <div key={i} className="ed-gallery-thumb" onClick={() => openLightbox(i + 1)}>
+                      <img src={src} alt={`${event?.title || event?.name} ${i + 2}`} className="ed-gallery-thumb-img" />
                       {isLast && (
                         <div className="ed-gallery-more-overlay">
-                          <span>+{gallery.length - 6} more</span>
+                          <span>+{gallery.length - 5} more</span>
                         </div>
                       )}
                     </div>
@@ -204,6 +260,15 @@ export default function EventDetail() {
               <p className="ed-section-heading ed-more-heading">More</p>
               <div className="ed-more-card">
                 <div className="ed-more-row"><p className="ed-more-label">FAQs: {faqs.length ? `${faqs.length} answers available` : "Organizer has not added FAQs yet"}</p></div>
+                {(event.termsAndConditions || event.terms) && (
+                  <>
+                    <div className="ed-divider-thin" />
+                    <div className="ed-more-row" onClick={() => setShowTerms(true)} style={{ cursor: "pointer" }}>
+                      <p className="ed-more-label">Terms & Conditions</p>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{color: "rgba(255,255,255,0.5)"}}><path d="m9 18 6-6-6-6"/></svg>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
@@ -310,6 +375,76 @@ export default function EventDetail() {
                 ))}
               </div>
             </>
+          )}
+
+          {/* ── Terms & Conditions Modal ── */}
+          {showTerms && (
+            <div className="ed-modal-overlay" onClick={() => setShowTerms(false)}>
+              <div className="ed-modal-content" onClick={(e) => e.stopPropagation()}>
+                <div className="ed-modal-header">
+                  <h3>Terms & Conditions</h3>
+                  <button className="ed-modal-close" onClick={() => setShowTerms(false)}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                  </button>
+                </div>
+                <div className="ed-modal-body">
+                  {typeof (event.termsAndConditions || event.terms) === 'string' ? (
+                    <p style={{ whiteSpace: "pre-line", margin: 0 }}>{event.termsAndConditions || event.terms}</p>
+                  ) : Array.isArray(event.termsAndConditions || event.terms) ? (
+                    <ul className="ed-terms-list">
+                      {(event.termsAndConditions || event.terms).map((term, i) => <li key={i}>{term}</li>)}
+                    </ul>
+                  ) : (
+                    <p>No terms and conditions provided.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Lightbox Modal ── */}
+          {lightboxIndex !== null && (
+            <div className="ed-lightbox" onClick={closeLightbox}>
+              <button className="ed-lightbox-close" onClick={closeLightbox} aria-label="Close lightbox">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </button>
+              
+              {gallery.length > 1 && (
+                <button className="ed-lightbox-arrow ed-lightbox-arrow--left" onClick={prevImage} aria-label="Previous image">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </button>
+              )}
+
+              <div className="ed-lightbox-content" onClick={(e) => e.stopPropagation()}>
+                <img src={gallery[lightboxIndex]} alt={`Gallery view ${lightboxIndex + 1}`} className="ed-lightbox-main-img" />
+                <div className="ed-lightbox-counter">
+                  {lightboxIndex + 1} / {gallery.length}
+                </div>
+              </div>
+
+              {gallery.length > 1 && (
+                <button className="ed-lightbox-arrow ed-lightbox-arrow--right" onClick={nextImage} aria-label="Next image">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
+              )}
+
+              {/* Lightbox thumbnails strip */}
+              {gallery.length > 1 && (
+                <div className="ed-lightbox-thumbs-wrap" onClick={(e) => e.stopPropagation()}>
+                  <div className="ed-lightbox-thumbs-list">
+                    {gallery.map((src, i) => (
+                      <div 
+                        key={i} 
+                        className={`ed-lightbox-thumb-item ${i === lightboxIndex ? "active" : ""}`}
+                        onClick={() => setLightboxIndex(i)}
+                      >
+                        <img src={src} alt={`Thumbnail ${i + 1}`} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>

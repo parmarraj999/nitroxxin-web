@@ -240,6 +240,18 @@
   margin-top: 14px;
 }
 
+.eb-ticket__details-group {
+  margin-top: 12px;
+}
+
+.eb-ticket__details-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #15171a;
+  display: block;
+  margin-bottom: 2px;
+}
+
 .eb-ticket__chips span {
   border-radius: 999px;
   background: #edf1f4;
@@ -247,6 +259,11 @@
   color: #4b5563;
   font-size: 12px;
   font-weight: 700;
+}
+
+.eb-ticket__chips .eb-chip--exc {
+  background: #fbeae9;
+  color: #c92a2a;
 }
 
 .eb-ticket__action {

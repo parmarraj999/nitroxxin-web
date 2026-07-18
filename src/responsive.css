@@ -19,7 +19,7 @@
   .bottom-nav-tabs { flex: 1; justify-content: space-around; min-width: 0; }
   .nav-tab { flex: 1; justify-content: center; min-width: 0; padding: 10px 8px; gap: 6px; font-size: 12px; }
   .nav-tab svg { width: 20px; height: 20px; flex: 0 0 auto; }
-  .bottom-nav-location, .bottom-nav-wrapper > .location-btn { display: none; }
+  /* .bottom-nav-location, .bottom-nav-wrapper > .location-btn { display: none; } */
 
   /* Home hero */
   .slider-wrapper { min-height: auto; padding: 84px 16px 32px; }
@@ -117,7 +117,7 @@
   .navbar-login { padding: 8px 12px; }
 
   .nav-tab { flex-direction: column; gap: 1px; padding: 6px 3px; font-size: 10px; }
-  .bottom-nav-tabs { border-radius: 24px; }
+  .bottom-nav-tabs { border-radius: 40px; }
 
   .slide-inner { min-height: 0; }
   .category-circle { width: 200px; height: 250px; }

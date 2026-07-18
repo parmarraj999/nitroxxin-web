@@ -39,6 +39,12 @@
   text-decoration: none;
 }
 
+@media screen and (max-width:654px) {
+  .event-card{
+    min-height: 420px;
+  }
+}
+
 .event-card:hover {
   transform: translateY(-5px);
 }

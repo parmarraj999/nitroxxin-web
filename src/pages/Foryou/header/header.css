@@ -49,8 +49,9 @@
 }
 
 
+
 /* Nav arrows */
-.nav-arrow {
+.nav-arrow-header {
   position: absolute;
   top: 50%;
   transform: translateY(-60%);
@@ -71,19 +72,19 @@
   -webkit-backdrop-filter: blur(10px); 
 }
 
-.nav-arrow:hover {
+.nav-arrow-header:hover {
   background: #fff;
 }
 
-.nav-arrow.left {
+.nav-arrow-header.left {
   left:40px;
 }
 
-.nav-arrow.right {
+.nav-arrow-header.right {
   right:40px;
 }
 
-.nav-arrow svg {
+.nav-arrow-header svg {
   width: 14px;
   height: 14px;
   fill: #333;
@@ -124,4 +125,17 @@
 
 @media (max-width: 600px) {
   .slide-image { height: clamp(300px, 56vh, 460px); }
+}
+
+@media screen and (max-width:645px) {
+  .slide-container{
+    min-height: 50vh;
+    max-height: 75vh;
+  }
+  .nav-arrow-header{
+    display: none;
+  }
+  .slide-image{
+    min-height: 80vh;
+  }
 }

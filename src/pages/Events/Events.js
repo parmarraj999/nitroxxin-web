@@ -1,9 +1,7 @@
 import { useMemo, useState } from "react";
 import "./EventPage.css";
 import { Link, useNavigate } from "react-router-dom";
-import { useCollection } from "../../hooks/useFirestore";
-import { COLLECTIONS } from "../../services/firebase";
-import { normalizeCategory, normalizeEvent } from "../../services/normalizers";
+import { useEventsContext } from "../../context/EventsContext";
 import { toDate } from "../../utils/dataFormatters";
 
 const timeFilters = ["All", "Today", "Upcoming", "Free", "Paid", "VIP"];
@@ -64,7 +62,7 @@ function SlidersIcon() {
 
 function EventCard({ event }) {
   const [liked, setLiked] = useState(false);
-  const image = event.image || event.banner;
+  const image = event.thumbnailImage || event.banner;
 
   return (
     <Link className="ep-event-card" to={`/event/${event.id}`}>
@@ -104,25 +102,20 @@ function EmptyState({ title, text }) {
 
 export default function Events() {
   const navigate = useNavigate();
-  const eventsQuery = useCollection(COLLECTIONS.events, { limit: 120 });
-  const categoriesQuery = useCollection(COLLECTIONS.eventCategories, { limit: 20 });
+  const { events, eventsLoading, categories } = useEventsContext();
   const [query, setQuery] = useState("");
   const [activeSlide, setActiveSlide] = useState(0);
   const [activeFilter, setActiveFilter] = useState("All");
 
   const liveEvents = useMemo(
     () =>
-      eventsQuery.data
-        .map(normalizeEvent)
+      events
         .filter(isVisibleEvent)
         .sort((first, second) => eventSortTime(first) - eventSortTime(second)),
-    [eventsQuery.data]
+    [events]
   );
 
-  const eventCategories = useMemo(
-    () => categoriesQuery.data.map(normalizeCategory),
-    [categoriesQuery.data]
-  );
+  const eventCategories = categories;
 
   const featured = liveEvents.filter((event) => event.featured || event.isFeatured).slice(0, 8);
   const heroEvents = featured.length ? featured : liveEvents.slice(0, 8);
@@ -175,7 +168,7 @@ export default function Events() {
         </div>
       </div>
 
-      {eventsQuery.loading ? (
+      {eventsLoading ? (
         <EmptyState title="Loading events" text="Fetching live events from Firestore." />
       ) : !liveEvents.length ? (
         <EmptyState title="No live events yet" text="Publish events from the Event Dashboard and they will appear here automatically." />
@@ -188,7 +181,7 @@ export default function Events() {
                 <div className="ep-featured__track" style={{ transform: `translateX(-${activeSlide * 302}px)` }}>
                   {heroEvents.map((event, index) => (
                     <div key={event.id} className="ep-featured__slide">
-                      {event.image || event.banner ? <img src={event.image || event.banner} alt={event.title || event.name} /> : `Event ${index + 1}`}
+                      {event.image || event.banner ? <img src={event.thumbnailImage || event.banner} alt={event.title || event.name} /> : `Event ${index + 1}`}
                     </div>
                   ))}
                 </div>
