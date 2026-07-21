@@ -238,29 +238,27 @@ function AttendeesStep({ totalTickets, attendees, updateAttendee, contact, setCo
   );
 }
 
-function RideSetupStep({ joinAs, setJoinAs, bike, setBike, preferences, setPreferences }) {
+function RideSetupStep({ joinAs, setJoinAs, bike, setBike, preferences, setPreferences, selectedTiers }) {
+  // strictly derive joinAs from selected ticket types
+  useEffect(() => {
+    if (selectedTiers && selectedTiers.length > 0) {
+      const isBiker = selectedTiers.some(tier => {
+        const type = (tier.ticketFor || tier.name || '').toLowerCase();
+        return type.includes('rider') || type.includes('driver') || type.includes('biker');
+      });
+      setJoinAs(isBiker ? 'biker' : 'pillion');
+    }
+  }, [selectedTiers, setJoinAs]);
+
   return (
     <section className="eb-panel">
       <div className="eb-panel__head">
         <p className="eb-kicker">Ride setup</p>
-        <h2>Tell us how you are joining</h2>
+        <h2>{joinAs === 'biker' ? 'Vehicle setup' : 'Rider preferences'}</h2>
         <span>This helps Nitroxx plan parking, marshals, and rider grouping.</span>
       </div>
-      <div className="eb-option-grid">
-        {JOIN_OPTIONS.map((option) => (
-          <button
-            type="button"
-            key={option.key}
-            className={`eb-option${joinAs === option.key ? ' is-selected' : ''}`}
-            onClick={() => setJoinAs(option.key)}
-          >
-            <FaMotorcycle />
-            <strong>{option.title}</strong>
-            <span>{option.text}</span>
-          </button>
-        ))}
-      </div>
-      <div className="eb-form-grid eb-form-grid--wide">
+      {joinAs === 'biker' && (
+        <div className="eb-form-grid eb-form-grid--wide">
         <Field label="Bike brand">
           <input value={bike.brand} onChange={(e) => setBike({ ...bike, brand: e.target.value })} placeholder="Royal Enfield, BMW, KTM" />
         </Field>
@@ -293,6 +291,26 @@ function RideSetupStep({ joinAs, setJoinAs, bike, setBike, preferences, setPrefe
           </select>
         </Field>
       </div>
+      )}
+      {joinAs !== 'biker' && (
+        <div className="eb-form-grid eb-form-grid--wide">
+           <Field label="Riding experience (Optional)">
+             <select value={preferences.experience} onChange={(e) => setPreferences({ ...preferences, experience: e.target.value })}>
+               <option>Beginner</option>
+               <option>Intermediate</option>
+               <option>Advanced</option>
+               <option>Professional</option>
+             </select>
+           </Field>
+           <Field label="Preferred pace (Optional)">
+             <select value={preferences.pace} onChange={(e) => setPreferences({ ...preferences, pace: e.target.value })}>
+               <option>Relaxed</option>
+               <option>Balanced</option>
+               <option>Sport</option>
+             </select>
+           </Field>
+        </div>
+      )}
       <Field label="Special request">
         <textarea value={preferences.notes} onChange={(e) => setPreferences({ ...preferences, notes: e.target.value })} placeholder="Accessibility needs, group name, medical note, arrival delay..." />
       </Field>
@@ -497,6 +515,7 @@ export default function EventBooking() {
         description: item.shortDescription || item.description || (perks.length ? perks.join(', ') : 'Event access as specified by the host.'),
         perks,
         exclusions,
+        ticketFor: item.ticketFor || item.type || '',
       };
     });
   }, [event]);
@@ -687,6 +706,7 @@ export default function EventBooking() {
           setBike={setBike}
           preferences={preferences}
           setPreferences={setPreferences}
+          selectedTiers={tiers.filter(t => counts[t.key] > 0)}
         />
       );
     }

@@ -1228,3 +1228,55 @@
 .ed-terms-list li {
   margin-bottom: 12px;
 }
+
+/* ════════════════════════════════════════════════════
+   Category Details
+════════════════════════════════════════════════════ */
+.ed-category-details-section {
+  margin-top: 36px;
+  margin-bottom: 4px;
+}
+.ed-category-heading {
+  margin-top:30px;
+}
+.ed-category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+.ed-category-item {
+  background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 16px;
+  backdrop-filter: blur(10px);
+  transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+}
+.ed-category-item:hover {
+  transform: translateY(-2px);
+  border-color: rgba(80,215,53,0.3);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+.ed-category-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin: 0 0 6px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.ed-category-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-white);
+  margin: 0;
+  word-break: break-word;
+}
+
+@media (max-width: 560px) {
+  .ed-category-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

@@ -24,12 +24,14 @@ export default function EventDetail() {
   const { id } = useParams();
   
   const { events, eventsLoading } = useEventsContext();
+ 
   const eventFromContext = events.find((e) => e.id === id);
   
   const fallbackQuery = useDocument(COLLECTIONS.events, !eventFromContext && !eventsLoading ? id : null);
   
   const event = eventFromContext || (fallbackQuery.data ? normalizeEvent(fallbackQuery.data) : null);
   const loading = eventsLoading || (fallbackQuery.loading && !eventFromContext);
+   console.log(event)
   
   const relatedEvents = events;
   const { user } = useAuth();
@@ -44,8 +46,6 @@ export default function EventDetail() {
     await saveFavoriteEvent({ userId: user.uid, event });
   };
 
-  
-  
   const gallery = event?.images?.length ? event.images : [event?.image || event?.banner].filter(Boolean);
 
   useEffect(() => {
@@ -236,6 +236,21 @@ export default function EventDetail() {
                     })}
                   </div>
                 </section>
+              )}
+
+              {/* ── Category Details ── */}
+              {categoryDetails?.details?.length > 0 && (
+                <>
+                  <p className="ed-section-heading ed-category-heading">{categoryDetails.config?.category} Details</p>
+                  <div className="ed-category-grid">
+                    {categoryDetails.details.map((field) => (
+                      <div className="ed-category-item" key={field.id}>
+                        <p className="ed-category-label">{field.label}</p>
+                        <p className="ed-category-value">{formatCategoryValue(field.value, field)}</p>
+                      </div>
+                    ))}
+                  </div>
+                </>
               )}
 
               {/* ── Things to know ── */}
