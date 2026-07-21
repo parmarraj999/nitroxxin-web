@@ -336,25 +336,26 @@ BAR (heading + search side by side) ===== */
 /* ===== EVENT CARD (vertical rectangle with blur overlay) ===== */
 .ep-events-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 24px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 34px;
   /* margin-top: 310px;ad */
   position: relative;
 }
 
 .ep-event-card {
-  border-radius: 30px;
-  /* overflow: hidden; */
+  border-radius: 24px;
+  overflow: hidden;
   position: relative;
   cursor: pointer;
+  border: 2px dashed rgba(255, 255, 255, 0.15);
 }
 
 /* The image fills the whole card height */
 .ep-event-card__image {
   width: 100%;
   height: 400px;
+  max-height: 280px;
   background: rgba(255, 255, 255, 0.05);
-  border: 2px dashed rgba(255, 255, 255, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;

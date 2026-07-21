@@ -62,7 +62,7 @@ function SlidersIcon() {
 
 function EventCard({ event }) {
   const [liked, setLiked] = useState(false);
-  const image = event.thumbnailImage || event.banner;
+  const image = event.bannerImage || event.banner;
 
   return (
     <Link className="ep-event-card" to={`/event/${event.id}`}>
