@@ -19,6 +19,25 @@ const listFrom = (...values) =>
     return [value];
   }).filter(Boolean);
 
+const ExpandableText = ({ text, maxLength = 150 }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  if (!text) return null;
+  if (text.length <= maxLength) return <p className="ed-itin-text">{text}</p>;
+  return (
+    <div>
+      <p className="ed-itin-text">
+        {isExpanded ? text : `${text.slice(0, maxLength)}...`}
+      </p>
+      <button 
+        onClick={() => setIsExpanded(!isExpanded)}
+        style={{ background: 'transparent', border: 'none', color: 'var(--green)', fontSize: '13px', cursor: 'pointer', padding: 0, marginTop: '4px', fontWeight: '600' }}
+      >
+        {isExpanded ? 'Read Less' : 'Read More'}
+      </button>
+    </div>
+  );
+};
+
 export default function EventDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -200,7 +219,7 @@ export default function EventDetail() {
                 <section className="ed-itinerary-section">
                   <p className="ed-section-heading ed-itin-heading">Itinerary</p>
                   <div className="ed-itin-list">
-                    {(showFullItinerary ? event.itinerary : event.itinerary.slice(0, 3)).map((item, idx) => {
+                    {(showFullItinerary ? event.itinerary : event.itinerary.slice(0, 1)).map((item, idx) => {
                       const type = item.type || (item.text ? "text" : item.url ? "image" : "text");
                       const typeLabel = type === "pdf" ? "PDF" : type === "image" ? "Photo" : "Info";
                       return (
@@ -217,7 +236,7 @@ export default function EventDetail() {
                               </div>
                               {/* Text body */}
                               {(type === "text" || item.text) && item.text && (
-                                <p className="ed-itin-text">{item.text}</p>
+                                <ExpandableText text={item.text} maxLength={120} />
                               )}
                               {/* Image */}
                               {type === "image" && item.url && (
@@ -240,7 +259,7 @@ export default function EventDetail() {
                       );
                     })}
                   </div>
-                  {event.itinerary.length > 3 && (
+                  {event.itinerary.length > 1 && (
                     <div style={{ marginTop: '16px', textAlign: 'center' }}>
                       <button 
                         onClick={() => setShowFullItinerary(!showFullItinerary)}
@@ -259,12 +278,15 @@ export default function EventDetail() {
                 <>
                   <p className="ed-section-heading ed-category-heading">{categoryDetails.config?.category} Details</p>
                   <div className="ed-category-grid">
-                    {categoryDetails.details.map((field) => (
-                      <div className="ed-category-item" key={field.id}>
-                        <p className="ed-category-label">{field.label}</p>
-                        <p className="ed-category-value">{formatCategoryValue(field.value, field)}</p>
-                      </div>
-                    ))}
+                    {categoryDetails.details.map((field) => {
+                      const isLongText = typeof field.value === 'string' && field.value.length > 60;
+                      return (
+                        <div className={`ed-category-item ${isLongText ? 'ed-category-item--wide' : ''}`} key={field.id} style={{ height: 'fit-content' }}>
+                          <p className="ed-category-label">{field.label}</p>
+                          <p className="ed-category-value">{formatCategoryValue(field.value, field)}</p>
+                        </div>
+                      );
+                    })}
                   </div>
                 </>
               )}

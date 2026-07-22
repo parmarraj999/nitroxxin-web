@@ -514,10 +514,22 @@ BAR (heading + search side by side) ===== */
   }
   .ep-featured {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
+    text-align: center;
+  }
+  .ep-featured__slider-btn {
+    display: none;
+  }
+  .ep-featured__info {
+    width: 100%;
+    margin-top: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
   .ep-featured__viewport {
-    width: 100%;
+    width: 302px;
+    max-width: 100%;
   }
   .ep-events-grid {
     grid-template-columns: 1fr;

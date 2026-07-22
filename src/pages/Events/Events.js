@@ -5,9 +5,7 @@ import { useEventsContext } from "../../context/EventsContext";
 import { toDate } from "../../utils/dataFormatters";
 
 const timeFilters = ["All", "Today", "Upcoming", "Free", "Paid", "VIP"];
-const HIDDEN_STATUSES = new Set(["archived", "deleted", "rejected", "removed"]);
-
-const isVisibleEvent = (event) => !HIDDEN_STATUSES.has(String(event.status || "").toLowerCase());
+const isVisibleEvent = (event) => String(event.status || "").toLowerCase() === "published";
 
 const eventSortTime = (event) => {
   const date = toDate(event.date || event.eventDate || event.startsAt || event.startDate || event.createdAt);
@@ -117,8 +115,12 @@ export default function Events() {
 
   const eventCategories = categories;
 
-  const featured = liveEvents.filter((event) => event.featured || event.isFeatured).slice(0, 8);
-  const heroEvents = featured.length ? featured : liveEvents.slice(0, 8);
+  let upcomingEvents = liveEvents.filter((event) => {
+    const startsAt = toDate(event.date || event.eventDate || event.startsAt || event.startDate);
+    return !startsAt || startsAt.setHours(0,0,0,0) >= new Date().setHours(0,0,0,0);
+  });
+  if (upcomingEvents.length === 0) upcomingEvents = liveEvents;
+  const heroEvents = upcomingEvents.slice(0, 5);
   const total = Math.max(heroEvents.length, 1);
   const prev = () => setActiveSlide((previous) => (previous - 1 + total) % total);
   const next = () => setActiveSlide((previous) => (previous + 1) % total);
@@ -143,7 +145,7 @@ export default function Events() {
     });
   }, [activeFilter, liveEvents, query]);
 
-  const currentEvent = heroEvents[activeSlide] || heroEvents[0];
+  const currentEvent = heroEvents[activeSlide] || heroEvents[0] || {};
 
   return (
     <div className="ep-page">

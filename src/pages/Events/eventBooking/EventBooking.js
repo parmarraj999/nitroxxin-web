@@ -41,7 +41,6 @@ const ADD_ONS = [
   { key: 'helmet', title: 'Helmet on rent', price: 250, text: 'Sanitized full-face helmet at the venue.' },
   { key: 'jacket', title: 'Riding jacket', price: 450, text: 'Armored jacket rental for the event window.' },
   { key: 'meal', title: 'Meal pass', price: 399, text: 'Dinner, hydration refill, and energy bar.' },
-  { key: 'insurance', title: 'Ride protection', price: 199, text: 'Basic accidental assistance and priority support.' },
 ];
 
 const makeAttendee = (index = 0) => ({
@@ -415,9 +414,9 @@ function PaymentStep({ payment, setPayment, coupon, setCoupon, summary, event })
           <dl>
             <div><dt>Tickets</dt><dd>{summary.ticketCount}</dd></div>
             <div><dt>Ticket total</dt><dd>{formatMoney(summary.ticketTotal)}</dd></div>
-            <div><dt>Add-ons</dt><dd>{formatMoney(summary.addOnTotal)}</dd></div>
-            <div><dt>Convenience</dt><dd>{formatMoney(summary.fees)}</dd></div>
-            <div><dt>Discount</dt><dd>-{formatMoney(summary.discount)}</dd></div>
+            {summary.addOnTotal > 0 && <div><dt>Add-ons</dt><dd>{formatMoney(summary.addOnTotal)}</dd></div>}
+            {summary.fees > 0 && <div><dt>Convenience</dt><dd>{formatMoney(summary.fees)}</dd></div>}
+            {summary.discount > 0 && <div><dt>Discount</dt><dd>-{formatMoney(summary.discount)}</dd></div>}
             <div className="eb-final-card__total"><dt>Amount payable</dt><dd>{formatMoney(summary.total)}</dd></div>
           </dl>
         </article>
@@ -491,7 +490,7 @@ export default function EventBooking() {
     termsAccepted: false,
     whatsappUpdates: true,
   });
-  const [selectedAddOns, setSelectedAddOns] = useState(['insurance']);
+  const [selectedAddOns, setSelectedAddOns] = useState([]);
   const [payment, setPayment] = useState({ method: 'upi', reference: '' });
   const [coupon, setCoupon] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -553,7 +552,7 @@ export default function EventBooking() {
     const tierTotals = tiers.reduce((next, tier) => ({ ...next, [tier.key]: tier.price * counts[tier.key] }), {});
     const ticketTotal = Object.values(tierTotals).reduce((sum, value) => sum + value, 0);
     const addOnTotal = ADD_ONS.filter((item) => selectedAddOns.includes(item.key)).reduce((sum, item) => sum + item.price, 0);
-    const fees = Math.round((ticketTotal + addOnTotal) * 0.025) + 49;
+    const fees = 0;
     const discount = coupon === 'NITROXX10' ? Math.min(1000, Math.round(ticketTotal * 0.1)) : 0;
     return {
       tierTotals,
