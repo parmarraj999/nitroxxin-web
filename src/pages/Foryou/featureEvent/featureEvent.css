@@ -1,8 +1,9 @@
 .featured-events {
   width: 100%;
-  height: 120vh;
+  height: fit-content;
   padding: 0 2rem;
   margin-top: 5rem;
+  margin-bottom: 15rem;
 }
 
 .section-title {
@@ -22,15 +23,17 @@
     margin: 0 auto;
   display: grid;
   width: 90%;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 30px 30px;
   row-gap: 30px;
 }
 
 .event-card {
   position: relative;
-  width: 280px;
+  /* width: 280px; */
+  max-width: 100%;
   height: 350px;
+  max-height: 280px;
   border-radius: 20px;
   overflow: hidden;
   background: #1e1e1e;

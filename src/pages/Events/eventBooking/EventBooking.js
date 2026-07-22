@@ -159,9 +159,10 @@ function CategoryBookingBrief({ event }) {
   if (!config) return null;
   return <section className="eb-category-brief">
     <div><p className="eb-kicker">Before you book</p><h3>{config.category} details</h3></div>
-    {details.length ? <div className="eb-category-brief__grid">{details.map((field) =>
-      <div key={field.id}><span>{field.label}</span><strong>{formatCategoryValue(field.value, field)}</strong></div>
-    )}</div> : <p>The organizer will share category-specific instructions before the event.</p>}
+    {details.length ? <div className="eb-category-brief__grid">{details.map((field) => {
+      const isLongText = typeof field.value === 'string' && field.value.length > 60;
+      return <div key={field.id} className={isLongText ? 'eb-category-item--wide' : ''}><span>{field.label}</span><strong>{formatCategoryValue(field.value, field)}</strong></div>
+    })}</div> : <p>The organizer will share category-specific instructions before the event.</p>}
   </section>;
 }
 
