@@ -20,7 +20,6 @@ export default function RaceDay() {
         return () => clearInterval(interval);
     }, [total]);
 
-    const heigh = window.innerHeight;
 
     return (
         <div className="slider-wrapper">

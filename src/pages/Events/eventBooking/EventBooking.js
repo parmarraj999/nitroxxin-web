@@ -31,11 +31,11 @@ const STEPS = [
   { id: 5, label: 'Pay', icon: FaCreditCard },
 ];
 
-const JOIN_OPTIONS = [
-  { key: 'biker', title: 'Biker', text: 'I am riding my motorcycle to the event.' },
-  { key: 'pillion', title: 'Pillion', text: 'I need to be paired with an approved rider.' },
-  // { key: 'group', title: 'Group ride', text: 'I am booking for a riding crew.' },
-];
+// const JOIN_OPTIONS = [
+//   { key: 'biker', title: 'Biker', text: 'I am riding my motorcycle to the event.' },
+//   { key: 'pillion', title: 'Pillion', text: 'I need to be paired with an approved rider.' },
+//   // { key: 'group', title: 'Group ride', text: 'I am booking for a riding crew.' },
+// ];
 
 const ADD_ONS = [
   { key: 'helmet', title: 'Helmet on rent', price: 250, text: 'Sanitized full-face helmet at the venue.' },
