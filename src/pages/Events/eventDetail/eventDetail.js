@@ -39,6 +39,11 @@ export default function EventDetail() {
 
   const [lightboxIndex, setLightboxIndex] = useState(null);
   const [showTerms, setShowTerms] = useState(false);
+  const [showFullItinerary, setShowFullItinerary] = useState(false);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const handleFavorite = async () => {
     if (!event) return;
@@ -195,7 +200,7 @@ export default function EventDetail() {
                 <section className="ed-itinerary-section">
                   <p className="ed-section-heading ed-itin-heading">Itinerary</p>
                   <div className="ed-itin-list">
-                    {event.itinerary.map((item, idx) => {
+                    {(showFullItinerary ? event.itinerary : event.itinerary.slice(0, 3)).map((item, idx) => {
                       const type = item.type || (item.text ? "text" : item.url ? "image" : "text");
                       const typeLabel = type === "pdf" ? "PDF" : type === "image" ? "Photo" : "Info";
                       return (
@@ -235,6 +240,17 @@ export default function EventDetail() {
                       );
                     })}
                   </div>
+                  {event.itinerary.length > 3 && (
+                    <div style={{ marginTop: '16px', textAlign: 'center' }}>
+                      <button 
+                        onClick={() => setShowFullItinerary(!showFullItinerary)}
+                        className="ed-book-btn"
+                        style={{ padding: '8px 20px', fontSize: '13px', background: 'rgba(255,255,255,0.1)', color: 'white', boxShadow: 'none' }}
+                      >
+                        {showFullItinerary ? 'Show Less' : `View Full Itinerary (${event.itinerary.length})`}
+                      </button>
+                    </div>
+                  )}
                 </section>
               )}
 
