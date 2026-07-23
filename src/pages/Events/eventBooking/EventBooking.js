@@ -37,11 +37,7 @@ const STEPS = [
 //   // { key: 'group', title: 'Group ride', text: 'I am booking for a riding crew.' },
 // ];
 
-const ADD_ONS = [
-  { key: 'helmet', title: 'Helmet on rent', price: 250, text: 'Sanitized full-face helmet at the venue.' },
-  { key: 'jacket', title: 'Riding jacket', price: 450, text: 'Armored jacket rental for the event window.' },
-  { key: 'meal', title: 'Meal pass', price: 399, text: 'Dinner, hydration refill, and energy bar.' },
-];
+
 
 const makeAttendee = (index = 0) => ({
   name: index === 0 ? '' : '',
@@ -318,7 +314,7 @@ function RideSetupStep({ joinAs, setJoinAs, bike, setBike, preferences, setPrefe
   );
 }
 
-function AddOnsStep({ selectedAddOns, toggleAddOn, preferences, setPreferences }) {
+function AddOnsStep({ selectedAddOns, toggleAddOn, preferences, setPreferences, availableAddOns }) {
   return (
     <section className="eb-panel">
       <div className="eb-panel__head">
@@ -327,7 +323,7 @@ function AddOnsStep({ selectedAddOns, toggleAddOn, preferences, setPreferences }
         <span>Optional extras are charged per booking.</span>
       </div>
       <div className="eb-addons">
-        {ADD_ONS.map((addOn) => (
+        {availableAddOns.length > 0 ? availableAddOns.map((addOn) => (
           <button
             type="button"
             key={addOn.key}
@@ -339,7 +335,7 @@ function AddOnsStep({ selectedAddOns, toggleAddOn, preferences, setPreferences }
             <small>{addOn.text}</small>
             <b>{formatMoney(addOn.price)}</b>
           </button>
-        ))}
+        )) : <p style={{ color: '#66707d', gridColumn: '1/-1' }}>No add-ons available for this event.</p>}
       </div>
       <div className="eb-consents">
         <label>
@@ -371,7 +367,7 @@ function AddOnsStep({ selectedAddOns, toggleAddOn, preferences, setPreferences }
   );
 }
 
-function PaymentStep({ payment, setPayment, coupon, setCoupon, summary, event }) {
+function PaymentStep({ payment, setPayment, couponInput, setCouponInput, appliedCoupon, applyCoupon, removeCoupon, couponError, summary, event }) {
   return (
     <section className="eb-panel">
       <div className="eb-panel__head">
@@ -401,7 +397,20 @@ function PaymentStep({ payment, setPayment, coupon, setCoupon, summary, event })
               <input value={payment.reference} onChange={(e) => setPayment({ ...payment, reference: e.target.value })} placeholder="name@upi or card reference" />
             </Field>
             <Field label="Coupon code">
-              <input value={coupon} onChange={(e) => setCoupon(e.target.value.toUpperCase())} placeholder="NITROXX10" />
+              {appliedCoupon ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ flex: 1, padding: '11px 13px', border: '1px solid #0a8f5a', borderRadius: '8px', background: '#e8f7ee', color: '#0a6f45', fontWeight: 'bold' }}>
+                    {appliedCoupon.code} Applied
+                  </div>
+                  <button type="button" onClick={removeCoupon} className="eb-btn eb-btn--ghost" style={{ minWidth: 'auto', padding: '0 16px' }}>Remove</button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <input style={{ flex: 1, minHeight: '46px' }} value={couponInput} onChange={(e) => setCouponInput(e.target.value.toUpperCase())} placeholder="Enter code" />
+                  <button type="button" onClick={applyCoupon} className="eb-btn eb-btn--primary" style={{ minWidth: 'auto', padding: '0 16px' }}>Apply</button>
+                </div>
+              )}
+              {couponError && <span style={{ color: '#b42318', fontSize: '13px', marginTop: '4px' }}>{couponError}</span>}
             </Field>
           </div>
         </div>
@@ -426,8 +435,8 @@ function PaymentStep({ payment, setPayment, coupon, setCoupon, summary, event })
   );
 }
 
-function BookingSummary({ event, summary, counts, selectedAddOns, currentStep }) {
-  const selected = ADD_ONS.filter((item) => selectedAddOns.includes(item.key));
+function BookingSummary({ event, summary, counts, selectedAddOns, currentStep, availableAddOns }) {
+  const selected = availableAddOns.filter((item) => selectedAddOns.includes(item.key));
   return (
     <aside className="eb-summary">
       <p className="eb-kicker">Order summary</p>
@@ -493,7 +502,9 @@ export default function EventBooking() {
   });
   const [selectedAddOns, setSelectedAddOns] = useState([]);
   const [payment, setPayment] = useState({ method: 'upi', reference: '' });
-  const [coupon, setCoupon] = useState('');
+  const [couponInput, setCouponInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponError, setCouponError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [bookingForSelf, setBookingForSelf] = useState(false);
@@ -518,6 +529,16 @@ export default function EventBooking() {
         ticketFor: item.ticketFor || item.type || '',
       };
     });
+  }, [event]);
+
+  const availableAddOns = useMemo(() => {
+    const addons = event?.addOns || event?.addons || [];
+    return addons.map((item, i) => ({
+      key: item.id || item.key || `addon-${i}`,
+      title: item.title || item.name || item.addonName,
+      price: Number(item.price || item.amount || 0),
+      text: item.text || item.description || ''
+    }));
   }, [event]);
 
   useEffect(() => {
@@ -552,9 +573,22 @@ export default function EventBooking() {
   const summary = useMemo(() => {
     const tierTotals = tiers.reduce((next, tier) => ({ ...next, [tier.key]: tier.price * counts[tier.key] }), {});
     const ticketTotal = Object.values(tierTotals).reduce((sum, value) => sum + value, 0);
-    const addOnTotal = ADD_ONS.filter((item) => selectedAddOns.includes(item.key)).reduce((sum, item) => sum + item.price, 0);
+    const addOnTotal = availableAddOns.filter((item) => selectedAddOns.includes(item.key)).reduce((sum, item) => sum + item.price, 0);
     const fees = 0;
-    const discount = coupon === 'NITROXX10' ? Math.min(1000, Math.round(ticketTotal * 0.1)) : 0;
+    
+    let discount = 0;
+    if (appliedCoupon) {
+      if (appliedCoupon.type === 'percentage' || appliedCoupon.discountType === 'percentage') {
+        const val = Number(appliedCoupon.value || appliedCoupon.discount || 0);
+        discount = Math.round(ticketTotal * (val / 100));
+        if (appliedCoupon.max || appliedCoupon.maxDiscount) {
+          discount = Math.min(Number(appliedCoupon.max || appliedCoupon.maxDiscount), discount);
+        }
+      } else {
+        discount = Number(appliedCoupon.value || appliedCoupon.discount || appliedCoupon.amount || 0);
+      }
+    }
+    
     return {
       tierTotals,
       ticketCount: totalTickets,
@@ -564,7 +598,7 @@ export default function EventBooking() {
       discount,
       total: Math.max(0, ticketTotal + addOnTotal + fees - discount),
     };
-  }, [coupon, counts, selectedAddOns, tiers, totalTickets]);
+  }, [appliedCoupon, counts, selectedAddOns, tiers, totalTickets, availableAddOns]);
 
   if (loading) {
     return (
@@ -601,6 +635,34 @@ export default function EventBooking() {
       next[index] = { ...(next[index] || makeAttendee(index)), [field]: value };
       return next;
     });
+  };
+
+  const applyCoupon = () => {
+    const code = couponInput.trim().toUpperCase();
+    if (!code) return;
+    
+    const eventCoupons = event?.coupons || [];
+    const validCoupon = eventCoupons.find(c => String(c.code || c.couponCode).toUpperCase() === code);
+    
+    if (validCoupon) {
+      if (validCoupon.available !== undefined && Number(validCoupon.available) <= 0) {
+        setCouponError('This coupon is fully claimed.');
+        return;
+      }
+      setAppliedCoupon(validCoupon);
+      setCouponError('');
+    } else if (code === 'NITROXX10') {
+      setAppliedCoupon({ code: 'NITROXX10', type: 'percentage', value: 10, max: 1000 });
+      setCouponError('');
+    } else {
+      setCouponError('Invalid or unavailable coupon code');
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponInput('');
+    setCouponError('');
   };
 
   const toggleAddOn = (key) => {
@@ -658,7 +720,7 @@ export default function EventBooking() {
         joinAs,
         total: summary.total,
         ticketPlan: { counts, tiers: tiers.map(({ key, name, price, availableSeats }) => ({ key, name, price, availableSeats })) },
-        addOns: ADD_ONS.filter((item) => selectedAddOns.includes(item.key)),
+        addOns: availableAddOns.filter((item) => selectedAddOns.includes(item.key)),
         fees: { convenience: summary.fees, discount: summary.discount },
         bookingContact: contact,
         emergencyContact: emergency,
@@ -717,10 +779,11 @@ export default function EventBooking() {
           toggleAddOn={toggleAddOn}
           preferences={preferences}
           setPreferences={setPreferences}
+          availableAddOns={availableAddOns}
         />
       );
     }
-    return <PaymentStep payment={payment} setPayment={setPayment} coupon={coupon} setCoupon={setCoupon} summary={summary} event={event} />;
+    return <PaymentStep payment={payment} setPayment={setPayment} couponInput={couponInput} setCouponInput={setCouponInput} appliedCoupon={appliedCoupon} applyCoupon={applyCoupon} removeCoupon={removeCoupon} couponError={couponError} summary={summary} event={event} />;
   };
 
   return (
@@ -748,6 +811,7 @@ export default function EventBooking() {
             counts={counts}
             selectedAddOns={selectedAddOns}
             currentStep={step}
+            availableAddOns={availableAddOns}
           />
         </div>
       </div>
