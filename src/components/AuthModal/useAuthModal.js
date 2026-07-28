@@ -1,40 +1,34 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-} from "react";
+import { createContext, useCallback, useContext, useMemo } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const AuthModalContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [activeView, setActiveView] = useState("login");
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const openLogin = useCallback(() => {
-    setActiveView("login");
-    setIsAuthOpen(true);
-  }, []);
+    navigate("/login", { state: { from: location } });
+  }, [navigate, location]);
 
   const openSignup = useCallback(() => {
-    setActiveView("signup");
-    setIsAuthOpen(true);
-  }, []);
+    navigate("/signup", { state: { from: location } });
+  }, [navigate, location]);
 
   const closeAuth = useCallback(() => {
-    setIsAuthOpen(false);
+    // If we need to close auth without logging in, we could navigate back.
+    // However, it's safer to just let the user navigate manually or use browser back.
   }, []);
 
   const value = useMemo(
     () => ({
-      isAuthOpen,
-      activeView,
+      isAuthOpen: false,
+      activeView: "login",
       openLogin,
       openSignup,
       closeAuth,
     }),
-    [activeView, closeAuth, isAuthOpen, openLogin, openSignup]
+    [openLogin, openSignup, closeAuth]
   );
 
   return (

@@ -437,6 +437,7 @@ function PaymentStep({ payment, setPayment, couponInput, setCouponInput, applied
 
 function BookingSummary({ event, summary, counts, selectedAddOns, currentStep, availableAddOns }) {
   const selected = availableAddOns.filter((item) => selectedAddOns.includes(item.key));
+  console.log(summary)
   return (
     <aside className="eb-summary">
       <p className="eb-kicker">Order summary</p>

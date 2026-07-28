@@ -20,7 +20,7 @@
 }
 
 .events-grid {
-    margin: 0 auto;
+  margin: 0 auto;
   display: grid;
   width: 90%;
   grid-template-columns: repeat(3, 1fr);
@@ -43,7 +43,7 @@
 }
 
 @media screen and (max-width:654px) {
-  .event-card{
+  .event-card {
     min-height: 420px;
   }
 }
@@ -73,7 +73,7 @@
   /* height: 65px; */
   backdrop-filter: blur(15px);
   background: rgba(6, 6, 6, 0.25);
-  padding: 10px 15px ;
+  padding: 10px 15px;
   border-bottom-left-radius: 20px;
   border-bottom-right-radius: 20px;
 }

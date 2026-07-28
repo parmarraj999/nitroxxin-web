@@ -28,7 +28,7 @@ const ExpandableText = ({ text, maxLength = 150 }) => {
       <p className="ed-itin-text">
         {isExpanded ? text : `${text.slice(0, maxLength)}...`}
       </p>
-      <button 
+      <button
         onClick={() => setIsExpanded(!isExpanded)}
         style={{ background: 'transparent', border: 'none', color: 'var(--green)', fontSize: '13px', cursor: 'pointer', padding: 0, marginTop: '4px', fontWeight: '600' }}
       >
@@ -41,17 +41,17 @@ const ExpandableText = ({ text, maxLength = 150 }) => {
 export default function EventDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
-  
+
   const { events, eventsLoading } = useEventsContext();
- 
+
   const eventFromContext = events.find((e) => e.id === id);
-  
+
   const fallbackQuery = useDocument(COLLECTIONS.events, !eventFromContext && !eventsLoading ? id : null);
-  
+
   const event = eventFromContext || (fallbackQuery.data ? normalizeEvent(fallbackQuery.data) : null);
   const loading = eventsLoading || (fallbackQuery.loading && !eventFromContext);
-   console.log(event)
-  
+  console.log(event)
+
   const relatedEvents = events;
   const { user } = useAuth();
   const { openLogin } = useAuthModal();
@@ -159,24 +159,6 @@ export default function EventDetail() {
     <div className="event-detail-page">
       <div className="event-detail-scroll-container">
         <div className="event-detail-canvas">
-          <div className="event-detail-bg" />
-          {/* <div className="ed-navbar">
-            <div className="ed-navbar-blur" />
-            <button className="ed-back-btn" onClick={() => navigate(-1)} aria-label="Go back">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" color="white" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
-            </button>
-            <button className="ed-bookmark-btn" onClick={handleFavorite} aria-label="Save event">
-              <div className="ed-bookmark-bg" />
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" color="white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z" /></svg>
-            </button>
-          </div> */}
-
-          <p className="ed-event-title">{event.title || event.name}</p>
-          <p className="ed-event-meta">
-            {event.category && <span className="ed-event-category">{event.category}</span>}
-            <span className="ed-event-date">{event.dateTimeText || event.dateText}</span>
-            <span className="ed-event-location"> | {event.location}</span>
-          </p>
 
           {/* ── Gallery ── */}
           <div className="ed-gallery-wrap">
@@ -208,6 +190,13 @@ export default function EventDetail() {
             )}
           </div>
 
+          <p className="ed-event-title">{event.title || event.name}</p>
+          <p className="ed-event-meta">
+            {event.category && <span className="ed-event-category">{event.category}</span>}
+            <span className="ed-event-date">{event.dateTimeText || event.dateText}</span>
+            <span className="ed-event-location"> | {event.location}</span>
+          </p>
+
           <div className="ed-body-row">
             <div className="ed-body-left">
               {/* ── About ── */}
@@ -225,7 +214,7 @@ export default function EventDetail() {
                       return (
                         <div className="ed-itin-item" key={idx}>
                           {/* Step number bubble */}
-                          <div className="ed-itin-num">{idx + 1}</div>
+                          {/* <div className="ed-itin-num">{idx + 1}</div> */}
                           {/* Card */}
                           <div className="ed-itin-content">
                             <div className="ed-itin-card">
@@ -245,13 +234,13 @@ export default function EventDetail() {
                               {/* PDF */}
                               {type === "pdf" && item.url && (
                                 <a href={item.url} target="_blank" rel="noopener noreferrer" className="ed-itin-pdf-link">
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></svg>
                                   <span>Open Document</span>
                                 </a>
                               )}
                               {/* Extra description */}
                               {item.description && type !== "text" && (
-                                <p className="ed-itin-text" style={{marginTop: 8}}>{item.description}</p>
+                                <p className="ed-itin-text" style={{ marginTop: 8 }}>{item.description}</p>
                               )}
                             </div>
                           </div>
@@ -261,7 +250,7 @@ export default function EventDetail() {
                   </div>
                   {event.itinerary.length > 1 && (
                     <div style={{ marginTop: '16px', textAlign: 'center' }}>
-                      <button 
+                      <button
                         onClick={() => setShowFullItinerary(!showFullItinerary)}
                         className="ed-book-btn"
                         style={{ padding: '8px 20px', fontSize: '13px', background: 'rgba(255,255,255,0.1)', color: 'white', boxShadow: 'none' }}
@@ -288,6 +277,26 @@ export default function EventDetail() {
                       );
                     })}
                   </div>
+                </>
+              )}
+
+              {/* ── Trip Support ── */}
+              {event.tripSupport && event.tripSupport.length > 0 && (
+                <>
+                  <p className="ed-section-heading ed-things-heading">Trip Support</p>
+                  <ol className="ed-things-list">
+                    {event.tripSupport.map((item, idx) => <li key={idx}>{item}</li>)}
+                  </ol>
+                </>
+              )}
+
+              {/* ── Mandatory Rider Requirements ── */}
+              {event.mandatoryRequirements && event.mandatoryRequirements.length > 0 && (
+                <>
+                  <p className="ed-section-heading ed-things-heading">Mandatory Rider Requirements</p>
+                  <ol className="ed-things-list">
+                    {event.mandatoryRequirements.map((item, idx) => <li key={idx}>{item}</li>)}
+                  </ol>
                 </>
               )}
 
@@ -318,7 +327,7 @@ export default function EventDetail() {
                     <div className="ed-divider-thin" />
                     <div className="ed-more-row" onClick={() => setShowTerms(true)} style={{ cursor: "pointer" }}>
                       <p className="ed-more-label">Terms & Conditions</p>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{color: "rgba(255,255,255,0.5)"}}><path d="m9 18 6-6-6-6"/></svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "rgba(255,255,255,0.5)" }}><path d="m9 18 6-6-6-6" /></svg>
                     </div>
                   </>
                 )}
@@ -350,7 +359,7 @@ export default function EventDetail() {
                   <>
                     <div className="ed-divider-thin" />
                     <div className="ed-info-row">
-                      <div className="ed-info-icon-box"><svg xmlns="http://www.w3.org/2000/svg" color="white" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+                      <div className="ed-info-icon-box"><svg xmlns="http://www.w3.org/2000/svg" color="white" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg></div>
                       <div className="ed-info-text">
                         <p className="ed-info-label">Registration</p>
                         <p className="ed-info-sub">{event.registrationStart} → {event.registrationEnd}</p>
@@ -362,7 +371,7 @@ export default function EventDetail() {
                 <div className="ed-price-row">
                   <div>
                     <p className="ed-price">{event.ticketPrice ? `₹${event.ticketPrice}` : (event.priceText || "Free")}</p>
-                    {event.ticketType && <p className="ed-info-sub" style={{marginTop: 2}}>{event.ticketType}</p>}
+                    {event.ticketType && <p className="ed-info-sub" style={{ marginTop: 2 }}>{event.ticketType}</p>}
                   </div>
                   <button className="ed-book-btn" onClick={() => navigate(`/event/${event.id}/book`)}>Book Ticket</button>
                 </div>
@@ -376,7 +385,7 @@ export default function EventDetail() {
                     <img src={event.hostPhotoURL || event.organizerPhoto} alt={event.hostName || event.organizerName} className="ed-organizer-avatar" />
                   ) : (
                     <div className="ed-organizer-avatar ed-organizer-avatar--placeholder">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" color="white"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" color="white"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                     </div>
                   )}
                   <div className="ed-organizer-meta">
@@ -390,19 +399,19 @@ export default function EventDetail() {
                 <div className="ed-organizer-contacts">
                   {event.organizerEmail && (
                     <a href={`mailto:${event.organizerEmail}`} className="ed-organizer-contact-row">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /></svg>
                       <span>{event.organizerEmail}</span>
                     </a>
                   )}
                   {event.organizerPhone && (
                     <a href={`tel:${event.organizerPhone}`} className="ed-organizer-contact-row">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13 19.79 19.79 0 0 1 1.61 4.48 2 2 0 0 1 3.59 2.25h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.08 6.08l.88-.88a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 17z"/></svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13 19.79 19.79 0 0 1 1.61 4.48 2 2 0 0 1 3.59 2.25h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.08 6.08l.88-.88a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 17z" /></svg>
                       <span>{event.organizerPhone}</span>
                     </a>
                   )}
                   {event.organizerInstagram && (
                     <a href={`https://instagram.com/${event.organizerInstagram.replace(/^@/, "")}`} target="_blank" rel="noopener noreferrer" className="ed-organizer-contact-row">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" /></svg>
                       <span>@{event.organizerInstagram.replace(/^@/, "")}</span>
                     </a>
                   )}
@@ -461,7 +470,7 @@ export default function EventDetail() {
               <button className="ed-lightbox-close" onClick={closeLightbox} aria-label="Close lightbox">
                 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
-              
+
               {gallery.length > 1 && (
                 <button className="ed-lightbox-arrow ed-lightbox-arrow--left" onClick={prevImage} aria-label="Previous image">
                   <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
@@ -486,8 +495,8 @@ export default function EventDetail() {
                 <div className="ed-lightbox-thumbs-wrap" onClick={(e) => e.stopPropagation()}>
                   <div className="ed-lightbox-thumbs-list">
                     {gallery.map((src, i) => (
-                      <div 
-                        key={i} 
+                      <div
+                        key={i}
                         className={`ed-lightbox-thumb-item ${i === lightboxIndex ? "active" : ""}`}
                         onClick={() => setLightboxIndex(i)}
                       >

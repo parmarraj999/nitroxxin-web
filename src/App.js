@@ -30,15 +30,14 @@ import Wallet from './pages/profile/pages/Wallet';
 import MyOrders from './pages/profile/pages/MyOrders';
 import Support from './pages/profile/pages/Support';
 
-const AuthModal = lazy(() =>
-  import('./components/AuthModal/AuthModal')
-);
+import AuthPage from './pages/Auth/AuthPage';
 
 const Navigation = () => {
   const location = useLocation();
   const isBookingPage = location.pathname.includes('/book');
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/signup';
   
-  if (isBookingPage) return null;
+  if (isBookingPage || isAuthPage) return null;
   
   return (
     <>
@@ -51,10 +50,10 @@ const Navigation = () => {
 function App() {
 
   return (
-    <AuthProvider>
-      <FirebaseAuthProvider>
-        <EventsProvider>
-          <Router>
+    <FirebaseAuthProvider>
+      <EventsProvider>
+        <Router>
+          <AuthProvider>
             <div className="app-container">
             <Navigation />
 
@@ -94,6 +93,8 @@ function App() {
                 path="/accessories/brands"
                 element={<BrandPage />}
               />
+              <Route path="/login" element={<AuthPage isSignupView={false} />} />
+              <Route path="/signup" element={<AuthPage isSignupView={true} />} />
 
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>}>
                 <Route index element={<ProfileOverview />} />
@@ -104,15 +105,11 @@ function App() {
                 <Route path="support" element={<Support />} />
               </Route>
             </Routes>
-
-              <Suspense fallback={null}>
-                <AuthModal />
-              </Suspense>
             </div>
-          </Router>
-        </EventsProvider>
-      </FirebaseAuthProvider>
-    </AuthProvider>
+          </AuthProvider>
+        </Router>
+      </EventsProvider>
+    </FirebaseAuthProvider>
   );
 }
 
