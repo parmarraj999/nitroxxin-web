@@ -5,11 +5,11 @@ export default function RaceDay() {
     const [active, setActive] = useState(0);
 
     const slides = [
-        { id: 1, image:"https://i.pinimg.com/736x/5b/44/85/5b4485c04865377bde41755d40a915f5.jpg" },
-        { id: 2, image:"https://i.pinimg.com/736x/3d/d8/32/3dd832109de044c1656d57f8f3be95a8.jpg" },
-        { id: 3, image:"https://i.pinimg.com/736x/16/a5/96/16a5963ca1bb790fdb9d84b6b9cb3e0e.jpg" },
-        { id: 4, image:"https://i.pinimg.com/736x/93/18/06/9318064ec61c854868362bca42d30774.jpg" },
-        { id: 5, image:"https://i.pinimg.com/736x/50/1b/6a/501b6aa4833b4fed2f0be09f0daf67e7.jpg" },
+        { id: 1, image:"../../../../assets/images/banner-1.jpeg" },
+        { id: 2, image:"../../../../assets/images/banner-2.jpeg" },
+        { id: 3, image:"../../../../assets/images/banner-3.jpeg" },
+        { id: 4, image:"../../../../assets/images/banner-4.jpeg" },
+        { id: 5, image:"../../../../assets/images/banner-5.png" },
     ];
     const total = slides.length;
 

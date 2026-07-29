@@ -1,3 +1,4 @@
+import { useState } from "react";
 import FilterPills from "../components/FilterPills";
 import QrCode from "../components/QrCode";
 import { useAuth } from "../../../context/AuthContext";
@@ -30,18 +31,31 @@ function RideCard({ booking }) {
 
 export default function MyRides() {
   const { user } = useAuth();
+  const [filter, setFilter] = useState("All");
+
   const { data } = useCollection(COLLECTIONS.bookings, {
-    where: [["userId", "==", user?.uid]],
+    where: user?.uid ? [["userId", "==", user.uid]] : [["userId", "==", "NO_USER"]],
     orderBy: [["createdAt", "desc"]],
-    limit: 50,
+  });
+
+  const filteredData = data.filter((booking) => {
+    if (filter === "All") return true;
+    const status = String(booking.status || "").toLowerCase();
+    if (filter === "Complete") return status === "completed";
+    if (filter === "Ongoing") return status === "pending" || status === "confirmed" || status === "approved";
+    return true;
   });
 
   return (
     <section className="profile-screen profile-screen--narrow">
       <h1>My Rides</h1>
-      <FilterPills items={["All", "Complete", "Ongoing"]} />
+      <FilterPills 
+        items={["All", "Complete", "Ongoing"]} 
+        activeItem={filter} 
+        onChange={setFilter} 
+      />
       <div className="ride-list">
-        {data.length ? data.map((booking) => <RideCard key={booking.id} booking={booking} />) : <p>No event bookings yet.</p>}
+        {filteredData.length ? filteredData.map((booking) => <RideCard key={booking.id} booking={booking} />) : <p>No event bookings yet.</p>}
       </div>
     </section>
   );

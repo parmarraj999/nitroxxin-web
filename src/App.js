@@ -36,9 +36,9 @@ const Navigation = () => {
   const location = useLocation();
   const isBookingPage = location.pathname.includes('/book');
   const isAuthPage = location.pathname === '/login' || location.pathname === '/signup';
-  
+
   if (isBookingPage || isAuthPage) return null;
-  
+
   return (
     <>
       <Navbar />
@@ -55,56 +55,56 @@ function App() {
         <Router>
           <AuthProvider>
             <div className="app-container">
-            <Navigation />
+              <Navigation />
 
-            <Routes>
-              <Route path="/" element={<Foryou />} />
+              <Routes>
+                <Route path="/" element={<Foryou />} />
 
-              <Route path="/events" element={<Events />} />
-              <Route path="/events/:id" element={<EventDetail />} />
-              <Route path="/events/:id/book" element={<EventBooking />} />
-              <Route path="/event/:id" element={<EventDetail />} />
-              <Route path="/event/:id/book" element={<EventBooking />} />
+                <Route path="/events" element={<Events />} />
+                <Route path="/events/:id" element={<EventDetail />} />
+                <Route path="/events/:id/book" element={<EventBooking />} />
+                <Route path="/event/:id" element={<EventDetail />} />
+                <Route path="/event/:id/book" element={<EventBooking />} />
 
-              <Route path="/accessories" element={<AccessoriesPage />} />
-              <Route path="/accessories/collection" element={<Collection />} />
-              <Route
-                path="/accessories/collection/:bike"
-                element={<BikeBrandPage />}
-              />
-              <Route
-                path="/accessories/:id"
-                element={<AccessoriesDetail />}
-              />
-              <Route path="/product/:id" element={<AccessoriesDetail />} />
-              <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
-              <Route
-                path="/accessories/products"
-                element={<ProductsPage />}
-              />
-              <Route
-                path="/accessories/products/:id"
-                element={<ProductsPage />}
-              />
-              <Route path="/category/:id" element={<ProductsPage filterType="category" />} />
-              <Route path="/brand/:id" element={<ProductsPage filterType="brand" />} />
-              <Route path="/vendor/:id" element={<ProductsPage filterType="vendor" />} />
-              <Route
-                path="/accessories/brands"
-                element={<BrandPage />}
-              />
-              <Route path="/login" element={<AuthPage isSignupView={false} />} />
-              <Route path="/signup" element={<AuthPage isSignupView={true} />} />
+                <Route path="/accessories" element={<AccessoriesPage />} />
+                <Route path="/accessories/collection" element={<Collection />} />
+                <Route
+                  path="/accessories/collection/:bike"
+                  element={<BikeBrandPage />}
+                />
+                <Route
+                  path="/accessories/:id"
+                  element={<AccessoriesDetail />}
+                />
+                <Route path="/product/:id" element={<AccessoriesDetail />} />
+                <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
+                <Route
+                  path="/accessories/products"
+                  element={<ProductsPage />}
+                />
+                <Route
+                  path="/accessories/products/:id"
+                  element={<ProductsPage />}
+                />
+                <Route path="/category/:id" element={<ProductsPage filterType="category" />} />
+                <Route path="/brand/:id" element={<ProductsPage filterType="brand" />} />
+                <Route path="/vendor/:id" element={<ProductsPage filterType="vendor" />} />
+                <Route
+                  path="/accessories/brands"
+                  element={<BrandPage />}
+                />
+                <Route path="/login" element={<AuthPage isSignupView={false} />} />
+                <Route path="/signup" element={<AuthPage isSignupView={true} />} />
 
-              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>}>
-                <Route index element={<ProfileOverview />} />
-                <Route path="events" element={<MyRides />} />
-                <Route path="wishlist" element={<Wishlist />} />
-                <Route path="accessories" element={<MyOrders />} />
-                <Route path="wallet" element={<Wallet />} />
-                <Route path="support" element={<Support />} />
-              </Route>
-            </Routes>
+                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>}>
+                  <Route index element={<ProfileOverview />} />
+                  <Route path="events" element={<MyRides />} />
+                  <Route path="wishlist" element={<Wishlist />} />
+                  <Route path="accessories" element={<MyOrders />} />
+                  <Route path="wallet" element={<Wallet />} />
+                  <Route path="support" element={<Support />} />
+                </Route>
+              </Routes>
             </div>
           </AuthProvider>
         </Router>
