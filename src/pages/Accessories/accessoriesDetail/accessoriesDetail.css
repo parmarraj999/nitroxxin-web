@@ -12,9 +12,9 @@
 .product-detail-page__info-section {
   display: flex;
   gap: 0;
-  width: min(1270px, 100%);
+  width: 90%;
   margin: 0 auto;
-  padding: 60px clamp(24px, 6vw, 80px);
+  padding: 60px clamp(24px, 2vw, 80px);
   align-items: flex-start;
 }
 
