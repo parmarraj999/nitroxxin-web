@@ -377,7 +377,7 @@ export function ReviewSection({ product }) {
                           <img
                             key={idx}
                             src={source}
-                            alt={`Review photo ${idx + 1}`}
+                            alt={`Review ${idx + 1}`}
                             className="review-card__photo-thumb"
                             onClick={() => setLightboxImg(source)}
                           />
