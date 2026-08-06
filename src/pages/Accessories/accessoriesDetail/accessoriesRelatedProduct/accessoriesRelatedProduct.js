@@ -1,8 +1,6 @@
 import { Link } from "react-router-dom";
 import "./accessoriesRelatedProduct.css";
-import { useCollection } from "../../../../hooks/useFirestore";
-import { COLLECTIONS } from "../../../../services/firebase";
-import { normalizeProduct } from "../../../../services/normalizers";
+import { useAccessoriesContext } from "../../../../context/AccessoriesContext";
 
 function ProductCard({ product }) {
   return (
@@ -29,9 +27,8 @@ function ProductCard({ product }) {
 }
 
 export function RelatedProducts({ product }) {
-  const { data } = useCollection(COLLECTIONS.products, { limit: 16 });
-  const related = data
-    .map(normalizeProduct)
+  const { products } = useAccessoriesContext();
+  const related = products
     .filter((item) => item.id !== product?.id)
     .filter((item) => {
       if (!product) return true;

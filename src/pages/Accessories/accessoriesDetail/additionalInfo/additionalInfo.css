@@ -56,7 +56,7 @@
 .additional-info__key {
   font-family: 'Inter', sans-serif;
   font-weight: 500;
-  font-size: 14px;
+  font-size: 16px;
   color: #666;
   flex-shrink: 0;
   min-width: 130px;
@@ -65,7 +65,7 @@
 .additional-info__value {
   font-family: 'Inter', sans-serif;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 16px;
   color: #111;
   text-align: right;
   word-break: break-word;
@@ -89,4 +89,47 @@
 
 .additional-info__list-item:last-child {
   margin-bottom: 0;
+}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .additional-info {
+    width: 100%;
+    border-radius: 12px;
+  }
+
+  .additional-info__title {
+    font-size: 16px;
+    padding: 16px;
+  }
+
+  .additional-info__row {
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 16px;
+  }
+
+  .additional-info__key {
+    font-size: 13px;
+    min-width: unset;
+    color: #888;
+  }
+
+  .additional-info__value {
+    font-size: 14px;
+    text-align: left;
+  }
+
+  .additional-info__list {
+    padding: 10px 16px 12px 32px;
+  }
+
+  .additional-info__list-item {
+    font-size: 13px;
+  }
+
+  .additional-info__section-title {
+    padding: 8px 16px 4px;
+    font-size: 11px;
+  }
 }

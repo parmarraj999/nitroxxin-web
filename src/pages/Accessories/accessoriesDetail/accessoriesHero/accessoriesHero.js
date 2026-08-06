@@ -141,7 +141,6 @@ export function AccessoriesHero({ product }) {
 
         {/* Price */}
         <div className="product-hero__price-row">
-          {discountPct && <span className="product-hero__discount-badge">-{discountPct}%</span>}
           <span className="product-hero__price-new">
             {product.offerPriceText || product.priceText || product.offerPrice || product.price}
           </span>
@@ -150,6 +149,7 @@ export function AccessoriesHero({ product }) {
               {product.priceText || product.price}
             </span>
           )}
+          {discountPct && <span className="product-hero__discount-badge">-{discountPct}%</span>}
         </div>
 
         {/* Stock status */}

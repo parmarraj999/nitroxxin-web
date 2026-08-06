@@ -8,7 +8,7 @@ import { normalizeBrand } from '../../../services/normalizers';
 
 const BrandItem = ({ id, image, alt }) => {
     return (
-        <Link className="brand-item" to={`/brand/${id}`}>
+        <Link className="brand-item" to={`/accessories/brands/${id}`}>
             <div className="brand-circle">
                 <img src={image} alt={alt} className="brand-logo" />
             </div>

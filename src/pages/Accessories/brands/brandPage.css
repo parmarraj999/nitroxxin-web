@@ -1,0 +1,18 @@
+.brands-page { min-height: 100vh; background: #fff; }
+.brands-page__container { max-width: 1680px; margin: 0 auto; padding: 7rem clamp(20px, 4vw, 64px) 90px; }
+.brands-page__breadcrumb { display: flex; gap: 9px; color: #858585; font-size: 14px; margin-bottom: 36px; }
+.brands-page__breadcrumb a { color: inherit; text-decoration: none; }
+.brands-page__heading { text-align: center; margin-bottom: clamp(42px, 7vw, 100px); }
+.brands-page__heading h1, .brands-page__card h2 { font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif; letter-spacing: .5px; text-transform: uppercase; }
+.brands-page__heading h1 { color: #2b2b2b; font-size: clamp(42px, 5vw, 64px); margin: 0; }
+.brands-page__heading p { color: #777; margin: 12px 0 0; font-size: 16px; }
+.brands-page__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(18px, 2.1vw, 36px); }
+.brands-page__card { color: #303030; text-decoration: none; min-width: 0; }
+.brands-page__image { aspect-ratio: 1 / 1; border-radius: 18px; background: #eeeeee; display: grid; place-items: center; overflow: hidden; transition: transform .22s ease, box-shadow .22s ease; }
+.brands-page__card:hover .brands-page__image { transform: translateY(-6px); box-shadow: 0 16px 30px rgba(0,0,0,.13); }
+.brands-page__image img { width: 100%; height: 100%; object-fit: contain; padding: 18px; }
+.brands-page__image span { color: #aaa; font: 700 clamp(42px, 8vw, 96px)/1 Arial, sans-serif; }
+.brands-page__card h2 { margin: 20px 0 0; font-size: clamp(22px, 2vw, 34px); }
+.brands-page__state { min-height: 300px; display: grid; place-items: center; text-align: center; color: #777; border: 1px solid #eee; border-radius: 16px; padding: 30px; }
+@media (max-width: 900px) { .brands-page__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 480px) { .brands-page__container { padding-top: 6rem; } .brands-page__heading { text-align: left; margin-bottom: 42px; } .brands-page__grid { gap: 14px; } .brands-page__card h2 { margin-top: 12px; } }

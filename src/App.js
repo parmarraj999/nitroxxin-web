@@ -1,6 +1,6 @@
 import './App.css';
 import { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, Outlet } from 'react-router-dom';
 
 import Navbar from './components/layout/navbar/navbar';
 import BottomNav from './components/layout/bottomNav/bottomNav';
@@ -13,14 +13,16 @@ import EventBooking from './pages/Events/eventBooking/EventBooking';
 import AccessoriesPage from './pages/Accessories/AccessoriesPage';
 import AccessoriesDetail from './pages/Accessories/accessoriesDetail/accessoriesDetail';
 import Collection from './pages/Accessories/collection/collection';
-import BikeBrandPage from './pages/Accessories/bikeBrandPage/bikeBrandPage';
 import ProductsPage from './pages/Accessories/productPage/productsPage';
 import BrandPage from './pages/Accessories/brands/brandPage';
+import BikeBrandPage from './pages/Accessories/bikeBrandPage/bikeBrandPage';
+import CategoryPage from './pages/Accessories/categoryPage/categoryPage';
 import CartPage from './pages/Cart/CartPage';
 
 import { AuthProvider } from './components/AuthModal/useAuthModal';
 import { FirebaseAuthProvider } from './context/AuthContext';
 import { EventsProvider } from './context/EventsContext';
+import { AccessoriesProvider } from './context/AccessoriesContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Profile from './pages/profile/profile';
 import ProfileOverview from './pages/profile/pages/ProfileOverview';
@@ -47,6 +49,14 @@ const Navigation = () => {
   );
 };
 
+const AccessoriesLayout = () => {
+  return (
+    <AccessoriesProvider>
+      <Outlet />
+    </AccessoriesProvider>
+  );
+};
+
 function App() {
 
   return (
@@ -66,33 +76,36 @@ function App() {
                 <Route path="/event/:id" element={<EventDetail />} />
                 <Route path="/event/:id/book" element={<EventBooking />} />
 
-                <Route path="/accessories" element={<AccessoriesPage />} />
-                <Route path="/accessories/collection" element={<Collection />} />
-                <Route
-                  path="/accessories/collection/:bike"
-                  element={<BikeBrandPage />}
-                />
-                <Route
-                  path="/accessories/:id"
-                  element={<AccessoriesDetail />}
-                />
-                <Route path="/product/:id" element={<AccessoriesDetail />} />
+                <Route element={<AccessoriesLayout />}>
+                  <Route path="/accessories" element={<AccessoriesPage />} />
+                  <Route path="/accessories/collection" element={<Collection />} />
+                  <Route path="/accessories/collection/:categoryId" element={<Collection />} />
+                  <Route path="/accessories/category/:categoryId" element={<CategoryPage />} />
+                  <Route
+                    path="/accessories/:id"
+                    element={<AccessoriesDetail />}
+                  />
+                  <Route path="/product/:id" element={<AccessoriesDetail />} />
+                  <Route
+                    path="/accessories/products"
+                    element={<ProductsPage />}
+                  />
+                  <Route
+                    path="/accessories/products/:id"
+                    element={<ProductsPage />}
+                  />
+                  <Route path="/category/:id" element={<ProductsPage filterType="category" />} />
+                  <Route path="/brand/:id" element={<ProductsPage filterType="brand" />} />
+                  <Route path="/bike/:id" element={<ProductsPage filterType="bike" />} />
+                  <Route path="/accessories/bike/:id" element={<ProductsPage filterType="bike" />} />
+                  <Route path="/vendor/:id" element={<ProductsPage filterType="vendor" />} />
+                  <Route
+                    path="/accessories/brands"
+                    element={<BrandPage />}
+                  />
+                  <Route path="/accessories/brands/:brandId" element={<BikeBrandPage />} />
+                </Route>
                 <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
-                <Route
-                  path="/accessories/products"
-                  element={<ProductsPage />}
-                />
-                <Route
-                  path="/accessories/products/:id"
-                  element={<ProductsPage />}
-                />
-                <Route path="/category/:id" element={<ProductsPage filterType="category" />} />
-                <Route path="/brand/:id" element={<ProductsPage filterType="brand" />} />
-                <Route path="/vendor/:id" element={<ProductsPage filterType="vendor" />} />
-                <Route
-                  path="/accessories/brands"
-                  element={<BrandPage />}
-                />
                 <Route path="/login" element={<AuthPage isSignupView={false} />} />
                 <Route path="/signup" element={<AuthPage isSignupView={true} />} />
 

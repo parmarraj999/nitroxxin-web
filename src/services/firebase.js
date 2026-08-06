@@ -53,6 +53,7 @@ export const COLLECTIONS = {
   wishlist: "wishlist",
   settings: "settings",
   banners: "banners",
+  bikeBrands: "bike_brands",
   notifications: "notifications",
   reviews: "reviews",
   supportTickets: "supportTickets",

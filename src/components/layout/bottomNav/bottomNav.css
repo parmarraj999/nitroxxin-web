@@ -86,12 +86,13 @@ box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 
 @media screen and (max-width:655px) {
   .bottom-nav-tabs{
-    max-width: 80%;
+    /* max-width: 80%; */
     font-size: 12px;
   }
-  .bottom-nav-location {
+  .location-btn {
     max-width: 20%;
     font-size: 12px;
+    display: none;
   }
   
 }

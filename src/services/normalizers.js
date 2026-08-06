@@ -23,6 +23,8 @@ export const normalizeProduct = (doc) => {
     offerPriceText: formatPrice(offerPrice, data.offerPriceText),
     stock: Number(data.inventory?.stockQuantity ?? data.stock ?? data.quantity ?? 0),
     status: String(data.status || "published").toLowerCase(),
+    averageRating: Number(data.averageRating ?? data.rating ?? 0),
+    reviewCount: Number(data.reviewCount ?? data.reviewsCount ?? data.numReviews ?? 0),
   };
 };
 
@@ -70,5 +72,18 @@ export const normalizeBrand = (doc) => {
     label: data.label || data.name || data.title || "Brand",
     alt: data.alt || data.name || data.title || "Brand",
     image: data.logo || data.logoUrl || firstImage(data),
+  };
+};
+
+export const normalizeSubcategory = (doc) => {
+  const data = doc.data ? doc.data() : doc;
+  return {
+    ...data,
+    id: doc.id || data.id,
+    label: data.label || data.name || data.title || "Sub-category",
+    image: data.image || data.imageUrl || data.thumbnail || null,
+    parentId: data.parentId || data.categoryId || data.parent || null,
+    description: data.description || "",
+    productCount: data.productCount || data.count || null,
   };
 };

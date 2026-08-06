@@ -8,7 +8,7 @@ import { normalizeCategory } from '../../../services/normalizers';
 
 const CategoryItem = ({ id, image, title }) => {
     return (
-        <Link className="category-item" to={`/category/${id}`}>
+        <Link className="category-item" to={`/accessories/collection/${id}`}>
             <div className="category-circle">
                 <img src={image} alt={title} className="category-image" />
                 <p className="category-label">{title}</p>

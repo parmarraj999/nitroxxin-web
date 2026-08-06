@@ -39,7 +39,7 @@ export default function AccessoriesDetail() {
           <FeaturesSection product={product} />
         </div>}
 
-        <ReviewSection />
+        <ReviewSection product={product} />
 
         <RelatedProducts product={product} />
       </main>

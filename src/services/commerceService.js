@@ -331,3 +331,92 @@ export const bookEvent = async ({
 
   return { id: bookingRef.id, bookingId };
 };
+
+export const submitReview = async ({ productId, productName, vendorId, user, profile, rating, title, review, images = [] }) => {
+  if (!user) throw new Error("Please log in to submit a review.");
+  if (!rating || rating < 1 || rating > 5) throw new Error("Please select a rating between 1 and 5 stars.");
+  if (!review || !review.trim()) throw new Error("Please enter your review comments.");
+
+  let isVerified = "no";
+  try {
+    const ordersSnap = await db()
+      .collection(COLLECTIONS.orders)
+      .where("userId", "==", user.uid)
+      .get();
+
+    if (!ordersSnap.empty) {
+      const bought = ordersSnap.docs.some((docSnap) => {
+        const orderData = docSnap.data();
+        const items = orderData.items || orderData.orderItems || [];
+        return items.some((i) => i.productId === productId || i.id === productId);
+      });
+      if (bought) isVerified = "yes";
+    }
+  } catch (err) {
+    console.warn("Could not verify purchase history:", err);
+  }
+
+  const reviewRef = db().collection(COLLECTIONS.reviews).doc();
+  const payload = compact({
+    reviewId: reviewRef.id,
+    productId,
+    productName: productName || "Product",
+    vendorId: vendorId || DEFAULT_VENDOR_ID,
+    userId: user.uid,
+    customer: profile?.fullName || profile?.displayName || user.displayName || user.email?.split("@")[0] || "Verified Customer",
+    customerPhoto: profile?.photoURL || user.photoURL || "",
+    rating: Number(rating),
+    title: title?.trim() || "",
+    review: review.trim(),
+    images: Array.isArray(images) ? images.filter(Boolean) : [],
+    verifiedPurchase: isVerified,
+    status: "published",
+    helpfulCount: 0,
+    reply: "",
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+
+  await reviewRef.set(payload);
+
+  // Recalculate average rating & review count for the product
+  try {
+    const reviewsSnap = await db()
+      .collection(COLLECTIONS.reviews)
+      .where("productId", "==", productId)
+      .get();
+
+    if (!reviewsSnap.empty) {
+      const allReviews = reviewsSnap.docs.map((d) => d.data());
+      const totalCount = allReviews.length;
+      const sumRating = allReviews.reduce((acc, r) => acc + Number(r.rating || 0), 0);
+      const avgRating = Math.round((sumRating / totalCount) * 10) / 10;
+
+      await db().collection(COLLECTIONS.products).doc(productId).set(
+        {
+          averageRating: avgRating,
+          rating: avgRating,
+          reviewCount: totalCount,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
+    }
+  } catch (recalcErr) {
+    console.warn("Could not update product average rating:", recalcErr);
+  }
+
+  return { id: reviewRef.id, ...payload };
+};
+
+export const markReviewHelpful = async (reviewId) => {
+  if (!reviewId) return;
+  await db().collection(COLLECTIONS.reviews).doc(reviewId).set(
+    {
+      helpfulCount: increment(1),
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true }
+  );
+};
+
