@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FaFacebookF, FaGoogle, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaGoogle, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
-import heroImage from '../../assets/ping_pong_hero.png';
 import './AuthPage.css';
 
 const AuthPage = ({ isSignupView = false }) => {

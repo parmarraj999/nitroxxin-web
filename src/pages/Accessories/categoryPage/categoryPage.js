@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import AccessoriesHeader from "../accessoriesNav/AccessoriesHeader";
 import { useDocument } from "../../../hooks/useFirestore";
 import { COLLECTIONS } from "../../../services/firebase";
-import { normalizeCategory, normalizeProduct } from "../../../services/normalizers";
+import { normalizeCategory } from "../../../services/normalizers";
 import { useAccessoriesContext } from "../../../context/AccessoriesContext";
 import "./categoryPage.css";
 

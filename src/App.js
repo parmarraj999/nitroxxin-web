@@ -1,5 +1,4 @@
 import './App.css';
-import { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Outlet } from 'react-router-dom';
 
 import Navbar from './components/layout/navbar/navbar';

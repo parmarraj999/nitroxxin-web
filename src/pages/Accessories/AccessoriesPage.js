@@ -43,14 +43,6 @@ function ChevronRightIcon() {
   );
 }
 
-function ArrowRightIcon() {
-  return (
-    <svg viewBox="0 0 16 14" width="25" fill="none">
-      <path d="M1 7H15M9 1L15 7L9 13" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 function SlidersIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none">
