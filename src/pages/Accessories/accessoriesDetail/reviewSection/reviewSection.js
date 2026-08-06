@@ -373,13 +373,13 @@ export function ReviewSection({ product }) {
                     {/* Photo attachments */}
                     {Array.isArray(rev.images) && rev.images.length > 0 && (
                       <div className="review-card__photos">
-                        {rev.images.map((Src, idx) => (
+                        {rev.images.map((source, idx) => (
                           <img
                             key={idx}
-                            src={Src}
+                            src={source}
                             alt={`Review photo ${idx + 1}`}
                             className="review-card__photo-thumb"
-                            onClick={() => setLightboxImg(Src)}
+                            onClick={() => setLightboxImg(source)}
                           />
                         ))}
                       </div>
