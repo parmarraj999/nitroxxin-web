@@ -1,3 +1,8 @@
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
+
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY || "AIzaSyAG-FLs94I1LRNQ0Gwnyey-Dwjia8NVdn0",
   authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN || "nitroxxin-web.firebaseapp.com",
@@ -7,6 +12,13 @@ const firebaseConfig = {
   appId: process.env.REACT_APP_FIREBASE_APP_ID || "1:640362602132:web:6e6cd1fd13ba1d21545e81",
 };
 
+// Initialize Modular Firebase SDK
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+export const authInstance = getAuth(app);
+export const firestoreInstance = getFirestore(app);
+export const storageInstance = getStorage(app);
+
+// Compat Layer for legacy window.firebase compatibility
 let firebaseApp;
 
 export const getFirebase = () => {

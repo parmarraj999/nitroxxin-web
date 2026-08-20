@@ -1,9 +1,7 @@
-import React from "react";
+import React, { useMemo } from "react";
 import "./featureEvent.css";
 import { Link } from "react-router-dom";
-import { useCollection } from "../../../hooks/useFirestore";
-import { COLLECTIONS } from "../../../services/firebase";
-import { normalizeEvent } from "../../../services/normalizers";
+import { useEventsContext } from "../../../context/EventsContext";
 import { toDate } from "../../../utils/dataFormatters";
 
 const HIDDEN_STATUSES = new Set(["archived", "deleted", "rejected", "removed"]);
@@ -30,12 +28,13 @@ const EventCard = ({ id, image, title, date, price }) => (
 );
 
 const FeaturedEvents = () => {
-  const { data, loading } = useCollection(COLLECTIONS.events, { limit: 24 });
-  const events = data
-    .map(normalizeEvent)
-    .filter(isVisibleEvent)
-    .sort((first, second) => eventSortTime(first) - eventSortTime(second))
-    .slice(0, 8);
+  const { events: cachedEvents, eventsLoading: loading } = useEventsContext();
+  const events = useMemo(() => {
+    return (cachedEvents || [])
+      .filter((e) => isVisibleEvent(e) && e.featuredForYou === true)
+      .sort((first, second) => eventSortTime(first) - eventSortTime(second))
+      .slice(0, 9);
+  }, [cachedEvents]);
 
   if (!loading && !events.length) return null;
 

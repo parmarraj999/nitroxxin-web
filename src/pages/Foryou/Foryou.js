@@ -7,13 +7,18 @@ import FeaturedEvents from './featureEvent/featureEvent'
 import ShopByCategory from './shopByCategory/shopByCategory'
 import ShopByBrands from './shopByBrand/shopByBrand'
 import FAQ from './FAQ/faq'
+import { useDocument } from '../../hooks/useFirestore'
 
 function Foryou() {
+    const { data: layoutData } = useDocument('page_layouts', 'for_you');
+    const banners = layoutData?.banners || [];
+    const categories = layoutData?.categories || [];
+
     return (
         <section className='foryou-section'>
-            <Header />
+            <Header banners={banners} />
             <Marquee />
-            <CategoriesSection />
+            <CategoriesSection categories={categories} />
             <FeaturedEvents />
             <ShopByCategory />
             <ShopByBrands />

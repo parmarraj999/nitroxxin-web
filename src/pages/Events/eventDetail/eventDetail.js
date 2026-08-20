@@ -428,10 +428,10 @@ export default function EventDetail() {
                   <Link className="ep-event-card" to={`/event/${item.id}`} key={item.id}>
                     <div className="ep-event-card__image">
                       {item.image ? <img src={item.image} alt={item.title || item.name} /> : <span>No image</span>}
-                      <div className="ep-event-card__info">
-                        <div className="ep-event-card__name">{item.title || item.name}</div>
-                        <div className="ep-event-card__meta"><span>{item.dateText}</span><span>{item.priceText || "Free"}</span></div>
-                      </div>
+                    </div>
+                    <div className="ep-event-card__info">
+                      <div className="ep-event-card__name">{item.title || item.name}</div>
+                      <div className="ep-event-card__meta"><span>{item.dateText}</span><span>{item.priceText || "Free"}</span></div>
                     </div>
                   </Link>
                 ))}

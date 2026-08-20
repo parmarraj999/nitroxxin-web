@@ -1,23 +1,22 @@
 import React from 'react';
 import './shopByBrand.css';
 import { Link } from 'react-router-dom';
-import { useCollection } from '../../../hooks/useFirestore';
-import { COLLECTIONS } from '../../../services/firebase';
-import { normalizeBrand } from '../../../services/normalizers';
+import { useAccessoriesContext } from '../../../context/AccessoriesContext';
 
 
-const BrandItem = ({ id, image, alt }) => {
+const BrandItem = ({ id, image, imageUrl, alt, name }) => {
+    const imgUrl = imageUrl || image;
     return (
         <Link className="brand-item" to={`/accessories/brands/${id}`}>
             <div className="brand-circle">
-                <img src={image} alt={alt} className="brand-logo" />
+                <img src={imgUrl} alt={alt || name} className="brand-logo" />
             </div>
         </Link>
     );
 };
 
 const ShopByBrands = () => {
-    const { data } = useCollection(COLLECTIONS.brands, { limit: 8 });
+    const { brands: cachedBrands } = useAccessoriesContext();
     const fallbackBrands = [
         { image: 'assets/images/brand-1.png', alt: 'Alpinestars' },
         { image: 'assets/images/brand-2.png', alt: 'Brand' },
@@ -26,7 +25,9 @@ const ShopByBrands = () => {
         { image: 'assets/images/brand-5.png', alt: 'DJI' },
         { image: 'assets/images/brand-6.png', alt: 'Cardo Systems' }
     ];
-    const brands = data.length ? data.map(normalizeBrand) : fallbackBrands;
+    
+    const starredBrands = (cachedBrands || []).filter(b => b.featuredForYou === true);
+    const brands = starredBrands.length > 0 ? starredBrands : fallbackBrands;
 
     return (
         <section className="shop-by-brands">

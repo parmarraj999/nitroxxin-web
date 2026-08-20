@@ -52,13 +52,13 @@ export default function CategoryPage() {
   // Resolve subcategories belonging to this category
   const subcategories = useMemo(() => {
     if (!category) return [];
-    
+
     const parentIdKey = String(category.id).toLowerCase();
     const categoryLabelKey = String(category.label || "").toLowerCase();
-    
+
     // 1. Get from embedded subcategories on the category document (primary source)
     const embedded = category.subcategories || category.subCats || category.subCategories || [];
-    
+
     // 2. Get from subcategories collection (secondary source)
     const filteredFromCollection = allSubcategoriesContext.filter(
       (subcat) => String(subcat.parentId || "").toLowerCase() === parentIdKey
@@ -82,14 +82,14 @@ export default function CategoryPage() {
           const pCat = String(p.category || "").toLowerCase();
           // Match singular/plural and ID
           return (
-            pCat === categoryLabelKey || 
-            pCat === `${categoryLabelKey}s` || 
-            categoryLabelKey === `${pCat}s` || 
+            pCat === categoryLabelKey ||
+            pCat === `${categoryLabelKey}s` ||
+            categoryLabelKey === `${pCat}s` ||
             pCat === parentIdKey
           );
         }
       );
-      
+
       const subcatNames = [...new Set(categoryProducts.map((p) => p.subcategory || p.subCategory).filter(Boolean))];
       source = subcatNames.map((name, index) => {
         const firstProdWithImg = categoryProducts.find((p) => (p.subcategory || p.subCategory) === name && p.image);
@@ -110,7 +110,7 @@ export default function CategoryPage() {
   }, [category, allSubcategoriesContext, allProductsContext, search]);
 
   const banner = category?.bannerUrl || category?.image;
-  
+
   const isCategoryResolved = categories.some(
     (c) => String(c.id).toLowerCase() === String(categoryId).toLowerCase()
   ) || categoryDocQuery.data;

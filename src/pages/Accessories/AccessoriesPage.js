@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import "./AccessoriesPage.css";
 import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
@@ -119,6 +119,22 @@ export default function AccessoriesPage() {
   const bikeParam = searchParams.get("bike") || searchParams.get("search") || "";
   const brandParam = searchParams.get("brand") || "";
   const subcategoryParam = searchParams.get("subcategory") || "";
+
+  const categoryTrackRef = useRef(null);
+  const bikeTrackRef = useRef(null);
+  const brandTrackRef = useRef(null);
+
+  const scrollLeft = (ref) => {
+    if (ref.current) {
+      ref.current.scrollBy({ left: -340, behavior: "smooth" });
+    }
+  };
+
+  const scrollRight = (ref) => {
+    if (ref.current) {
+      ref.current.scrollBy({ left: 340, behavior: "smooth" });
+    }
+  };
 
   const {
     products,
@@ -370,8 +386,8 @@ export default function AccessoriesPage() {
         <div className="ap-section">
           <h2 className="ap-section__title">SHOP BY CATEGORY</h2>
           <div className="ap-category-slider">
-            <button className="ap-category-slider__btn" aria-label="Previous"><ChevronLeftIcon /></button>
-            <div className="ap-category-track">
+            <button className="ap-category-slider__btn" aria-label="Previous" onClick={() => scrollLeft(categoryTrackRef)}><ChevronLeftIcon /></button>
+            <div className="ap-category-track" ref={categoryTrackRef}>
               {displayCategories.map((cat) => (
                 <Link to={`/accessories/category/${cat.id}`} key={cat.id} className="ap-cat-card">
                   <div className="ap-cat-card__image-bg">
@@ -381,7 +397,7 @@ export default function AccessoriesPage() {
                 </Link>
               ))}
             </div>
-            <button className="ap-category-slider__btn" aria-label="Next"><ChevronRightIcon /></button>
+            <button className="ap-category-slider__btn" aria-label="Next" onClick={() => scrollRight(categoryTrackRef)}><ChevronRightIcon /></button>
           </div>
         </div>
       )}
@@ -389,15 +405,19 @@ export default function AccessoriesPage() {
       {displayBikeBrands.length > 0 && (
         <div className="ap-section">
           <h2 className="ap-section__title">SHOP BY BIKE</h2>
-          <div className="ap-bike-grid">
-            {displayBikeBrands.map((bike) => (
-              <Link key={bike.id} to={`/accessories/brands/${bike.id}`} className="ap-bike-card">
-                <div className="ap-bike-card__image-box">
-                  {bike.image ? <img src={bike.image} alt={bike.label} /> : <span>{bike.label}</span>}
-                </div>
-                <span className="ap-bike-card__label">{bike.label}</span>
-              </Link>
-            ))}
+          <div className="ap-category-slider">
+            <button className="ap-category-slider__btn" aria-label="Previous" onClick={() => scrollLeft(bikeTrackRef)}><ChevronLeftIcon /></button>
+            <div className="ap-category-track" ref={bikeTrackRef}>
+              {displayBikeBrands.map((bike) => (
+                <Link key={bike.id} to={`/accessories/brands/${bike.id}`} className="ap-bike-card">
+                  <div className="ap-bike-card__image-box">
+                    {bike.image ? <img src={bike.image} alt={bike.label} /> : <span>{bike.label}</span>}
+                  </div>
+                  <span className="ap-bike-card__label">{bike.label}</span>
+                </Link>
+              ))}
+            </div>
+            <button className="ap-category-slider__btn" aria-label="Next" onClick={() => scrollRight(bikeTrackRef)}><ChevronRightIcon /></button>
           </div>
         </div>
       )}
@@ -405,14 +425,18 @@ export default function AccessoriesPage() {
       {displayBrands.length > 0 && (
         <div className="ap-section">
           <h2 className="ap-section__title">SHOP BY BRAND</h2>
-          <div className="ap-brand-grid">
-            {displayBrands.map((brand) => (
-              <Link to={`/accessories?brand=${encodeURIComponent(brand.label)}`} key={brand.id} className="ap-brand-card">
-                <div className="ap-brand-card__box">
-                  {brand.image ? <img src={brand.image} alt={brand.label} /> : <span>{brand.label}</span>}
-                </div>
-              </Link>
-            ))}
+          <div className="ap-category-slider">
+            <button className="ap-category-slider__btn" aria-label="Previous" onClick={() => scrollLeft(brandTrackRef)}><ChevronLeftIcon /></button>
+            <div className="ap-category-track" ref={brandTrackRef}>
+              {displayBrands.map((brand) => (
+                <Link to={`/accessories?brand=${encodeURIComponent(brand.label)}`} key={brand.id} className="ap-brand-card">
+                  <div className="ap-brand-card__box">
+                    {brand.image ? <img src={brand.image} alt={brand.label} /> : <span>{brand.label}</span>}
+                  </div>
+                </Link>
+              ))}
+            </div>
+            <button className="ap-category-slider__btn" aria-label="Next" onClick={() => scrollRight(brandTrackRef)}><ChevronRightIcon /></button>
           </div>
         </div>
       )}
@@ -554,7 +578,7 @@ export default function AccessoriesPage() {
                 )}
               </div>
             )}
-       
+
             {subcategoryOptions.length > 0 && (
               <div className="ap-filter-group">
                 <div className="ap-filter-group__label">Sub Category</div>

@@ -301,7 +301,7 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 40px;
 }
 
 .ap-category-slider__btn {
@@ -329,7 +329,7 @@
 
 .ap-category-track {
   display: flex;
-  gap: 24px;
+  gap: 40px;
   overflow-x: auto;
   scrollbar-width: none;
   flex: 1;
@@ -343,7 +343,7 @@
 /* Category card */
 .ap-cat-card {
   flex-shrink: 0;
-  width: 302px;
+  width: 280px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -351,8 +351,8 @@
 }
 
 .ap-cat-card__image-bg {
-  width: 302px;
-  height: 379px;
+  width: 250px;
+  height: 300px;
   /* background: #e8e8e8; */
   border-radius: 100px;
   display: flex;
@@ -370,12 +370,13 @@
   font-size: 18px;
   color: #000;
   text-align: center;
+  text-decoration: none;
 }
 
 /* ===== SHOP BY BIKE ===== */
 .ap-bike-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 28px;
 }
 
@@ -386,6 +387,8 @@
   gap: 16px;
   text-decoration: none;
   transition: transform 0.25s ease;
+  flex-shrink: 0;
+  width: 280px;
 }
 
 .ap-bike-card:hover {
@@ -473,8 +476,8 @@
 /* ===== SHOP BY BRAND ===== */
 .ap-brand-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 24px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 50px;
 }
 
 .ap-brand-card {
@@ -482,11 +485,13 @@
   flex-direction: column;
   align-items: center;
   gap: 14px;
+  flex-shrink: 0;
+  width: 250px;
 }
 
 .ap-brand-card__box {
-  width: 300px;
-  /* height: 300px; */
+  width: 100%;
+  aspect-ratio: 1/0;
   /* background: #e8e8e8; */
   display: flex;
   align-items: center;
@@ -494,6 +499,8 @@
   color: #aaa;
   font-size: 14px;
   overflow: hidden;
+  border-radius: 18px;
+  margin : auto 0;
 }
 
 /* ===== SHOP SECTION ===== */
@@ -1104,13 +1111,15 @@
     grid-template-columns: 1fr;
   }
   .ap-cat-card__image-bg,
-  .ap-bike-card__circle,
+  .ap-bike-card__image-box,
   .ap-brand-card__box {
     width: 100%;
     height: 220px;
     border-radius: 40px;
   }
-  .ap-cat-card {
+  .ap-cat-card,
+  .ap-bike-card,
+  .ap-brand-card {
     width: 100%;
   }
   .ap-shop-title {

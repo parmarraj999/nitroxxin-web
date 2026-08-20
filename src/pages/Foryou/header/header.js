@@ -1,21 +1,27 @@
 import React, { useState, useEffect } from "react";
 import "./header.css";
 
-export default function RaceDay() {
+export default function RaceDay({ banners }) {
     const [active, setActive] = useState(0);
 
-    const slides = [
-        { id: 1, image:"../../../../assets/images/banner-1.jpeg" },
-        { id: 2, image:"../../../../assets/images/banner-2.jpeg" },
-        { id: 3, image:"../../../../assets/images/banner-3.jpeg" },
-        { id: 4, image:"../../../../assets/images/banner-4.jpeg" },
-        { id: 5, image:"../../../../assets/images/banner-5.png" },
+    const fallbackBanners = [
+        { id: 1, imageUrl: "../../../../assets/images/banner-1.jpeg", redirectUrl: "" },
+        { id: 2, imageUrl: "../../../../assets/images/banner-2.jpeg", redirectUrl: "" },
+        { id: 3, imageUrl: "../../../../assets/images/banner-3.jpeg", redirectUrl: "" },
+        { id: 4, imageUrl: "../../../../assets/images/banner-4.jpeg", redirectUrl: "" },
+        { id: 5, imageUrl: "../../../../assets/images/banner-5.png", redirectUrl: "" },
     ];
-    const total = slides.length;
+
+    // Filter banners that have at least an imageUrl or image, otherwise fallback
+    const activeBanners = (banners && banners.filter(b => b.imageUrl || b.image).length > 0)
+        ? banners.filter(b => b.imageUrl || b.image)
+        : fallbackBanners;
+
+    const total = activeBanners.length;
 
     useEffect(() => {
         const interval = setInterval(() => {
-            setActive((a) => (a + 1) % total);
+            setActive((a) => (total > 0 ? (a + 1) % total : 0));
         }, 3000);
         return () => clearInterval(interval);
     }, [total]);
@@ -24,7 +30,7 @@ export default function RaceDay() {
     return (
         <div className="slider-wrapper">
             {/* Left Arrow */}
-            <button className="nav-arrow-header left" onClick={() => setActive((a) => (a - 1 + total) % total)}>
+            <button className="nav-arrow-header left" onClick={() => setActive((a) => (total > 0 ? (a - 1 + total) % total : 0))}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-left-icon lucide-chevron-left"><path d="m15 18-6-6 6-6" /></svg>
             </button>
 
@@ -39,21 +45,52 @@ export default function RaceDay() {
                         padding: 0
                     }}
                 >
-                    {slides.map((slide) => (
-                        <img
-                            key={slide.id} 
-                            src={slide.image} 
-                            className="slide-image"
-                            alt={`Slide ${slide.id}`} 
-                        />
-                    ))}
+                    {activeBanners.map((slide, index) => {
+                        const img = (
+                            <img
+                                key={slide.id || index} 
+                                src={slide.imageUrl || slide.image} 
+                                className="slide-image"
+                                alt={`Slide ${index + 1}`} 
+                            />
+                        );
+                        const wrapperStyle = {
+                            display: 'block',
+                            width: '100%',
+                            minWidth: '100%',
+                            flex: '0 0 100%',
+                            padding: 0,
+                            margin: 0
+                        };
+
+                        if (slide.redirectUrl) {
+                            return (
+                                <a
+                                    key={slide.id || index}
+                                    href={slide.redirectUrl}
+                                    style={wrapperStyle}
+                                >
+                                    {img}
+                                </a>
+                            );
+                        }
+
+                        return (
+                            <div
+                                key={slide.id || index}
+                                style={wrapperStyle}
+                            >
+                                {img}
+                            </div>
+                        );
+                    })}
                 </div>
 
                 {/* Dots */}
 
             </div>
             <div className="slide-dots">
-                {slides.map((_, index) => (
+                {activeBanners.map((_, index) => (
                     <button
                         key={index}
                         className={`dot ${index === active ? 'active' : ''}`}
@@ -64,7 +101,7 @@ export default function RaceDay() {
                 ))}
             </div>
             {/* Right Arrow */}
-            <button className="nav-arrow-header right" onClick={() => setActive((a) => (a + 1) % total)}>
+            <button className="nav-arrow-header right" onClick={() => setActive((a) => (total > 0 ? (a + 1) % total : 0))}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
             </button>
 

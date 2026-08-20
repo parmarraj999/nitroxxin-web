@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, useLocation, Outlet } from 'rea
 
 import Navbar from './components/layout/navbar/navbar';
 import BottomNav from './components/layout/bottomNav/bottomNav';
+import Footer from './components/layout/footer/footer';
 
 import Foryou from './pages/Foryou/Foryou';
 import Events from './pages/Events/Events';
@@ -31,14 +32,13 @@ import Wallet from './pages/profile/pages/Wallet';
 import MyOrders from './pages/profile/pages/MyOrders';
 import Support from './pages/profile/pages/Support';
 
-import AuthPage from './pages/Auth/AuthPage';
+import AuthModalContainer from './components/AuthModal/AuthModalContainer';
 
 const Navigation = () => {
   const location = useLocation();
   const isBookingPage = location.pathname.includes('/book');
-  const isAuthPage = location.pathname === '/login' || location.pathname === '/signup';
 
-  if (isBookingPage || isAuthPage) return null;
+  if (isBookingPage) return null;
 
   return (
     <>
@@ -48,12 +48,17 @@ const Navigation = () => {
   );
 };
 
+const FooterWrapper = () => {
+  const location = useLocation();
+  const isBookingPage = location.pathname.includes('/book');
+
+  if (isBookingPage) return null;
+
+  return <Footer />;
+};
+
 const AccessoriesLayout = () => {
-  return (
-    <AccessoriesProvider>
-      <Outlet />
-    </AccessoriesProvider>
-  );
+  return <Outlet />;
 };
 
 function App() {
@@ -61,65 +66,67 @@ function App() {
   return (
     <FirebaseAuthProvider>
       <EventsProvider>
-        <Router>
-          <AuthProvider>
-            <div className="app-container">
-              <Navigation />
+        <AccessoriesProvider>
+          <Router>
+            <AuthProvider>
+              <div className="app-container">
+                <Navigation />
 
-              <Routes>
-                <Route path="/" element={<Foryou />} />
+                <Routes>
+                  <Route path="/" element={<Foryou />} />
 
-                <Route path="/events" element={<Events />} />
-                <Route path="/events/:id" element={<EventDetail />} />
-                <Route path="/events/:id/book" element={<EventBooking />} />
-                <Route path="/event/:id" element={<EventDetail />} />
-                <Route path="/event/:id/book" element={<EventBooking />} />
+                  <Route path="/events" element={<Events />} />
+                  <Route path="/events/:id" element={<EventDetail />} />
+                  <Route path="/events/:id/book" element={<EventBooking />} />
+                  <Route path="/event/:id" element={<EventDetail />} />
+                  <Route path="/event/:id/book" element={<EventBooking />} />
 
-                <Route element={<AccessoriesLayout />}>
-                  <Route path="/accessories" element={<AccessoriesPage />} />
-                  <Route path="/accessories/collection" element={<Collection />} />
-                  <Route path="/accessories/collection/:categoryId" element={<Collection />} />
-                  <Route path="/accessories/category/:categoryId" element={<CategoryPage />} />
-                  <Route
-                    path="/accessories/:id"
-                    element={<AccessoriesDetail />}
-                  />
-                  <Route path="/product/:id" element={<AccessoriesDetail />} />
-                  <Route
-                    path="/accessories/products"
-                    element={<ProductsPage />}
-                  />
-                  <Route
-                    path="/accessories/products/:id"
-                    element={<ProductsPage />}
-                  />
-                  <Route path="/category/:id" element={<ProductsPage filterType="category" />} />
-                  <Route path="/brand/:id" element={<ProductsPage filterType="brand" />} />
-                  <Route path="/bike/:id" element={<ProductsPage filterType="bike" />} />
-                  <Route path="/accessories/bike/:id" element={<ProductsPage filterType="bike" />} />
-                  <Route path="/vendor/:id" element={<ProductsPage filterType="vendor" />} />
-                  <Route
-                    path="/accessories/brands"
-                    element={<BrandPage />}
-                  />
-                  <Route path="/accessories/brands/:brandId" element={<BikeBrandPage />} />
-                </Route>
-                <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
-                <Route path="/login" element={<AuthPage isSignupView={false} />} />
-                <Route path="/signup" element={<AuthPage isSignupView={true} />} />
+                  <Route element={<AccessoriesLayout />}>
+                    <Route path="/accessories" element={<AccessoriesPage />} />
+                    <Route path="/accessories/collection" element={<Collection />} />
+                    <Route path="/accessories/collection/:categoryId" element={<Collection />} />
+                    <Route path="/accessories/category/:categoryId" element={<CategoryPage />} />
+                    <Route
+                      path="/accessories/:id"
+                      element={<AccessoriesDetail />}
+                    />
+                    <Route path="/product/:id" element={<AccessoriesDetail />} />
+                    <Route
+                      path="/accessories/products"
+                      element={<ProductsPage />}
+                    />
+                    <Route
+                      path="/accessories/products/:id"
+                      element={<ProductsPage />}
+                    />
+                    <Route path="/category/:id" element={<ProductsPage filterType="category" />} />
+                    <Route path="/brand/:id" element={<ProductsPage filterType="brand" />} />
+                    <Route path="/bike/:id" element={<ProductsPage filterType="bike" />} />
+                    <Route path="/accessories/bike/:id" element={<ProductsPage filterType="bike" />} />
+                    <Route path="/vendor/:id" element={<ProductsPage filterType="vendor" />} />
+                    <Route
+                      path="/accessories/brands"
+                      element={<BrandPage />}
+                    />
+                    <Route path="/accessories/brands/:brandId" element={<BikeBrandPage />} />
+                  </Route>
+                  <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
 
-                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>}>
-                  <Route index element={<ProfileOverview />} />
-                  <Route path="events" element={<MyRides />} />
-                  <Route path="wishlist" element={<Wishlist />} />
-                  <Route path="accessories" element={<MyOrders />} />
-                  <Route path="wallet" element={<Wallet />} />
-                  <Route path="support" element={<Support />} />
-                </Route>
-              </Routes>
-            </div>
-          </AuthProvider>
-        </Router>
+                  <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>}>
+                    <Route index element={<ProfileOverview />} />
+                    <Route path="events" element={<MyRides />} />
+                    <Route path="wishlist" element={<Wishlist />} />
+                    <Route path="accessories" element={<MyOrders />} />
+                    <Route path="wallet" element={<Wallet />} />
+                    <Route path="support" element={<Support />} />
+                  </Route>
+                </Routes>
+                <FooterWrapper />
+                <AuthModalContainer />
+              </div>
+            </AuthProvider>
+          </Router>
+        </AccessoriesProvider>
       </EventsProvider>
     </FirebaseAuthProvider>
   );

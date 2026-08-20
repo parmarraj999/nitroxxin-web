@@ -1,0 +1,299 @@
+.location-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 2500;
+    animation: fadeIn 0.25s ease-out;
+}
+
+.location-modal-container {
+    background: rgba(18, 18, 20, 0.82);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 28px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+    padding: 40px;
+    width: 100%;
+    max-width: 820px;
+    position: relative;
+    box-sizing: border-box;
+    font-family: inherit;
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Close Button */
+.location-modal-close {
+    position: absolute;
+    top: 28px;
+    right: 28px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    border: none;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.location-modal-close:hover {
+    background: rgba(255, 255, 255, 0.16);
+    transform: scale(1.06);
+    color: #ff1f1f;
+}
+
+.location-modal-close svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Title */
+.location-modal-title {
+    text-align: center;
+    color: #ffffff;
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin: 0 0 36px 0;
+    letter-spacing: -0.01em;
+}
+
+/* Search Row */
+.location-modal-search-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+.location-modal-search-form {
+    flex: 1;
+}
+
+.search-input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.search-input-wrapper .search-icon {
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #8a8a8e;
+    pointer-events: none;
+}
+
+.search-input {
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.06);
+    padding: 14px 20px 14px 50px;
+    color: #ffffff;
+    font-size: 0.95rem;
+    font-family: inherit;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.32);
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.04);
+}
+
+.search-input::placeholder {
+    color: #8a8a8e;
+    font-weight: 500;
+}
+
+/* Auto Detect Button */
+.auto-detect-btn {
+    border-radius: 30px;
+    padding: 13px 26px;
+    border: 1px solid #ff1f1f;
+    background: rgba(255, 31, 31, 0.04);
+    color: #ff1f1f;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    white-space: nowrap;
+}
+
+.auto-detect-btn:hover:not(:disabled) {
+    background: rgba(255, 31, 31, 0.12);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(255, 31, 31, 0.18);
+}
+
+.auto-detect-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.crosshair-icon {
+    stroke: #ff1f1f;
+}
+
+.auto-detect-btn.detecting .crosshair-icon {
+    animation: spin 1.5s linear infinite;
+}
+
+/* Section Title */
+.location-modal-section-title {
+    color: #8e8e93;
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 20px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding-bottom: 8px;
+}
+
+/* Cities Grid */
+.location-modal-cities-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px 10px;
+    max-height: 280px;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+.location-modal-cities-grid::-webkit-scrollbar {
+    width: 6px;
+}
+
+.location-modal-cities-grid::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.location-modal-cities-grid::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 3px;
+}
+
+.location-modal-cities-grid::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.24);
+}
+
+.city-item {
+    background: none;
+    border: none;
+    color: #8e8e93;
+    font-size: 0.95rem;
+    font-family: inherit;
+    text-align: left;
+    padding: 6px 0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.city-item:hover {
+    color: #ffffff;
+    transform: translateX(3px);
+}
+
+.city-item.active-city {
+    color: #ff1f1f;
+    font-weight: 700;
+}
+
+.custom-search-item {
+    color: #ff1f1f;
+    font-style: italic;
+    grid-column: 1 / -1;
+}
+
+.no-cities-msg {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: #636366;
+    padding: 24px;
+    font-style: italic;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Responsiveness */
+@media (max-width: 768px) {
+    .location-modal-container {
+        padding: 30px;
+        border-radius: 20px;
+    }
+    
+    .location-modal-cities-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .location-modal-title {
+        font-size: 1.4rem;
+        margin-bottom: 28px;
+    }
+}
+
+@media (max-width: 576px) {
+    .location-modal-search-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+    
+    .auto-detect-btn {
+        justify-content: center;
+    }
+
+    .location-modal-cities-grid {
+        grid-template-columns: repeat(2, 1fr);
+        max-height: 240px;
+    }
+    
+    .location-modal-close {
+        top: 20px;
+        right: 20px;
+    }
+}

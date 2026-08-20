@@ -6,6 +6,7 @@ export default function ProfileOverview() {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({
     fullName: profile?.fullName || profile?.displayName || user?.displayName || "",
+    username: profile?.username || "",
     phone: profile?.phone || "",
     email: profile?.email || user?.email || "",
     password: "",
@@ -15,15 +16,25 @@ export default function ProfileOverview() {
     setForm((prev) => ({
       ...prev,
       fullName: profile?.fullName || profile?.displayName || user?.displayName || "",
+      username: profile?.username || "",
       phone: profile?.phone || "",
       email: profile?.email || user?.email || "",
     }));
   }, [profile, user]);
 
   const save = async () => {
-    await updateProfile({ fullName: form.fullName, displayName: form.fullName, phone: form.phone });
-    if (form.password) await changePassword(form.password);
-    setEditing(false);
+    try {
+      await updateProfile({
+        fullName: form.fullName,
+        displayName: form.fullName,
+        username: form.username,
+        phone: form.phone,
+      });
+      if (form.password) await changePassword(form.password);
+      setEditing(false);
+    } catch (err) {
+      alert(err.message);
+    }
   };
 
   return (
@@ -42,15 +53,21 @@ export default function ProfileOverview() {
         </div>
         <div className="profile-card__body">
           {editing ? (
-            <>
-              <input value={form.fullName} onChange={(event) => setForm((prev) => ({ ...prev, fullName: event.target.value }))} />
-              <input value={form.phone} onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))} />
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <input placeholder="Full Name" value={form.fullName} onChange={(event) => setForm((prev) => ({ ...prev, fullName: event.target.value }))} />
+              <input placeholder="Username" value={form.username} onChange={(event) => setForm((prev) => ({ ...prev, username: event.target.value }))} />
+              <input placeholder="Phone" value={form.phone} onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))} />
               <input value={form.email} readOnly />
               <input type="password" placeholder="New password" value={form.password} onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))} />
-            </>
+            </div>
           ) : (
             <>
               <h2>{profile?.fullName || profile?.displayName || user?.displayName || "User"}</h2>
+              {profile?.username && (
+                <p className="profile-username" style={{ color: "#888", fontWeight: "500", fontSize: "13px", marginTop: "2px" }}>
+                  @{profile.username}
+                </p>
+              )}
               <p>{profile?.phone || "No phone added"}</p>
               <p>{profile?.email || user?.email}</p>
               <span>Joined {profile?.createdAt?.toDate ? profile.createdAt.toDate().toLocaleDateString("en-IN") : ""}</span>

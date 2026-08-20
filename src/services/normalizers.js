@@ -31,7 +31,34 @@ export const normalizeProduct = (doc) => {
 export const normalizeEvent = (doc) => {
   const data = doc.data ? doc.data() : doc;
   const id = doc.id || data.id;
-  const price = data.price ?? data.ticketPrice ?? data.startingPrice;
+
+  const source = data.ticketPackages || data.packages || data.ticketTiers || data.tickets || data.pricing?.packages || [];
+  const packages = Array.isArray(source) ? source : Object.entries(source || {}).map(([key, val]) => ({ id: key, ...val }));
+
+  let price = data.price ?? data.ticketPrice ?? data.startingPrice;
+  let ticketPrice = data.ticketPrice;
+  let hasPackages = false;
+
+  if (packages.length > 0) {
+    const packagePrices = packages
+      .map(p => Number(p.price ?? p.amount))
+      .filter(p => !isNaN(p) && isFinite(p));
+    if (packagePrices.length > 0) {
+      price = Math.min(...packagePrices);
+      ticketPrice = null; // force fallback to priceText on detail page
+      hasPackages = true;
+    }
+  }
+
+  const formattedPrice = formatPrice(price, data.priceText);
+  let priceText = formattedPrice;
+  if (price !== undefined && price !== null) {
+    if (price === 0) {
+      priceText = "Free";
+    } else if (hasPackages) {
+      priceText = `Starts from ${formattedPrice}`;
+    }
+  }
 
   return {
     ...data,
@@ -46,7 +73,8 @@ export const normalizeEvent = (doc) => {
     dateTimeText: data.dateTimeText || formatDateTime(data.date || data.eventDate || data.startsAt || data.startDate),
     location: data.locationName || data.location || data.address || "",
     price,
-    priceText: formatPrice(price, data.priceText),
+    ticketPrice,
+    priceText,
     category: data.categoryName || data.category || data.categoryId || "",
     hostId: data.hostId || data.organizerId || "",
     status: String(data.status || "Published"),

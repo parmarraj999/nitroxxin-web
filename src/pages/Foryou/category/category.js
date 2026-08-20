@@ -1,7 +1,7 @@
 import React from "react";
 import "./category.css";
 
-const categories = [
+const fallbackCategories = [
   {
     title: "Night Ride",
     image: "https://i.pinimg.com/736x/02/97/ad/0297ad76a7f6eb54618803075821b4d4.jpg",
@@ -36,8 +36,10 @@ const categories = [
   },
 ];
 
-const CategoriesSection = () => {
+const CategoriesSection = ({ categories }) => {
   const sliderRef = React.useRef(null);
+
+  const activeCategories = (categories && categories.length > 0) ? categories : fallbackCategories;
 
   const slideLeft = () => {
     if (sliderRef.current) {
@@ -56,18 +58,39 @@ const CategoriesSection = () => {
       <h2 className="categories-title">CATEGORIES</h2>
 
       <div className="categories-wrapper" ref={sliderRef}>
-        {categories.map((item, index) => (
-          <div
-            className="category-card"
-            key={index}
-            style={{
-              backgroundImage: `url(${item.image})`,
-            }}
-          >
-            <div className="overlay"></div>
-            <h3>{item.title}</h3>
-          </div>
-        ))}
+        {activeCategories.map((item, index) => {
+          const cardStyle = {
+            backgroundImage: `url(${item.imageUrl || item.image})`,
+            cursor: item.redirectUrl ? 'pointer' : 'default',
+            textDecoration: 'none',
+            color: 'inherit'
+          };
+
+          if (item.redirectUrl) {
+            return (
+              <a
+                className="category-card"
+                key={index}
+                href={item.redirectUrl}
+                style={cardStyle}
+              >
+                <div className="overlay"></div>
+                <h3>{item.title}</h3>
+              </a>
+            );
+          }
+
+          return (
+            <div
+              className="category-card"
+              key={index}
+              style={cardStyle}
+            >
+              <div className="overlay"></div>
+              <h3>{item.title}</h3>
+            </div>
+          );
+        })}
       </div>
 
       <div className="category-slider-btn">

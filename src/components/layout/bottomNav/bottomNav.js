@@ -2,21 +2,27 @@
 import React, { useEffect, useState } from 'react';
 import './bottomNav.css';
 import { useLocation, useNavigate } from 'react-router-dom';
+import LocationModal from './LocationModal';
 
 export default function BottomNav() {
-    const [city, setCity] = useState("");
+    const [city, setCity] = useState(localStorage.getItem('selectedCity') || "");
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isDetecting, setIsDetecting] = useState(false);
     const {pathname} = useLocation();
 
     useEffect(() => {
-        getUserCity();
+        if (!city) {
+            getUserCity();
+        }
     }, []);
 
     const navigate = useNavigate();
 
     const getUserCity = async () => {
-
+        setIsDetecting(true);
         if (!navigator.geolocation) {
             setCity("Location unavailable");
+            setIsDetecting(false);
             return;
         }
 
@@ -38,16 +44,32 @@ export default function BottomNav() {
                         data.address.state_district ||
                         "";
 
-                    setCity(cityName);
-
+                    if (cityName) {
+                        setCity(cityName);
+                        localStorage.setItem('selectedCity', cityName);
+                        window.dispatchEvent(new Event('locationChanged'));
+                    } else {
+                        setCity("Unknown");
+                    }
                 } catch (error) {
-                    setCity("No");
+                    setCity("Location Error");
+                } finally {
+                    setIsDetecting(false);
+                    setIsModalOpen(false);
                 }
             },
             () => {
-                setCity("No");
+                setCity("Permission Denied");
+                setIsDetecting(false);
             }
         );
+    };
+
+    const handleSelectCity = (selectedCity) => {
+        setCity(selectedCity);
+        localStorage.setItem('selectedCity', selectedCity);
+        window.dispatchEvent(new Event('locationChanged'));
+        setIsModalOpen(false);
     };
 
     return (
@@ -85,12 +107,21 @@ export default function BottomNav() {
             </div>
 
             {/* <div className="bottom-nav-location"> */}
-            <button className="location-btn">
+            <button className="location-btn" onClick={() => setIsModalOpen(true)}>
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>
                 <span>{city || 'Loading...'}</span>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6" /></svg>
             </button>
             {/* </div> */}
+
+            <LocationModal 
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSelectCity={handleSelectCity}
+                currentCity={city}
+                onAutoDetect={getUserCity}
+                isDetecting={isDetecting}
+            />
         </div>
     )
 }
