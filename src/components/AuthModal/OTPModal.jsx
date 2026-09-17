@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { getOrCreateRecaptchaVerifier, formatAuthError } from "../../services/authService";
 import "./OTPModal.css";
 
 export default function OTPModal() {
@@ -24,59 +25,58 @@ export default function OTPModal() {
     }
   }, []);
 
-  // Countdown timer for resending OTP
+  // Countdown timer for resend OTP
   useEffect(() => {
+    let interval = null;
     if (timer > 0) {
-      const interval = setInterval(() => {
+      interval = setInterval(() => {
         setTimer((prev) => prev - 1);
       }, 1000);
-      return () => clearInterval(interval);
     }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [timer]);
 
   const handleChange = (value, index) => {
-    if (isNaN(value)) return;
+    if (!/^\d*$/.test(value)) return; // Only allow digits
 
-    // Only take the last character typed
-    const val = value.slice(-1);
     const newOtp = [...otp];
-    newOtp[index] = val;
+    // If user typed/pasted a single digit
+    newOtp[index] = value.slice(-1);
     setOtp(newOtp);
 
-    // Auto-focus next input field if typing a character
-    if (val !== "" && index < 5 && inputRefs.current[index + 1]) {
+    // Auto-advance to next input if filled
+    if (value && index < 5 && inputRefs.current[index + 1]) {
       inputRefs.current[index + 1].focus();
     }
 
-    // Auto-submit OTP if all 6 boxes are filled
-    const fullOtp = newOtp.join("");
-    if (fullOtp.length === 6) {
-      handleVerification(fullOtp);
+    // Auto-submit if all 6 digits are entered
+    const completeCode = newOtp.join("");
+    if (completeCode.length === 6) {
+      handleVerification(completeCode);
     }
   };
 
   const handleKeyDown = (e, index) => {
-    // Navigate to previous input box on backspace
-    if (e.key === "Backspace") {
-      if (!otp[index] && index > 0 && inputRefs.current[index - 1]) {
-        inputRefs.current[index - 1].focus();
-      }
+    // Handle backspace navigation
+    if (e.key === "Backspace" && !otp[index] && index > 0 && inputRefs.current[index - 1]) {
+      inputRefs.current[index - 1].focus();
     }
   };
 
   const handlePaste = (e) => {
     e.preventDefault();
-    const pastedData = e.clipboardData.getData("text").trim();
-    if (pastedData.length === 6 && /^\d+$/.test(pastedData)) {
-      const otpArray = pastedData.split("");
-      setOtp(otpArray);
+    const pasteData = e.clipboardData.getData("text").trim();
+    if (/^\d{6}$/.test(pasteData)) {
+      const digits = pasteData.split("");
+      setOtp(digits);
       inputRefs.current[5]?.focus();
-      handleVerification(pastedData);
+      handleVerification(pasteData);
     }
   };
 
   const handleVerification = async (code) => {
-    setModalError(null);
     try {
       await confirmOTP(code);
     } catch (err) {
@@ -92,14 +92,16 @@ export default function OTPModal() {
     setModalError(null);
     setOtp(new Array(6).fill(""));
     try {
-      if (!window.recaptchaVerifier) {
+      const verifier = getOrCreateRecaptchaVerifier("recaptcha-container");
+      if (!verifier) {
         throw new Error("reCAPTCHA verifier is missing. Please restart.");
       }
-      await triggerOTP(phoneNumber, window.recaptchaVerifier);
+      await triggerOTP(phoneNumber, verifier);
       setTimer(30);
       inputRefs.current[0]?.focus();
     } catch (err) {
       console.error("Resend OTP error:", err);
+      setModalError(formatAuthError(err));
     }
   };
 

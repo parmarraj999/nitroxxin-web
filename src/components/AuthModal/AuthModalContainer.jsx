@@ -69,9 +69,6 @@ export default function AuthModalContainer() {
                 {activeView === "profileSetup" && <ProfileSetupModal />}
               </div>
             </div>
-
-            {/* Hidden container for Firebase Invisible Recaptcha */}
-            <div id="recaptcha-container"></div>
           </motion.div>
         </motion.div>
       )}

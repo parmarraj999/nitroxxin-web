@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
-import { RecaptchaVerifier } from "firebase/auth";
-import { authInstance } from "../../services/firebase";
+import { getOrCreateRecaptchaVerifier, resetRecaptchaVerifier, formatAuthError } from "../../services/authService";
 import "./LoginModal.css";
 
 export default function LoginModal() {
@@ -28,26 +27,19 @@ export default function LoginModal() {
     const fullPhoneNumber = `+91${trimmedPhone}`;
 
     try {
-      if (!window.recaptchaVerifier) {
-        window.recaptchaVerifier = new RecaptchaVerifier(authInstance, "recaptcha-container", {
-          size: "invisible",
-          callback: () => {
-            // reCAPTCHA solved
-          },
-          "expired-callback": () => {
-            setModalError("reCAPTCHA expired. Please request OTP again.");
-          }
-        });
+      const verifier = getOrCreateRecaptchaVerifier("recaptcha-container", () => {
+        setModalError("reCAPTCHA expired. Please request OTP again.");
+      });
+
+      if (!verifier) {
+        throw new Error("Unable to initialize verification service. Please reload the page.");
       }
-      await triggerOTP(fullPhoneNumber, window.recaptchaVerifier);
+
+      await triggerOTP(fullPhoneNumber, verifier);
     } catch (err) {
       console.error("Failed to send OTP:", err);
-      setModalError(err.message || "Failed to send verification code. Please try again.");
-      // If error occurs, reCAPTCHA might need to be reset
-      if (window.recaptchaVerifier) {
-        window.recaptchaVerifier.clear?.();
-        window.recaptchaVerifier = null;
-      }
+      resetRecaptchaVerifier("recaptcha-container");
+      setModalError(formatAuthError(err));
     }
   };
 

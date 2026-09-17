@@ -18,6 +18,19 @@ export const authInstance = getAuth(app);
 export const firestoreInstance = getFirestore(app);
 export const storageInstance = getStorage(app);
 
+// Explicitly configure client agent reCAPTCHA configuration.
+// This prevents Firebase Auth from requesting unconfigured reCAPTCHA Enterprise config
+// and throwing the warning: "Failed to initialize reCAPTCHA Enterprise config. Triggering the reCAPTCHA v2 verification."
+if (authInstance) {
+  authInstance._agentRecaptchaConfig = {
+    siteKey: "",
+    recaptchaEnforcementState: [],
+    getProviderEnforcementState: () => "OFF",
+    isProviderEnabled: () => false,
+    isAnyProviderEnabled: () => false,
+  };
+}
+
 // Compat Layer for legacy window.firebase compatibility
 let firebaseApp;
 

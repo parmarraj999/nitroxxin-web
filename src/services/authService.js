@@ -1,5 +1,91 @@
 import { authInstance } from "./firebase";
-import { signInWithPhoneNumber, signOut, onAuthStateChanged } from "firebase/auth";
+import { signInWithPhoneNumber, signOut, onAuthStateChanged, RecaptchaVerifier } from "firebase/auth";
+
+/**
+ * Initializes or retrieves the singleton RecaptchaVerifier instance.
+ * @param {string} containerId - Element ID for the reCAPTCHA container.
+ * @param {function} [onExpired] - Optional callback when reCAPTCHA token expires.
+ * @returns {RecaptchaVerifier|null}
+ */
+export const getOrCreateRecaptchaVerifier = (containerId = "recaptcha-container", onExpired) => {
+  if (typeof window === "undefined") return null;
+
+  if (window.recaptchaVerifier) {
+    return window.recaptchaVerifier;
+  }
+
+  const container = document.getElementById(containerId);
+  if (!container) {
+    console.error(`reCAPTCHA container #${containerId} not found in DOM.`);
+    return null;
+  }
+
+  // Ensure container element has no stale children
+  container.innerHTML = "";
+
+  window.recaptchaVerifier = new RecaptchaVerifier(authInstance, container, {
+    size: "invisible",
+    callback: () => {
+      // reCAPTCHA solved
+    },
+    "expired-callback": () => {
+      console.warn("reCAPTCHA token expired.");
+      if (typeof onExpired === "function") {
+        onExpired();
+      }
+    },
+  });
+
+  return window.recaptchaVerifier;
+};
+
+/**
+ * Clears and resets the RecaptchaVerifier instance.
+ * @param {string} containerId - Element ID for the reCAPTCHA container.
+ */
+export const resetRecaptchaVerifier = (containerId = "recaptcha-container") => {
+  if (typeof window === "undefined") return null;
+
+  if (window.recaptchaVerifier) {
+    try {
+      window.recaptchaVerifier.clear();
+    } catch (e) {
+      // ignore
+    }
+    window.recaptchaVerifier = null;
+  }
+
+  const container = document.getElementById(containerId);
+  if (container) {
+    container.innerHTML = "";
+  }
+
+  return getOrCreateRecaptchaVerifier(containerId);
+};
+
+/**
+ * Formats Firebase auth error codes into user-friendly messages.
+ * @param {Error} error
+ * @returns {string}
+ */
+export const formatAuthError = (error) => {
+  if (!error) return "An unexpected error occurred. Please try again.";
+  const code = error.code || "";
+  switch (code) {
+    case "auth/invalid-app-credential":
+      return "Verification failed (invalid app credential). If running locally, ensure 'localhost' is listed under Firebase Console > Authentication > Settings > Authorized domains.";
+    case "auth/captcha-check-failed":
+      return "reCAPTCHA verification failed. Please try again.";
+    case "auth/too-many-requests":
+      return "Too many requests. Please wait a few moments before trying again.";
+    case "auth/quota-exceeded":
+      return "SMS quota exceeded. Please try again later.";
+    case "auth/invalid-phone-number":
+      return "Please enter a valid phone number.";
+    default:
+      return error.message || "Failed to send verification code. Please try again.";
+  }
+};
 
 /**
  * Sends an OTP to the given phone number.
