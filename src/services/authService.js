@@ -74,8 +74,13 @@ export const formatAuthError = (error) => {
   switch (code) {
     case "auth/invalid-app-credential":
       return "Verification failed (invalid app credential). If running locally, ensure 'localhost' is listed under Firebase Console > Authentication > Settings > Authorized domains.";
-    case "auth/captcha-check-failed":
-      return "reCAPTCHA verification failed. Please try again.";
+    case "auth/captcha-check-failed": {
+      const currentHost = typeof window !== "undefined" ? window.location.hostname : "localhost";
+      if (error.message && error.message.includes("Hostname match not found")) {
+        return `Domain not authorized (${currentHost}). Add "${currentHost}" in Firebase Console > Authentication > Settings > Authorized domains.`;
+      }
+      return "reCAPTCHA verification failed. Please check your network and try again.";
+    }
     case "auth/too-many-requests":
       return "Too many requests. Please wait a few moments before trying again.";
     case "auth/quota-exceeded":
