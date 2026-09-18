@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback, useMemo } 
 import { firestoreInstance } from "../services/firebase";
 import { doc, onSnapshot } from "firebase/firestore";
 import { subscribeToAuth, sendOTP, verifyOTP, logoutUser } from "../services/authService";
-import { createUserProfile, getUserProfile, updateUserProfile } from "../services/userService";
+import { createUserProfile, getUserProfile, updateUserProfile, ensureUserProfile } from "../services/userService";
 import { uploadProfileImage } from "../services/storageService";
 
 const AuthContext = createContext(null);
@@ -43,16 +43,8 @@ export const FirebaseAuthProvider = ({ children }) => {
           if (docSnap.exists()) {
             const profileData = { id: docSnap.id, ...docSnap.data() };
             setProfile(profileData);
-            
-            // Auto open Profile Setup if logged in but incomplete profile
-            if (!profileData.isProfileComplete && isAuthOpen) {
-              setActiveView("profileSetup");
-            }
           } else {
             setProfile(null);
-            if (isAuthOpen) {
-              setActiveView("profileSetup");
-            }
           }
           setLoading(false);
         },
@@ -68,17 +60,7 @@ export const FirebaseAuthProvider = ({ children }) => {
       if (unsubscribeProfile) unsubscribeProfile();
       unsubscribeAuth();
     };
-  }, [isAuthOpen]);
-
-  // Enforce profile setup if user is authenticated but profile is incomplete
-  useEffect(() => {
-    if (!loading && user) {
-      if (!profile || !profile.isProfileComplete) {
-        setIsAuthOpen(true);
-        setActiveView("profileSetup");
-      }
-    }
-  }, [loading, user, profile]);
+  }, []);
 
   const openLogin = useCallback(() => {
     setModalError(null);
@@ -89,15 +71,11 @@ export const FirebaseAuthProvider = ({ children }) => {
   }, []);
 
   const closeAuth = useCallback(() => {
-    // If the profile is incomplete, do not allow closing the modal to bypass setup
-    if (user && (!profile || !profile.isProfileComplete)) {
-      return;
-    }
     setIsAuthOpen(false);
     setPhoneNumber("");
     setConfirmationResult(null);
     setModalError(null);
-  }, [user, profile]);
+  }, []);
 
   const triggerOTP = useCallback(async (phoneVal, recaptchaVerifier) => {
     setModalLoading(true);
@@ -123,15 +101,18 @@ export const FirebaseAuthProvider = ({ children }) => {
       if (!confirmationResult) throw new Error("No verification context found. Please request OTP again.");
       const firebaseUser = await verifyOTP(confirmationResult, code);
       
-      // Fetch user profile from Firestore to decide next view
-      const profileDoc = await getUserProfile(firebaseUser.uid);
-      
-      if (profileDoc && profileDoc.isProfileComplete) {
-        setIsAuthOpen(false);
-        setConfirmationResult(null);
-      } else {
-        setActiveView("profileSetup");
+      // Ensure basic user profile exists in Firestore without blocking on full detail setup
+      try {
+        await ensureUserProfile(firebaseUser.uid, {
+          phone: firebaseUser.phoneNumber || phoneNumber || "",
+        });
+      } catch (profileErr) {
+        console.warn("Could not ensure profile document:", profileErr);
       }
+
+      // Close auth modal directly upon successful OTP verification
+      setIsAuthOpen(false);
+      setConfirmationResult(null);
       return firebaseUser;
     } catch (err) {
       console.error("Confirm OTP error:", err);
@@ -140,7 +121,7 @@ export const FirebaseAuthProvider = ({ children }) => {
     } finally {
       setModalLoading(false);
     }
-  }, [confirmationResult]);
+  }, [confirmationResult, phoneNumber]);
 
   const completeProfileSetup = useCallback(async (userData) => {
     if (!user) throw new Error("No authenticated session found.");

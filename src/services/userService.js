@@ -1,5 +1,5 @@
 import { firestoreInstance } from "./firebase";
-import { doc, getDoc, writeBatch, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, writeBatch, updateDoc, serverTimestamp } from "firebase/firestore";
 
 /**
  * Fetches the user profile document from the Firestore "users" collection.
@@ -16,6 +16,38 @@ export const getUserProfile = async (uid) => {
     return null;
   } catch (error) {
     console.error("Error fetching user profile:", error);
+    throw error;
+  }
+};
+
+/**
+ * Ensures a basic user profile document exists in Firestore for the given user ID.
+ * Useful for immediate OTP login without blocking on profile details.
+ * @param {string} uid - Firebase Auth user ID.
+ * @param {object} userData - Basic user attributes (e.g. phone).
+ * @returns {Promise<object>} user profile document
+ */
+export const ensureUserProfile = async (uid, userData = {}) => {
+  try {
+    const userRef = doc(firestoreInstance, "users", uid);
+    const docSnap = await getDoc(userRef);
+    if (!docSnap.exists()) {
+      const initialData = {
+        uid,
+        phone: userData.phone || "",
+        fullName: userData.fullName || "",
+        displayName: userData.displayName || "",
+        role: "user",
+        isProfileComplete: false,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      };
+      await setDoc(userRef, initialData, { merge: true });
+      return { id: uid, ...initialData };
+    }
+    return { id: docSnap.id, ...docSnap.data() };
+  } catch (error) {
+    console.error("Error ensuring user profile:", error);
     throw error;
   }
 };

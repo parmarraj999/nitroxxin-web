@@ -6,10 +6,7 @@ import ProfileSetupModal from "./ProfileSetupModal";
 import "./AuthModalContainer.css";
 
 export default function AuthModalContainer() {
-  const { isAuthOpen, activeView, closeAuth, user, profile } = useAuth();
-
-  // If user is authenticated but profile is incomplete, they cannot bypass profile setup by closing the modal.
-  const canClose = !(user && (!profile || !profile.isProfileComplete));
+  const { isAuthOpen, activeView, closeAuth } = useAuth();
 
   return (
     <AnimatePresence>
@@ -19,7 +16,7 @@ export default function AuthModalContainer() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          onClick={canClose ? closeAuth : undefined}
+          onClick={closeAuth}
         >
           <motion.div
             className="auth-modal-card"
@@ -30,14 +27,12 @@ export default function AuthModalContainer() {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close Button */}
-            {canClose && (
-              <button className="auth-modal-close-btn" onClick={closeAuth} aria-label="Close modal">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
-            )}
+            <button className="auth-modal-close-btn" onClick={closeAuth} aria-label="Close modal">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
 
             {/* Top Half: Neon Gradient Banner with Space for Image */}
             <div className="auth-modal-banner">
