@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback, useMemo } 
 import { firestoreInstance } from "../services/firebase";
 import { doc, onSnapshot } from "firebase/firestore";
 import { subscribeToAuth, sendOTP, verifyOTP, logoutUser } from "../services/authService";
-import { createUserProfile, getUserProfile, updateUserProfile, ensureUserProfile } from "../services/userService";
+import { createUserProfile, updateUserProfile, ensureUserProfile } from "../services/userService";
 import { uploadProfileImage } from "../services/storageService";
 
 const AuthContext = createContext(null);
