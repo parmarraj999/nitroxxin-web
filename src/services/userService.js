@@ -1,5 +1,5 @@
 import { firestoreInstance } from "./firebase";
-import { doc, getDoc, setDoc, writeBatch, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, writeBatch, serverTimestamp } from "firebase/firestore";
 
 /**
  * Fetches the user profile document from the Firestore "users" collection.
