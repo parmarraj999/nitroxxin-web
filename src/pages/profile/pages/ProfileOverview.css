@@ -1,0 +1,826 @@
+/* ==========================================================
+   AURORA PROFILE CARD UI - NITROXXIN
+   Matches the exact modern card aesthetic from the mockup
+========================================================== */
+
+.profile-overview-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 10px 0 40px;
+}
+
+/* Card Container */
+.aurora-profile-card {
+  width: 100%;
+  max-width: 375px;
+  background: #ffffff;
+  border-radius: 28px;
+  border: 1.5px solid #eceef2;
+  box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.03);
+  padding: 14px 14px 18px;
+  position: relative;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #111827;
+  transition: box-shadow 0.3s ease;
+}
+
+.aurora-profile-card:hover {
+  box-shadow: 0 20px 48px -12px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+/* TOP: Aurora Mesh Gradient Banner */
+.aurora-banner {
+  height: 136px;
+  width: 100%;
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+  background: 
+    radial-gradient(circle at 82% 20%, #a7f3d0 0%, transparent 40%),
+    radial-gradient(circle at 20% 35%, #22c55e 0%, transparent 55%),
+    radial-gradient(circle at 65% 85%, #15803d 0%, transparent 60%),
+    linear-gradient(135deg, #064e3b 0%, #065f46 45%, #047857 100%);
+}
+
+.aurora-glow-1 {
+  position: absolute;
+  top: -20%;
+  right: 10%;
+  width: 110px;
+  height: 110px;
+  background: rgba(167, 243, 208, 0.45);
+  filter: blur(24px);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.aurora-glow-2 {
+  position: absolute;
+  bottom: 0%;
+  left: 10%;
+  width: 140px;
+  height: 80px;
+  background: rgba(34, 197, 94, 0.35);
+  filter: blur(28px);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* AVATAR */
+.aurora-avatar-container {
+  margin-top: -46px;
+  margin-left: 12px;
+  margin-bottom: 8px;
+  position: relative;
+  display: inline-block;
+  z-index: 2;
+}
+
+.aurora-avatar-ring {
+  width: 86px;
+  height: 86px;
+  border-radius: 50%;
+  border: 4.5px solid #ffffff;
+  background: #fffdfa;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease;
+}
+
+.aurora-avatar-ring:hover {
+  transform: scale(1.03);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.16);
+}
+
+.aurora-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.default-anime-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.aurora-avatar-upload-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  border-radius: 50%;
+}
+
+.aurora-avatar-ring:hover .aurora-avatar-upload-overlay {
+  opacity: 1;
+}
+
+.uploading-badge {
+  position: absolute;
+  left: 96px;
+  bottom: 8px;
+  background: #111827;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* CARD BODY */
+.aurora-card-body {
+  padding: 4px 6px 4px;
+}
+
+/* HEADER ROW: Name, Username & Action Buttons */
+.aurora-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.aurora-user-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.aurora-name {
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f131a;
+  letter-spacing: -0.4px;
+  margin: 0 0 2px 0;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.aurora-username {
+  font-size: 13.5px;
+  color: #64748b;
+  font-weight: 500;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.aurora-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Follow / Edit Button */
+.aurora-follow-btn {
+  background: #0f131a;
+  color: #ffffff;
+  border: none;
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.aurora-follow-btn:hover {
+  background: #272f3d;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+}
+
+.aurora-follow-btn:active {
+  transform: translateY(1px);
+}
+
+/* Bookmark Icon Button */
+.aurora-icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid #e2e8f0;
+  background: #ffffff;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.aurora-icon-btn:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.aurora-icon-btn.bookmarked {
+  color: #059669;
+  border-color: #10b981;
+  background: #ecfdf5;
+}
+
+/* ADDITIONAL DETAILS SECTION (Driving License & Emergency Number) */
+.aurora-details-section {
+  margin-top: 14px;
+}
+
+.aurora-pill-badges-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.aurora-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  line-height: 1.2;
+}
+
+.license-badge {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #15803d;
+}
+
+.license-badge .badge-label {
+  color: #166534;
+  font-weight: 700;
+}
+
+.license-badge .badge-text {
+  font-family: inherit;
+  letter-spacing: 0.2px;
+}
+
+.emergency-badge {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.emergency-badge .badge-label {
+  color: #991b1b;
+  font-weight: 700;
+}
+
+.add-badge {
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  color: #475569;
+  cursor: pointer;
+}
+
+.add-badge:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #0f172a;
+  transform: translateY(-1px);
+}
+
+.badge-icon {
+  font-size: 13px;
+}
+
+/* DIVIDER */
+.aurora-divider {
+  height: 1px;
+  background: #f1f5f9;
+  margin: 16px 0;
+  width: 100%;
+}
+
+/* STATS ROW */
+.aurora-stats-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-align: center;
+  padding: 0 10px;
+}
+
+.aurora-stat-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.aurora-stat-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f131a;
+  letter-spacing: -0.3px;
+  line-height: 1;
+}
+
+.stat-icon.star {
+  color: #0f131a;
+  font-size: 15px;
+}
+
+.stat-icon.doc,
+.stat-icon.user {
+  font-size: 15px;
+}
+
+.aurora-stat-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  margin-top: 5px;
+}
+
+/* BOTTOM PILL BUTTON: "Get in Touch" */
+.aurora-bottom-pill-btn {
+  width: 100%;
+  height: 52px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #1f232b 0%, #101217 100%);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border: none;
+  cursor: pointer;
+  margin-top: 20px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: 0.1px;
+}
+
+.aurora-bottom-pill-btn:hover {
+  background: linear-gradient(180deg, #2b313c 0%, #14171d 100%);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
+}
+
+.aurora-bottom-pill-btn:active {
+  transform: translateY(1px);
+}
+
+.pill-circle-arrow {
+  position: absolute;
+  left: 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #0f131a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.aurora-bottom-pill-btn:hover .pill-circle-arrow {
+  transform: translateX(4px);
+}
+
+.pill-btn-text {
+  font-size: 14.5px;
+  font-weight: 600;
+}
+
+/* ==========================================================
+   EDIT MODE
+========================================================== */
+
+.aurora-card-body.edit-mode {
+  padding-top: 10px;
+}
+
+.edit-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.edit-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f131a;
+  margin: 0;
+}
+
+.edit-close-btn {
+  background: #f1f5f9;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.edit-close-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.edit-photo-shortcut {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.change-photo-btn {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.change-photo-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.aurora-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.aurora-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.aurora-form-group label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+  letter-spacing: 0.1px;
+}
+
+.label-with-icon {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.field-tag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.field-tag.emergency {
+  background: #fef2f2;
+  color: #991b1b;
+  border-color: #fecaca;
+}
+
+.aurora-form-group input {
+  height: 38px;
+  border-radius: 10px;
+  border: 1.5px solid #e2e8f0;
+  padding: 0 12px;
+  font-size: 13.5px;
+  color: #0f172a;
+  outline: none;
+  background: #f8fafc;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.aurora-form-group input:focus {
+  border-color: #10b981;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+.input-with-prefix {
+  display: flex;
+  align-items: center;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.input-with-prefix:focus-within {
+  border-color: #10b981;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+.input-prefix {
+  padding-left: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.input-with-prefix input {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  flex: 1;
+  padding-left: 4px;
+}
+
+.field-hint {
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: 1.3;
+}
+
+.edit-actions-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.aurora-cancel-btn {
+  flex: 1;
+  height: 42px;
+  border-radius: 12px;
+  border: 1.5px solid #e2e8f0;
+  background: #ffffff;
+  color: #475569;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.aurora-cancel-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.aurora-save-btn {
+  flex: 2;
+  height: 42px;
+  border-radius: 12px;
+  border: none;
+  background: #0f131a;
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.aurora-save-btn:hover:not(:disabled) {
+  background: #272f3d;
+  transform: translateY(-1px);
+}
+
+.aurora-save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.aurora-alert-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.aurora-alert-success {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+/* ==========================================================
+   QUICK CONTACT MODAL ("Get in Touch")
+========================================================== */
+
+.aurora-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.aurora-modal-box {
+  width: 100%;
+  max-width: 360px;
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 22px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.modal-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.modal-close {
+  background: #f1f5f9;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.modal-subtitle {
+  font-size: 12.5px;
+  color: #64748b;
+  margin: 0 0 18px 0;
+}
+
+.contact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 10px 12px;
+  gap: 10px;
+}
+
+.contact-item.highlight {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.contact-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.contact-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.contact-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.contact-val {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.contact-action-btn {
+  background: #0f131a;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.contact-action-btn:hover {
+  background: #272f3d;
+}
+
+.contact-action-btn.sos {
+  background: #dc2626;
+}
+
+.contact-action-btn.sos:hover {
+  background: #b91c1c;
+}
+
+.contact-action-btn.add {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+}
+
+.contact-action-btn.add:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.modal-edit-shortcut-btn {
+  width: 100%;
+  height: 42px;
+  border-radius: 12px;
+  background: #0f131a;
+  color: #ffffff;
+  border: none;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 18px;
+  transition: all 0.2s;
+}
+
+.modal-edit-shortcut-btn:hover {
+  background: #272f3d;
+}

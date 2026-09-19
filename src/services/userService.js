@@ -121,10 +121,10 @@ export const createUserProfile = async (uid, userData) => {
 export const updateUserProfile = async (uid, updates) => {
   try {
     const userRef = doc(firestoreInstance, "users", uid);
-    await updateDoc(userRef, {
+    await setDoc(userRef, {
       ...updates,
       updatedAt: serverTimestamp(),
-    });
+    }, { merge: true });
   } catch (error) {
     console.error("Error updating user profile:", error);
     throw error;

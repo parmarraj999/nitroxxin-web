@@ -21,39 +21,77 @@ export const FirebaseAuthProvider = ({ children }) => {
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState(null);
 
-  // Subscribe to Firebase Auth and sync with Firestore profile
+  // Subscribe to Firebase Auth and sync with Firestore profile (supports both real Auth & Dev Test UID)
   useEffect(() => {
     let unsubscribeProfile;
 
     const unsubscribeAuth = subscribeToAuth(async (firebaseUser) => {
       if (unsubscribeProfile) unsubscribeProfile();
-      setUser(firebaseUser);
 
-      if (!firebaseUser) {
-        setProfile(null);
-        setLoading(false);
-        return;
-      }
+      if (firebaseUser) {
+        localStorage.removeItem("nitroxxin_dev_test_uid");
+        setUser(firebaseUser);
 
-      // Realtime listener to users/{uid} document
-      const docRef = doc(firestoreInstance, "users", firebaseUser.uid);
-      unsubscribeProfile = onSnapshot(
-        docRef,
-        (docSnap) => {
-          if (docSnap.exists()) {
-            const profileData = { id: docSnap.id, ...docSnap.data() };
-            setProfile(profileData);
-          } else {
-            setProfile(null);
+        // Realtime listener to users/{uid} document
+        const docRef = doc(firestoreInstance, "users", firebaseUser.uid);
+        unsubscribeProfile = onSnapshot(
+          docRef,
+          (docSnap) => {
+            if (docSnap.exists()) {
+              const profileData = { id: docSnap.id, ...docSnap.data() };
+              setProfile(profileData);
+            } else {
+              setProfile(null);
+            }
+            setLoading(false);
+          },
+          (snapError) => {
+            console.error("Firestore sync error:", snapError);
+            setError(snapError.message);
+            setLoading(false);
           }
-          setLoading(false);
-        },
-        (snapError) => {
-          console.error("Firestore sync error:", snapError);
-          setError(snapError.message);
+        );
+      } else {
+        // Check if a dev test UID is active in localStorage
+        const savedDevUid = localStorage.getItem("nitroxxin_dev_test_uid");
+        if (savedDevUid) {
+          const docRef = doc(firestoreInstance, "users", savedDevUid);
+          unsubscribeProfile = onSnapshot(
+            docRef,
+            (docSnap) => {
+              if (docSnap.exists()) {
+                const profileData = { id: docSnap.id, ...docSnap.data() };
+                setProfile(profileData);
+                setUser({
+                  uid: savedDevUid,
+                  phone: profileData?.phone || "+919999999999",
+                  displayName: profileData?.fullName || profileData?.displayName || "Test User",
+                  email: profileData?.email || `${savedDevUid}@test.nitroxxin.com`,
+                  isDevMock: true,
+                });
+              } else {
+                setProfile(null);
+                setUser({
+                  uid: savedDevUid,
+                  phone: "+919999999999",
+                  displayName: "Test User",
+                  email: `${savedDevUid}@test.nitroxxin.com`,
+                  isDevMock: true,
+                });
+              }
+              setLoading(false);
+            },
+            (snapError) => {
+              console.error("Dev UID Firestore sync error:", snapError);
+              setLoading(false);
+            }
+          );
+        } else {
+          setUser(null);
+          setProfile(null);
           setLoading(false);
         }
-      );
+      }
     });
 
     return () => {
@@ -149,9 +187,58 @@ export const FirebaseAuthProvider = ({ children }) => {
     }
   }, [user, phoneNumber]);
 
+  const loginWithUid = useCallback(async (customUid) => {
+    if (!customUid || !customUid.trim()) {
+      const err = new Error("Please enter a valid UID");
+      setModalError(err.message);
+      throw err;
+    }
+    const trimmedUid = customUid.trim();
+    setModalLoading(true);
+    setModalError(null);
+
+    try {
+      localStorage.setItem("nitroxxin_dev_test_uid", trimmedUid);
+
+      let profileData = null;
+      try {
+        profileData = await ensureUserProfile(trimmedUid, {
+          phone: "+919999999999",
+          fullName: "Test User (" + (trimmedUid.length > 6 ? trimmedUid.slice(0, 6) : trimmedUid) + ")",
+        });
+      } catch (err) {
+        console.warn("Could not ensure profile document for test UID:", err);
+      }
+
+      const mockUser = {
+        uid: trimmedUid,
+        phoneNumber: profileData?.phone || "+919999999999",
+        displayName: profileData?.fullName || profileData?.displayName || "Test User",
+        email: profileData?.email || `${trimmedUid}@test.nitroxxin.com`,
+        isDevMock: true,
+      };
+
+      setUser(mockUser);
+      if (profileData) {
+        setProfile(profileData);
+      }
+
+      setIsAuthOpen(false);
+      setConfirmationResult(null);
+      return mockUser;
+    } catch (err) {
+      console.error("Login with UID failed:", err);
+      setModalError(err.message || "Failed to log in with UID");
+      throw err;
+    } finally {
+      setModalLoading(false);
+    }
+  }, []);
+
   const logout = useCallback(async () => {
     setLoading(true);
     try {
+      localStorage.removeItem("nitroxxin_dev_test_uid");
       await logoutUser();
       setProfile(null);
       setUser(null);
@@ -177,7 +264,7 @@ export const FirebaseAuthProvider = ({ children }) => {
     if (!user) throw new Error("You must be logged in.");
     try {
       const photoURL = await uploadProfileImage(user.uid, file);
-      await updateProfile({ photoURL });
+      await updateProfile({ photoURL, profilePhoto: photoURL });
       return photoURL;
     } catch (err) {
       console.error("Upload photo error:", err);
@@ -195,6 +282,7 @@ export const FirebaseAuthProvider = ({ children }) => {
     logout,
     updateProfile,
     uploadProfilePhoto,
+    loginWithUid,
 
     // Modal state
     isAuthOpen,
@@ -216,6 +304,7 @@ export const FirebaseAuthProvider = ({ children }) => {
     logout,
     updateProfile,
     uploadProfilePhoto,
+    loginWithUid,
     isAuthOpen,
     activeView,
     phoneNumber,
