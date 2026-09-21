@@ -3,7 +3,7 @@ import { firestoreInstance } from "../services/firebase";
 import { doc, onSnapshot } from "firebase/firestore";
 import { subscribeToAuth, sendOTP, verifyOTP, logoutUser } from "../services/authService";
 import { createUserProfile, updateUserProfile, ensureUserProfile } from "../services/userService";
-import { uploadProfileImage } from "../services/storageService";
+import { uploadProfileImage, uploadDrivingLicenseImage } from "../services/storageService";
 
 const AuthContext = createContext(null);
 
@@ -64,8 +64,8 @@ export const FirebaseAuthProvider = ({ children }) => {
                 setProfile(profileData);
                 setUser({
                   uid: savedDevUid,
-                  phone: profileData?.phone || "+919999999999",
-                  displayName: profileData?.fullName || profileData?.displayName || "Test User",
+                  phone: profileData?.phone || profileData?.phoneNumber || "+919999999999",
+                  fullName: profileData?.fullName || profileData?.name || profileData?.displayName || "Test User",
                   email: profileData?.email || `${savedDevUid}@test.nitroxxin.com`,
                   isDevMock: true,
                 });
@@ -74,7 +74,7 @@ export const FirebaseAuthProvider = ({ children }) => {
                 setUser({
                   uid: savedDevUid,
                   phone: "+919999999999",
-                  displayName: "Test User",
+                  fullName: "Test User",
                   email: `${savedDevUid}@test.nitroxxin.com`,
                   isDevMock: true,
                 });
@@ -174,7 +174,7 @@ export const FirebaseAuthProvider = ({ children }) => {
       await createUserProfile(user.uid, {
         ...userData,
         phone: user.phoneNumber || phoneNumber || "",
-        photoURL: finalPhotoURL || userData.photoURL || "",
+        profilePhoto: finalPhotoURL || userData.profilePhoto || "",
       });
 
       setIsAuthOpen(false);
@@ -212,8 +212,8 @@ export const FirebaseAuthProvider = ({ children }) => {
 
       const mockUser = {
         uid: trimmedUid,
-        phoneNumber: profileData?.phone || "+919999999999",
-        displayName: profileData?.fullName || profileData?.displayName || "Test User",
+        phone: profileData?.phone || profileData?.phoneNumber || "+919999999999",
+        fullName: profileData?.fullName || profileData?.name || profileData?.displayName || "Test User",
         email: profileData?.email || `${trimmedUid}@test.nitroxxin.com`,
         isDevMock: true,
       };
@@ -264,10 +264,36 @@ export const FirebaseAuthProvider = ({ children }) => {
     if (!user) throw new Error("You must be logged in.");
     try {
       const photoURL = await uploadProfileImage(user.uid, file);
-      await updateProfile({ photoURL, profilePhoto: photoURL });
+      await updateProfile({ profilePhoto: photoURL });
       return photoURL;
     } catch (err) {
       console.error("Upload photo error:", err);
+      throw err;
+    }
+  }, [user, updateProfile]);
+
+  const uploadUserDrivingLicense = useCallback(async (file) => {
+    if (!user) throw new Error("You must be logged in.");
+    try {
+      const downloadURL = await uploadDrivingLicenseImage(user.uid, file);
+      await updateProfile({
+        drivingLicenseImage: downloadURL,
+      });
+      return downloadURL;
+    } catch (err) {
+      console.error("Upload driving license error:", err);
+      throw err;
+    }
+  }, [user, updateProfile]);
+
+  const removeUserDrivingLicense = useCallback(async () => {
+    if (!user) throw new Error("You must be logged in.");
+    try {
+      await updateProfile({
+        drivingLicenseImage: "",
+      });
+    } catch (err) {
+      console.error("Remove driving license error:", err);
       throw err;
     }
   }, [user, updateProfile]);
@@ -282,6 +308,8 @@ export const FirebaseAuthProvider = ({ children }) => {
     logout,
     updateProfile,
     uploadProfilePhoto,
+    uploadUserDrivingLicense,
+    removeUserDrivingLicense,
     loginWithUid,
 
     // Modal state
@@ -304,6 +332,8 @@ export const FirebaseAuthProvider = ({ children }) => {
     logout,
     updateProfile,
     uploadProfilePhoto,
+    uploadUserDrivingLicense,
+    removeUserDrivingLicense,
     loginWithUid,
     isAuthOpen,
     activeView,

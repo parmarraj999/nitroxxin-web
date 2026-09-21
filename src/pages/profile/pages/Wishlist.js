@@ -1,3 +1,4 @@
+import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import { useCollection } from "../../../hooks/useFirestore";
@@ -27,11 +28,39 @@ const products = [
 
 export default function Wishlist() {
   const { user } = useAuth();
-  const { data } = useCollection(COLLECTIONS.wishlist, {
+  const { data: wishlistData } = useCollection(COLLECTIONS.wishlist, {
     where: [["userId", "==", user?.uid]],
     limit: 50,
   });
-  const items = data.length ? data : products;
+
+  const { data: bookmarkData } = useCollection(
+    user?.uid ? `users/${user.uid}/bookmark` : null,
+    { limit: 50 }
+  );
+
+  const items = useMemo(() => {
+    const map = new Map();
+
+    (bookmarkData || []).forEach((item) => {
+      const id = item.eventId || item.id;
+      if (id) {
+        map.set(`event_${id}`, { ...item, type: "event" });
+      }
+    });
+
+    (wishlistData || []).forEach((item) => {
+      const id = item.productId || item.eventId || item.id;
+      const key = `${item.type || "product"}_${id}`;
+      if (!map.has(key)) {
+        map.set(key, item);
+      }
+    });
+
+    const list = Array.from(map.values());
+    if (list.length > 0) return list;
+    if (user && (wishlistData?.length === 0 || bookmarkData?.length === 0)) return [];
+    return products;
+  }, [bookmarkData, wishlistData, user]);
 
   return (
     <section className="profile-screen profile-screen--narrow">

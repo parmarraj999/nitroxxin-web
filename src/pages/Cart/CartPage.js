@@ -18,8 +18,8 @@ export default function CartPage() {
     limit: 50,
   });
   const [shipping, setShipping] = useState({
-    name: profile?.fullName || profile?.displayName || "",
-    phone: profile?.phone || "",
+    name: profile?.fullName || profile?.name || profile?.displayName || user?.fullName || user?.displayName || "",
+    phone: profile?.phone || profile?.phoneNumber || user?.phone || user?.phoneNumber || "",
     address: "",
     city: "",
     state: "",

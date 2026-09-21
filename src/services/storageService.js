@@ -18,3 +18,22 @@ export const uploadProfileImage = async (uid, file) => {
     throw error;
   }
 };
+
+/**
+ * Uploads a driving license image file to Firebase Storage.
+ * @param {string} uid - User UID.
+ * @param {File} file - Driving license image file.
+ * @returns {Promise<string>} Download URL of the uploaded image
+ */
+export const uploadDrivingLicenseImage = async (uid, file) => {
+  try {
+    const storageRef = ref(storageInstance, `driving_licenses/${uid}/license_${Date.now()}_${file.name}`);
+    const snapshot = await uploadBytes(storageRef, file);
+    const downloadURL = await getDownloadURL(snapshot.ref);
+    return downloadURL;
+  } catch (error) {
+    console.error("Error uploading driving license image:", error);
+    throw error;
+  }
+};
+

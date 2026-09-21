@@ -51,8 +51,9 @@ const Navigation = () => {
 const FooterWrapper = () => {
   const location = useLocation();
   const isBookingPage = location.pathname.includes('/book');
+  const isProfilePage = location.pathname.includes('/profile');
 
-  if (isBookingPage) return null;
+  if (isBookingPage || isProfilePage) return null;
 
   return <Footer />;
 };

@@ -12,7 +12,7 @@ const Navbar = () => {
     const { isAuthenticated, logout } = useAuth();
 
     return (
-        <nav className="navbar" style={pathname.includes('/events/') || pathname.includes('/accessories') || pathname.includes('/profile') || pathname.includes('/product') || pathname.includes('/cart') ? { display: 'none' } : {}}>
+        <nav className="navbar" style={pathname.includes('/events/') || pathname.includes('/event/') || pathname.includes('/accessories') || pathname.includes('/profile') || pathname.includes('/product') || pathname.includes('/cart') ? { display: 'none' } : {}}>
             <div className="navbar-container">
                 <h1 className="navbar-logo">
                     NITRO<span className="logo-x">X</span>X

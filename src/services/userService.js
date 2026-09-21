@@ -35,8 +35,7 @@ export const ensureUserProfile = async (uid, userData = {}) => {
       const initialData = {
         uid,
         phone: userData.phone || "",
-        fullName: userData.fullName || "",
-        displayName: userData.displayName || "",
+        fullName: userData.fullName || userData.name || userData.displayName || "",
         role: "user",
         isProfileComplete: false,
         createdAt: serverTimestamp(),
@@ -73,7 +72,7 @@ export const checkUsernameUnique = async (username) => {
 /**
  * Atomically creates a user profile and reserves the username.
  * @param {string} uid - Firebase Auth user ID.
- * @param {object} userData - { fullName, username, email, phone, photoURL, interests }
+ * @param {object} userData - { fullName, username, email, phone, profilePhoto, drivingLicense, drivingLicenseImage, interests }
  * @returns {Promise<void>}
  */
 export const createUserProfile = async (uid, userData) => {
@@ -86,15 +85,16 @@ export const createUserProfile = async (uid, userData) => {
 
   batch.set(userRef, {
     uid,
-    fullName: userData.fullName.trim(),
+    fullName: (userData.fullName || userData.name || userData.displayName || "").trim(),
     username: userData.username.trim(),
     usernameLower,
     email: userData.email ? userData.email.trim() : "",
-    phone: userData.phone || "",
-    photoURL: userData.photoURL || "",
+    phone: userData.phone || userData.phoneNumber || "",
+    profilePhoto: userData.profilePhoto || userData.photoURL || "",
+    drivingLicense: userData.drivingLicense || "",
+    drivingLicenseImage: userData.drivingLicenseImage || userData.drivingLicensePhoto || "",
     interests: userData.interests || [],
     isProfileComplete: true,
-    role: "user",
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   }, { merge: true });

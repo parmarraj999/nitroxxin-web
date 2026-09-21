@@ -102,14 +102,14 @@ export const placeOrder = async ({ user, profile, cartItems, shipping }) => {
         user: {
           uid: user.uid,
           email: user.email,
-          name: profile?.fullName || profile?.displayName || user.displayName || "",
-          phone: profile?.phone || "",
+          name: profile?.fullName || profile?.name || profile?.displayName || user.fullName || user.displayName || "",
+          phone: profile?.phone || profile?.phoneNumber || user.phone || user.phoneNumber || "",
         },
         customer: {
           uid: user.uid,
           email: user.email,
-          name: profile?.fullName || profile?.displayName || user.displayName || "",
-          phone: profile?.phone || "",
+          name: profile?.fullName || profile?.name || profile?.displayName || user.fullName || user.displayName || "",
+          phone: profile?.phone || profile?.phoneNumber || user.phone || user.phoneNumber || "",
         },
         shipping,
         items,
@@ -199,17 +199,95 @@ export const saveWishlistItem = async ({ userId, product }) => {
 export const saveFavoriteEvent = async ({ userId, event }) => {
   if (!userId) throw new Error("Please log in to save events.");
   const item = normalizeEvent(event);
-  await db().collection(COLLECTIONS.wishlist).doc(`${userId}_event_${item.id}`).set(
+
+  const bookmarkData = compact({
+    id: item.id,
+    eventId: item.id,
+    userId,
+    type: "event",
+    title: item.title || item.name || "",
+    name: item.name || item.title || "",
+    image: item.bannerImage || item.banner || item.image || (item.images && item.images[0]) || "",
+    bannerImage: item.bannerImage || item.banner || item.image || "",
+    images: item.images || [],
+    dateText: item.dateText || item.dateTimeText || "",
+    dateTimeText: item.dateTimeText || item.dateText || "",
+    startDate: item.startDate || "",
+    endDate: item.endDate || "",
+    location: item.location || "",
+    venue: item.venue || item.location || "",
+    price: item.price || 0,
+    priceText: item.priceText || (item.price ? `₹${item.price}` : "Free"),
+    category: item.category || "",
+    description: item.description || item.about || "",
+    about: item.about || item.description || "",
+    eventSnapshot: item,
+    data: item,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+
+  // Save in users > docID > bookmark collection > data
+  await db()
+    .collection(COLLECTIONS.users || "users")
+    .doc(userId)
+    .collection("bookmark")
+    .doc(item.id)
+    .set(bookmarkData, { merge: true });
+
+  // Also maintain in wishlist collection for backwards compatibility
+  try {
+    await db().collection(COLLECTIONS.wishlist).doc(`${userId}_event_${item.id}`).set(
+      {
+        userId,
+        type: "event",
+        eventId: item.id,
+        eventSnapshot: item,
+        createdAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+  } catch (err) {
+    console.warn("Sync to wishlist collection skipped:", err);
+  }
+};
+
+export const removeFavoriteEvent = async ({ userId, eventId }) => {
+  if (!userId) throw new Error("Please log in to remove events.");
+
+  // Remove from users > docID > bookmark collection
+  await db()
+    .collection(COLLECTIONS.users || "users")
+    .doc(userId)
+    .collection("bookmark")
+    .doc(eventId)
+    .delete();
+
+  // Also remove from wishlist collection
+  try {
+    await db().collection(COLLECTIONS.wishlist).doc(`${userId}_event_${eventId}`).delete();
+  } catch (err) {
+    console.warn("Remove from wishlist collection skipped:", err);
+  }
+};
+
+export const saveEventLike = async ({ userId, eventId }) => {
+  if (!userId || !eventId) return;
+  await db().collection(COLLECTIONS.eventLikes || "event_likes").doc(`${userId}_${eventId}`).set(
     {
       userId,
-      type: "event",
-      eventId: item.id,
-      eventSnapshot: item,
+      eventId,
       createdAt: serverTimestamp(),
     },
     { merge: true }
   );
 };
+
+export const removeEventLike = async ({ userId, eventId }) => {
+  if (!userId || !eventId) return;
+  await db().collection(COLLECTIONS.eventLikes || "event_likes").doc(`${userId}_${eventId}`).delete();
+};
+
 
 export const bookEvent = async ({
   user,
@@ -274,8 +352,8 @@ export const bookEvent = async ({
       attendee: {
         uid: user?.uid || "",
         email: user?.email || "",
-        name: profile?.fullName || profile?.displayName || user?.displayName || "",
-        phone: profile?.phone || "",
+        name: profile?.fullName || profile?.name || profile?.displayName || user?.fullName || user?.displayName || "",
+        phone: profile?.phone || profile?.phoneNumber || user?.phone || user?.phoneNumber || "",
       },
       status: "pending",
       approvalStatus: "pending",
@@ -363,8 +441,8 @@ export const submitReview = async ({ productId, productName, vendorId, user, pro
     productName: productName || "Product",
     vendorId: vendorId || DEFAULT_VENDOR_ID,
     userId: user.uid,
-    customer: profile?.fullName || profile?.displayName || user.displayName || user.email?.split("@")[0] || "Verified Customer",
-    customerPhoto: profile?.photoURL || user.photoURL || "",
+    customer: profile?.fullName || profile?.name || profile?.displayName || user.fullName || user.displayName || user.email?.split("@")[0] || "Verified Customer",
+    customerPhoto: profile?.profilePhoto || profile?.photoURL || user.photoURL || "",
     rating: Number(rating),
     title: title?.trim() || "",
     review: review.trim(),

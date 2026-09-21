@@ -559,8 +559,8 @@ export default function EventBooking() {
     setBookingForSelf(checked);
     if (!checked) return;
     const self = {
-      name: profile?.fullName || profile?.displayName || user?.displayName || '',
-      phone: profile?.phone || user?.phoneNumber || '',
+      name: profile?.fullName || profile?.name || profile?.displayName || user?.fullName || user?.displayName || '',
+      phone: profile?.phone || profile?.phoneNumber || user?.phone || user?.phoneNumber || '',
       email: profile?.email || user?.email || '',
       age: profile?.age || profile?.dateOfBirth || '',
       gender: profile?.gender || '',

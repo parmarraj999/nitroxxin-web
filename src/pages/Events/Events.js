@@ -4,6 +4,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useEventsContext } from "../../context/EventsContext";
 import { toDate } from "../../utils/dataFormatters";
 import { EVENT_CATEGORY_CONFIG } from "./eventCategoryConfig";
+import { useDocument } from "../../hooks/useFirestore";
 
 const timeFilters = ["All", "Today", "Upcoming", "Free", "Paid", "VIP"];
 const isVisibleEvent = (event) => String(event.status || "").toLowerCase() === "published";
@@ -102,7 +103,43 @@ function EmptyState({ title, text }) {
 export default function Events() {
   const navigate = useNavigate();
   const { events, eventsLoading, categories } = useEventsContext();
+
+  // Fetch dynamic page layout config from Firestore (page_layouts > events_layout)
+  const { data: eventsLayoutDoc } = useDocument("page_layouts", "events_layout");
+  const { data: fallbackEventsDoc } = useDocument("page_layouts", "events");
+  const layoutData = eventsLayoutDoc || fallbackEventsDoc;
+
+  const rawSlides =
+    layoutData?.heroSlides ||
+    layoutData?.data?.heroSlides ||
+    layoutData?.banners ||
+    layoutData?.data?.banners ||
+    (Array.isArray(layoutData?.data) ? layoutData.data : null);
+
+  const rawCategories = layoutData?.categories || layoutData?.data?.categories;
+
   const displayedCategories = useMemo(() => {
+    if (rawCategories && Array.isArray(rawCategories) && rawCategories.length > 0) {
+      return rawCategories.map((cat, idx) => {
+        let slug = "";
+        if (cat.redirectUrl && cat.redirectUrl.includes("category=")) {
+          slug = cat.redirectUrl.split("category=")[1].split("&")[0];
+        } else if (cat.slug) {
+          slug = cat.slug;
+        } else if (cat.title || cat.label) {
+          slug = (cat.title || cat.label).toLowerCase().replace(/\s+/g, "_");
+        } else {
+          slug = `cat-${idx}`;
+        }
+        return {
+          id: slug,
+          label: cat.title || cat.label || "Category",
+          image: cat.imageUrl || cat.image || "",
+          redirectUrl: cat.redirectUrl,
+        };
+      });
+    }
+
     if (categories && categories.length > 0) {
       return categories;
     }
@@ -111,7 +148,7 @@ export default function Events() {
       label: cfg.category,
       image: "",
     }));
-  }, [categories]);
+  }, [rawCategories, categories]);
 
   const [query, setQuery] = useState("");
   const [activeSlide, setActiveSlide] = useState(0);
@@ -151,15 +188,168 @@ export default function Events() {
 
   const eventCategories = displayedCategories;
 
-  let upcomingEvents = liveEvents.filter((event) => {
-    const startsAt = toDate(event.date || event.eventDate || event.startsAt || event.startDate);
-    return !startsAt || startsAt.setHours(0, 0, 0, 0) >= new Date().setHours(0, 0, 0, 0);
-  });
-  if (upcomingEvents.length === 0) upcomingEvents = liveEvents;
-  const heroEvents = upcomingEvents.slice(0, 5);
+  // Map dynamic hero slides from page_layouts or fallback to upcoming live events
+  const heroEvents = useMemo(() => {
+    if (rawSlides && Array.isArray(rawSlides) && rawSlides.length > 0) {
+      const validSlides = rawSlides.filter((slide) => {
+        return (
+          (slide.imageUrl && String(slide.imageUrl).trim()) ||
+          slide.eventId ||
+          (slide.title && String(slide.title).trim()) ||
+          (slide.eventName && String(slide.eventName).trim())
+        );
+      });
+
+      if (validSlides.length > 0) {
+        return validSlides.map((slide, index) => {
+          const matchedEvent = slide.eventId
+            ? events.find((e) => String(e.id) === String(slide.eventId))
+            : null;
+
+          const title =
+            slide.title ||
+            slide.eventName ||
+            matchedEvent?.title ||
+            matchedEvent?.name ||
+            `Featured Event ${index + 1}`;
+
+          const image =
+            slide.imageUrl ||
+            slide.bannerImage ||
+            slide.banner ||
+            matchedEvent?.bannerImage ||
+            matchedEvent?.banner ||
+            "";
+
+          const dateText =
+            slide.date ||
+            matchedEvent?.dateTimeText ||
+            matchedEvent?.dateText ||
+            "";
+
+          const location =
+            slide.venue ||
+            matchedEvent?.location ||
+            "";
+
+          let priceText = "";
+          if (slide.price !== undefined && slide.price !== null && String(slide.price).trim() !== "") {
+            const p = String(slide.price).trim();
+            priceText = p.toLowerCase() === "free" || p.startsWith("₹") ? p : `₹${p}`;
+          } else if (matchedEvent?.priceText) {
+            priceText = matchedEvent.priceText;
+          } else if (matchedEvent?.price !== undefined && matchedEvent?.price !== null) {
+            priceText = matchedEvent.price === 0 ? "Free" : `₹${matchedEvent.price}`;
+          } else {
+            priceText = "Free";
+          }
+
+          const eventId = slide.eventId || matchedEvent?.id || slide.id || `slide-${index}`;
+          const redirectUrl =
+            slide.redirectUrl ||
+            (slide.eventId ? `/event/${slide.eventId}` : matchedEvent?.id ? `/event/${matchedEvent.id}` : "");
+
+          return {
+            id: eventId,
+            eventId: slide.eventId || matchedEvent?.id,
+            title,
+            name: title,
+            subtitle: slide.subtitle || "",
+            badge: slide.badge || "",
+            bannerImage: image,
+            banner: image,
+            dateTimeText: dateText,
+            dateText: dateText,
+            location,
+            priceText,
+            redirectUrl,
+            rawEvent: matchedEvent,
+          };
+        });
+      }
+    }
+
+    // Fallback: If no custom layout is configured, use upcoming live events
+    let upcomingEvents = liveEvents.filter((event) => {
+      const startsAt = toDate(event.date || event.eventDate || event.startsAt || event.startDate);
+      return !startsAt || startsAt.setHours(0, 0, 0, 0) >= new Date().setHours(0, 0, 0, 0);
+    });
+    if (upcomingEvents.length === 0) upcomingEvents = liveEvents;
+    return upcomingEvents.slice(0, 5);
+  }, [rawSlides, events, liveEvents]);
+
+  // Section 1: Events Near Me
+  const nearMeEvents = useMemo(() => {
+    if (!liveEvents || liveEvents.length === 0) return [];
+
+    if (selectedCity && selectedCity.trim()) {
+      const cityLower = selectedCity.trim().toLowerCase();
+      const matched = liveEvents.filter((event) => {
+        const loc = String(event.location || "").toLowerCase();
+        const city = String(event.city || "").toLowerCase();
+        const venue = String(event.venue || "").toLowerCase();
+        const address = String(event.address || "").toLowerCase();
+        return (
+          loc.includes(cityLower) ||
+          city.includes(cityLower) ||
+          venue.includes(cityLower) ||
+          address.includes(cityLower)
+        );
+      });
+      if (matched.length > 0) return matched;
+    }
+
+    const withLocation = liveEvents.filter(
+      (event) => event.location || event.city || event.venue
+    );
+    return withLocation.length > 0 ? withLocation : liveEvents;
+  }, [liveEvents, selectedCity]);
+
+  // Section 2: Upcoming Events
+  const upcomingEventsList = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const upcoming = liveEvents.filter((event) => {
+      const startsAt = toDate(event.date || event.eventDate || event.startsAt || event.startDate);
+      return !startsAt || startsAt.getTime() >= today.getTime();
+    });
+
+    return (upcoming.length > 0 ? upcoming : liveEvents).sort(
+      (a, b) => eventSortTime(a) - eventSortTime(b)
+    );
+  }, [liveEvents]);
+
+  // Section 3: Top Events
+  const topEvents = useMemo(() => {
+    if (!liveEvents || liveEvents.length === 0) return [];
+
+    const featuredIds = layoutData?.featuredEventIds || layoutData?.data?.featuredEventIds || [];
+
+    const scored = [...liveEvents].map((event) => {
+      let score = 0;
+      if (featuredIds.includes(event.id)) score += 1000;
+      if (event.isTop || event.top || event.topEvent) score += 500;
+      if (event.featured || event.isFeatured) score += 300;
+      if (event.rating) score += Number(event.rating) * 20;
+      if (event.registeredCount) score += Number(event.registeredCount);
+      if (event.bookingsCount) score += Number(event.bookingsCount);
+      return { event, score };
+    });
+
+    scored.sort((a, b) => b.score - a.score);
+    return scored.map((s) => s.event);
+  }, [liveEvents, layoutData]);
+
   const total = Math.max(heroEvents.length, 1);
   const prev = () => setActiveSlide((previous) => (previous - 1 + total) % total);
   const next = () => setActiveSlide((previous) => (previous + 1) % total);
+
+  useEffect(() => {
+    if (activeSlide >= heroEvents.length && heroEvents.length > 0) {
+      setActiveSlide(0);
+    }
+  }, [heroEvents.length, activeSlide]);
 
   const filteredEvents = useMemo(() => {
     const today = new Date();
@@ -292,7 +482,7 @@ export default function Events() {
 
       {eventsLoading ? (
         <EmptyState title="Loading events" text="Fetching live events from Firestore." />
-      ) : !liveEvents.length ? (
+      ) : !liveEvents.length && !heroEvents.length ? (
         <EmptyState title="No live events yet" text="Publish events from the Event Dashboard and they will appear here automatically." />
       ) : (
         <>
@@ -310,14 +500,41 @@ export default function Events() {
 
               <div className="ep-featured__container">
                 <div className="ep-featured__info">
-                  <p className="ep-featured__date">{currentEvent.dateTimeText || currentEvent.dateText}</p>
+                  {currentEvent.badge && (
+                    <span className="ep-featured__badge">{currentEvent.badge}</span>
+                  )}
+                  {Boolean(currentEvent.dateTimeText || currentEvent.dateText) && (
+                    <p className="ep-featured__date">{currentEvent.dateTimeText || currentEvent.dateText}</p>
+                  )}
                   <h2 className="ep-featured__title">{currentEvent.title || currentEvent.name}</h2>
-                  <p className="ep-featured__location">{currentEvent.location}</p>
+                  {currentEvent.subtitle && (
+                    <p className="ep-featured__subtitle">{currentEvent.subtitle}</p>
+                  )}
+                  {currentEvent.location && (
+                    <p className="ep-featured__location">{currentEvent.location}</p>
+                  )}
                   <p className="ep-featured__price">
                     <span>{currentEvent.priceText || "Free"}</span>
-                    {currentEvent.priceText && currentEvent.priceText !== "Free" && !currentEvent.priceText.startsWith("Starts from") ? " onwards" : ""}
+                    {currentEvent.priceText && currentEvent.priceText !== "Free" && !currentEvent.priceText.startsWith("Starts from") && !currentEvent.priceText.includes("onwards") ? " onwards" : ""}
                   </p>
-                  <button className="ep-featured__book-btn" onClick={() => navigate(`/event/${currentEvent.id}/book`)}>
+                  <button
+                    className="ep-featured__book-btn"
+                    onClick={() => {
+                      if (currentEvent.redirectUrl) {
+                        if (currentEvent.redirectUrl.startsWith("http://") || currentEvent.redirectUrl.startsWith("https://")) {
+                          window.open(currentEvent.redirectUrl, "_blank");
+                        } else {
+                          navigate(currentEvent.redirectUrl);
+                        }
+                      } else if (currentEvent.eventId) {
+                        navigate(`/event/${currentEvent.eventId}/book`);
+                      } else if (currentEvent.id && !String(currentEvent.id).startsWith("slide-")) {
+                        navigate(`/event/${currentEvent.id}/book`);
+                      } else {
+                        navigate("/events");
+                      }
+                    }}
+                  >
                     Book tickets
                   </button>
                 </div>
@@ -326,8 +543,10 @@ export default function Events() {
                   <div className="ep-featured__track" style={{ transform: `translateX(-${activeSlide * 100}%)` }}>
                     {heroEvents.map((event, index) => (
                       <div
-                        key={event.id}
+                        key={event.id || index}
                         className={`ep-featured__slide${index === activeSlide ? " ep-featured__slide--active" : ""}`}
+                        onClick={() => setActiveSlide(index)}
+                        style={{ cursor: "pointer" }}
                       >
                         <div className="ep-stamp-card">
                           <div className="ep-stamp-perforations top" />
@@ -338,7 +557,7 @@ export default function Events() {
                             {event.bannerImage || event.banner ? (
                               <img src={event.bannerImage || event.banner} alt={event.title || event.name} />
                             ) : (
-                              <div className="ep-slide-placeholder">Event {index + 1}</div>
+                              <div className="ep-slide-placeholder">{event.title || `Event ${index + 1}`}</div>
                             )}
                           </div>
                         </div>
@@ -354,7 +573,7 @@ export default function Events() {
             <div className="ep-dots">
               {heroEvents.map((event, index) => (
                 <button
-                  key={event.id}
+                  key={event.id || index}
                   className={`ep-dot${index === activeSlide ? " ep-dot--active" : ""}`}
                   onClick={() => setActiveSlide(index)}
                   aria-label={`Slide ${index + 1}`}
@@ -381,11 +600,60 @@ export default function Events() {
             </div>
           )}
 
+          {/* Section: Events Near Me */}
           <div className="ep-section">
-            <p className="ep-section__title">Recommended Events</p>
-            <div className="ep-events-grid">
-              {liveEvents.slice(0, 8).map((event) => <EventCard key={event.id} event={event} />)}
-            </div>
+            <p className="ep-section__title">
+              Events Near Me
+              {selectedCity && (
+                <span className="ep-section__subtitle-tag"> — {selectedCity}</span>
+              )}
+            </p>
+            {nearMeEvents.length > 0 ? (
+              <div className="ep-events-grid">
+                {nearMeEvents.slice(0, 6).map((event) => (
+                  <EventCard key={`near-${event.id}`} event={event} />
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                title="No events near you"
+                text={selectedCity ? `No events found in ${selectedCity} right now.` : "No nearby events available."}
+              />
+            )}
+          </div>
+
+          {/* Section: Upcoming Events */}
+          <div className="ep-section">
+            <p className="ep-section__title">Upcoming Events</p>
+            {upcomingEventsList.length > 0 ? (
+              <div className="ep-events-grid">
+                {upcomingEventsList.slice(0, 6).map((event) => (
+                  <EventCard key={`upcoming-${event.id}`} event={event} />
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                title="No upcoming events"
+                text="Stay tuned! Exciting new events are being planned."
+              />
+            )}
+          </div>
+
+          {/* Section: Top Events */}
+          <div className="ep-section">
+            <p className="ep-section__title">Top Events</p>
+            {topEvents.length > 0 ? (
+              <div className="ep-events-grid">
+                {topEvents.slice(0, 6).map((event) => (
+                  <EventCard key={`top-${event.id}`} event={event} />
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                title="No top events yet"
+                text="Top events will appear here."
+              />
+            )}
           </div>
 
           <div className="ep-section">

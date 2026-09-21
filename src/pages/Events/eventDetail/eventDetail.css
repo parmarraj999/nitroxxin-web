@@ -60,7 +60,7 @@
 }
 
 /* ════════════════════════════════════════════════════
-   Navbar
+   Top Navigation Bar
 ════════════════════════════════════════════════════ */
 .ed-navbar {
   position: fixed;
@@ -69,58 +69,125 @@
   width: 100%;
   height: 72px;
   z-index: 100;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
 }
 
 .ed-navbar-blur {
   position: absolute;
   inset: 0;
-  background: rgba(13, 11, 16, 0.55);
+  background: rgba(13, 11, 16, 0.65);
   backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
 }
 
-.ed-back-btn {
-  position: absolute;
-  left: 24px;
-  top: 50%;
-  transform: translateY(-50%);
+.ed-navbar-inner {
+  position: relative;
+  width: min(1440px, 100%);
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 2;
+  box-sizing: border-box;
+  pointer-events: auto;
+}
+
+.ed-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ed-nav-btn {
   width: 44px;
   height: 44px;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1;
-  transition: background var(--transition), transform var(--transition);
+  padding: 0;
+  transition: all var(--transition);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  user-select: none;
 }
 
-.ed-back-btn:hover {
-  background: rgba(255, 255, 255, 0.14);
-  transform: translateY(-50%) scale(1.05);
+.ed-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.28);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
 }
 
-.ed-bookmark-btn {
-  position: absolute;
-  right: 44px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 44px;
-  height: 44px;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1;
-  transition: background var(--transition);
+.ed-nav-btn:active {
+  transform: translateY(0) scale(0.96);
 }
 
-.ed-bookmark-btn:hover {
-  background: rgba(255, 255, 255, 0.14);
+/* Liked state */
+.ed-nav-btn--liked {
+  background: rgba(255, 59, 92, 0.15);
+  border-color: rgba(255, 59, 92, 0.5);
+  color: #ff3b5c;
+  box-shadow: 0 4px 16px rgba(255, 59, 92, 0.3);
+}
+
+.ed-nav-btn--liked:hover {
+  background: rgba(255, 59, 92, 0.25);
+  border-color: rgba(255, 59, 92, 0.7);
+  box-shadow: 0 6px 20px rgba(255, 59, 92, 0.45);
+}
+
+.ed-nav-btn--liked svg {
+  filter: drop-shadow(0 0 8px rgba(255, 59, 92, 0.6));
+  animation: edHeartBeat 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Bookmarked state */
+.ed-nav-btn--bookmarked {
+  background: rgba(80, 215, 53, 0.15);
+  border-color: rgba(80, 215, 53, 0.5);
+  color: #50d735;
+  box-shadow: 0 4px 16px rgba(80, 215, 53, 0.3);
+}
+
+.ed-nav-btn--bookmarked:hover {
+  background: rgba(80, 215, 53, 0.25);
+  border-color: rgba(80, 215, 53, 0.7);
+  box-shadow: 0 6px 20px rgba(80, 215, 53, 0.45);
+}
+
+.ed-nav-btn--bookmarked svg {
+  filter: drop-shadow(0 0 8px rgba(80, 215, 53, 0.6));
+  animation: edBookmarkPop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes edHeartBeat {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+@keyframes edBookmarkPop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+@media (max-width: 900px) {
+  .ed-navbar-inner {
+    padding: 0 16px;
+  }
 }
 
 /* ════════════════════════════════════════════════════

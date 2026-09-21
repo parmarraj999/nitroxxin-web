@@ -62,16 +62,27 @@ const DefaultAnimeAvatar = () => (
 );
 
 export default function ProfileOverview() {
-  const { user, profile, updateProfile, uploadProfilePhoto } = useAuth();
+  const {
+    user,
+    profile,
+    updateProfile,
+    uploadProfilePhoto,
+    uploadUserDrivingLicense,
+    removeUserDrivingLicense,
+  } = useAuth();
   const fileInputRef = useRef(null);
+  const licenseFileInputRef = useRef(null);
 
   const [editing, setEditing] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
+  const [showLicenseModal, setShowLicenseModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [isUploadingLicense, setIsUploadingLicense] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [licensePreviewUrl, setLicensePreviewUrl] = useState(null);
 
   // Profile Form state
   const [form, setForm] = useState({
@@ -87,17 +98,18 @@ export default function ProfileOverview() {
   useEffect(() => {
     setForm({
       name:
-        profile?.name ||
         profile?.fullName ||
+        profile?.name ||
         profile?.displayName ||
+        user?.fullName ||
         user?.displayName ||
         "",
       username: profile?.username
         ? profile.username.replace(/^@/, "")
-        : user?.phoneNumber
-        ? `rider_${user.phoneNumber.slice(-4)}`
+        : (user?.phone || user?.phoneNumber)
+        ? `rider_${(user.phone || user.phoneNumber).slice(-4)}`
         : "",
-      phone: profile?.phone || profile?.phoneNumber || user?.phoneNumber || "",
+      phone: profile?.phone || profile?.phoneNumber || user?.phone || user?.phoneNumber || "",
       email: profile?.email || user?.email || "",
       drivingLicense: profile?.drivingLicense || "",
       emergencyNumber: profile?.emergencyNumber || "",
@@ -121,6 +133,50 @@ export default function ProfileOverview() {
     }
   };
 
+  // Handle driving license document image selection and upload
+  const handleLicenseSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorMessage("License image size must be less than 5MB.");
+      return;
+    }
+
+    setIsUploadingLicense(true);
+    setErrorMessage("");
+    try {
+      const previewUrl = URL.createObjectURL(file);
+      setLicensePreviewUrl(previewUrl);
+
+      const downloadURL = await uploadUserDrivingLicense(file);
+      setLicensePreviewUrl(downloadURL);
+    } catch (err) {
+      console.error("License upload error:", err);
+      setLicensePreviewUrl(null);
+      setErrorMessage(err.message || "Failed to upload driving license image. Please try again.");
+    } finally {
+      setIsUploadingLicense(false);
+      if (e.target) e.target.value = "";
+    }
+  };
+
+  // Remove driving license document image
+  const handleRemoveLicenseImage = async () => {
+    if (!window.confirm("Are you sure you want to remove your driving license image?")) return;
+    setIsUploadingLicense(true);
+    setErrorMessage("");
+    try {
+      await removeUserDrivingLicense();
+      setLicensePreviewUrl(null);
+    } catch (err) {
+      console.error("Remove license error:", err);
+      setErrorMessage(err.message || "Failed to remove license image.");
+    } finally {
+      setIsUploadingLicense(false);
+    }
+  };
+
   // Save profile updates to Firestore
   const handleSave = async (e) => {
     e.preventDefault();
@@ -137,12 +193,9 @@ export default function ProfileOverview() {
       const trimmedEmergency = form.emergencyNumber.trim();
 
       await updateProfile({
-        name: trimmedName,
         fullName: trimmedName,
-        displayName: trimmedName,
         username: formattedUsername,
         phone: trimmedPhone,
-        phoneNumber: trimmedPhone,
         email: trimmedEmail,
         drivingLicense: trimmedLicense,
         emergencyNumber: trimmedEmergency,
@@ -166,16 +219,22 @@ export default function ProfileOverview() {
 
   // Display values
   const displayName =
-    profile?.name ||
     profile?.fullName ||
+    profile?.name ||
     profile?.displayName ||
+    user?.fullName ||
     user?.displayName ||
     "Olivia Rhye";
 
-  const rawUsername = profile?.username || (user?.phoneNumber ? `@rider_${user.phoneNumber.slice(-4)}` : "@Oliviar_");
+  const rawUsername = profile?.username || (user?.phone || user?.phoneNumber ? `@rider_${(user.phone || user.phoneNumber).slice(-4)}` : "@Oliviar_");
   const displayUsername = rawUsername.startsWith("@") ? rawUsername : `@${rawUsername}`;
 
-  const currentPhoto = profile?.profilePhoto || profile?.photoURL || user?.photoURL;
+  const currentPhoto = profile?.profilePhoto || profile?.photoURL || user?.profilePhoto || user?.photoURL;
+  const currentLicenseImage =
+    licensePreviewUrl ||
+    profile?.drivingLicenseImage ||
+    profile?.drivingLicensePhoto ||
+    "";
   const ratingValue = profile?.rating || "4.9";
   const postsCount = profile?.postsCount || profile?.ridesCount || "125";
   const followersCount = profile?.followers || "12.4K";
@@ -190,6 +249,15 @@ export default function ProfileOverview() {
           accept="image/*"
           style={{ display: "none" }}
           onChange={handlePhotoSelect}
+        />
+
+        {/* Hidden File Input for Driving License */}
+        <input
+          type="file"
+          ref={licenseFileInputRef}
+          accept="image/*"
+          style={{ display: "none" }}
+          onChange={handleLicenseSelect}
         />
 
         {/* TOP: Aurora Mesh Gradient Banner */}
@@ -319,6 +387,45 @@ export default function ProfileOverview() {
                   </button>
                 )}
               </div>
+
+              {/* Driving License Document Attachment Badge */}
+              {currentLicenseImage ? (
+                <div className="aurora-license-chip-card">
+                  <div
+                    className="license-chip-preview"
+                    onClick={() => setShowLicenseModal(true)}
+                    title="Click to view driving license document"
+                  >
+                    <img
+                      src={currentLicenseImage}
+                      alt="Driving License Document"
+                      className="license-chip-img"
+                    />
+                    <div className="license-chip-text-group">
+                      <span className="license-chip-title">License Document Photo</span>
+                      <span className="license-chip-subtitle">Attached & Verified ✓</span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="license-chip-view-btn"
+                    onClick={() => setShowLicenseModal(true)}
+                  >
+                    View
+                  </button>
+                </div>
+              ) : (
+                <div
+                  className="aurora-license-empty-chip"
+                  onClick={() => setEditing(true)}
+                  role="button"
+                  tabIndex={0}
+                  title="Attach driving license photo in edit mode"
+                >
+                  <span className="empty-chip-icon">📄</span>
+                  <span className="empty-chip-text">+ Attach License Document Image</span>
+                </div>
+              )}
             </div>
 
             {/* Divider */}
@@ -351,30 +458,6 @@ export default function ProfileOverview() {
               </div>
             </div>
 
-            {/* Bottom Pill Button: "Get in Touch" */}
-            <button
-              type="button"
-              className="aurora-bottom-pill-btn"
-              onClick={() => setShowContactModal(true)}
-            >
-              <div className="pill-circle-arrow">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                  <polyline points="12 5 19 12 12 19" />
-                </svg>
-              </div>
-              <span className="pill-btn-text">Get in Touch</span>
-            </button>
           </div>
         ) : (
           /* ================= EDIT MODE ================= */
@@ -444,7 +527,7 @@ export default function ProfileOverview() {
               {/* Driving License */}
               <div className="aurora-form-group">
                 <label className="label-with-icon">
-                  <span>🪪 Driving License</span>
+                  <span>🪪 Driving License Number</span>
                   <span className="field-tag">Rider ID</span>
                 </label>
                 <input
@@ -458,6 +541,75 @@ export default function ProfileOverview() {
                 <span className="field-hint">
                   Used to verify your license for rides and rentals.
                 </span>
+
+                {/* Driving License Document Upload Option */}
+                <div className="license-upload-card">
+                  <div className="license-upload-card-header">
+                    <span className="license-card-label">License Document Photo</span>
+                    {currentLicenseImage && (
+                      <span className="license-card-verified-tag">✓ Attached</span>
+                    )}
+                  </div>
+
+                  {currentLicenseImage ? (
+                    <div className="license-preview-container">
+                      <div
+                        className="license-preview-frame"
+                        onClick={() => setShowLicenseModal(true)}
+                        title="Click to preview full license document"
+                      >
+                        <img
+                          src={currentLicenseImage}
+                          alt="Driving License"
+                          className="license-preview-image"
+                        />
+                        <div className="license-preview-hover">
+                          <span>🔍 View Full</span>
+                        </div>
+                      </div>
+
+                      <div className="license-preview-actions">
+                        <button
+                          type="button"
+                          className="license-action-btn change"
+                          onClick={() => licenseFileInputRef.current?.click()}
+                          disabled={isUploadingLicense}
+                        >
+                          ✏️ {isUploadingLicense ? "Uploading..." : "Change Image"}
+                        </button>
+                        <button
+                          type="button"
+                          className="license-action-btn remove"
+                          onClick={handleRemoveLicenseImage}
+                          disabled={isUploadingLicense}
+                        >
+                          🗑️ Remove
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      className="license-dropzone"
+                      onClick={() => !isUploadingLicense && licenseFileInputRef.current?.click()}
+                      role="button"
+                      tabIndex={0}
+                    >
+                      <div className="dropzone-body">
+                        <span className="dropzone-icon">
+                          {isUploadingLicense ? "⏳" : "📤"}
+                        </span>
+                        <span className="dropzone-main-text">
+                          {isUploadingLicense
+                            ? "Uploading License Document..."
+                            : "Upload Driving License Image"}
+                        </span>
+                        <span className="dropzone-sub-text">
+                          Tap to select photo (PNG, JPG, WebP up to 5MB)
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Emergency Contact Number */}
@@ -651,6 +803,51 @@ export default function ProfileOverview() {
             >
               Edit All Details
             </button>
+          </div>
+        </div>
+      )}
+      {/* Full Screen Driving License Modal */}
+      {showLicenseModal && currentLicenseImage && (
+        <div
+          className="license-modal-backdrop"
+          onClick={() => setShowLicenseModal(false)}
+        >
+          <div
+            className="license-modal-content"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="license-modal-header">
+              <div className="license-modal-title-box">
+                <span className="modal-title-icon">🪪</span>
+                <span className="modal-title-text">Driving License Document</span>
+              </div>
+              <button
+                type="button"
+                className="license-modal-close-btn"
+                onClick={() => setShowLicenseModal(false)}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="license-modal-img-container">
+              <img
+                src={currentLicenseImage}
+                alt="Driving License Document Preview"
+                className="license-modal-full-img"
+              />
+            </div>
+
+            <div className="license-modal-actions">
+              <button
+                type="button"
+                className="license-modal-done-btn"
+                onClick={() => setShowLicenseModal(false)}
+              >
+                Close Preview
+              </button>
+            </div>
           </div>
         </div>
       )}

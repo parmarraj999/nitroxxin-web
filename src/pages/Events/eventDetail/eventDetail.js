@@ -3,10 +3,15 @@ import React, { useEffect, useState } from "react";
 import "./eventDetail.css";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useDocument } from "../../../hooks/useFirestore";
-import { COLLECTIONS } from "../../../services/firebase";
+import { COLLECTIONS, db } from "../../../services/firebase";
 import { normalizeEvent } from "../../../services/normalizers";
 import { useEventsContext } from "../../../context/EventsContext";
-import { saveFavoriteEvent } from "../../../services/commerceService";
+import {
+  saveFavoriteEvent,
+  removeFavoriteEvent,
+  saveEventLike,
+  removeEventLike,
+} from "../../../services/commerceService";
 import { useAuth } from "../../../context/AuthContext";
 import { useAuthModal } from "../../../components/AuthModal/useAuthModal";
 import { formatCategoryValue, getCategoryDetails } from "../eventCategoryConfig";
@@ -50,7 +55,6 @@ export default function EventDetail() {
 
   const event = eventFromContext || (fallbackQuery.data ? normalizeEvent(fallbackQuery.data) : null);
   const loading = eventsLoading || (fallbackQuery.loading && !eventFromContext);
-  console.log(event)
 
   const relatedEvents = events;
   const { user } = useAuth();
@@ -60,14 +64,204 @@ export default function EventDetail() {
   const [showTerms, setShowTerms] = useState(false);
   const [showFullItinerary, setShowFullItinerary] = useState(false);
 
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
-  const handleFavorite = async () => {
+  // Sync bookmark state with Firestore & localStorage
+  useEffect(() => {
+    if (!event?.id) return;
+
+    // Check localStorage first
+    try {
+      const localSaved = JSON.parse(localStorage.getItem("nitroxx_bookmarked_events") || "[]");
+      if (localSaved.includes(event.id)) {
+        setIsBookmarked(true);
+      }
+    } catch {
+      // ignore
+    }
+
+    if (!user?.uid) return;
+
+    try {
+      const unsub = db()
+        .collection(COLLECTIONS.users || "users")
+        .doc(user.uid)
+        .collection("bookmark")
+        .doc(event.id)
+        .onSnapshot(
+          (snap) => {
+            if (snap.exists) {
+              setIsBookmarked(true);
+            } else {
+              // Fallback check in wishlist collection
+              db()
+                .collection(COLLECTIONS.wishlist)
+                .doc(`${user.uid}_event_${event.id}`)
+                .get()
+                .then((wishSnap) => {
+                  if (wishSnap.exists) setIsBookmarked(true);
+                  else setIsBookmarked(false);
+                })
+                .catch(() => setIsBookmarked(false));
+            }
+
+            try {
+              const localSaved = JSON.parse(localStorage.getItem("nitroxx_bookmarked_events") || "[]");
+              if (snap.exists && !localSaved.includes(event.id)) {
+                localStorage.setItem("nitroxx_bookmarked_events", JSON.stringify([...localSaved, event.id]));
+              } else if (!snap.exists && localSaved.includes(event.id)) {
+                localStorage.setItem(
+                  "nitroxx_bookmarked_events",
+                  JSON.stringify(localSaved.filter((i) => i !== event.id))
+                );
+              }
+            } catch {
+              // ignore
+            }
+          },
+          (err) => {
+            console.warn("Error listening to event bookmark:", err);
+          }
+        );
+
+      return () => unsub();
+    } catch (err) {
+      console.warn("Firestore bookmark listener failed:", err);
+    }
+  }, [user?.uid, event?.id]);
+
+  // Sync like state with Firestore & localStorage
+  useEffect(() => {
+    if (!event?.id) return;
+
+    // Check localStorage first
+    try {
+      const localLikes = JSON.parse(localStorage.getItem("nitroxx_liked_events") || "[]");
+      if (localLikes.includes(event.id)) {
+        setIsLiked(true);
+      }
+    } catch {
+      // ignore
+    }
+
+    if (!user?.uid) return;
+
+    try {
+      const unsub = db()
+        .collection(COLLECTIONS.eventLikes || "event_likes")
+        .doc(`${user.uid}_${event.id}`)
+        .onSnapshot(
+          (snap) => {
+            setIsLiked(snap.exists);
+            try {
+              const localLikes = JSON.parse(localStorage.getItem("nitroxx_liked_events") || "[]");
+              if (snap.exists && !localLikes.includes(event.id)) {
+                localStorage.setItem("nitroxx_liked_events", JSON.stringify([...localLikes, event.id]));
+              } else if (!snap.exists && localLikes.includes(event.id)) {
+                localStorage.setItem(
+                  "nitroxx_liked_events",
+                  JSON.stringify(localLikes.filter((i) => i !== event.id))
+                );
+              }
+            } catch {
+              // ignore
+            }
+          },
+          (err) => {
+            console.warn("Error listening to event like:", err);
+          }
+        );
+
+      return () => unsub();
+    } catch (err) {
+      console.warn("Firestore like listener failed:", err);
+    }
+  }, [user?.uid, event?.id]);
+
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/events");
+    }
+  };
+
+  const handleToggleBookmark = async () => {
     if (!event) return;
-    if (!user) return openLogin();
-    await saveFavoriteEvent({ userId: user.uid, event });
+    if (!user) {
+      openLogin();
+      return;
+    }
+
+    const nextState = !isBookmarked;
+    setIsBookmarked(nextState);
+
+    try {
+      const localSaved = JSON.parse(localStorage.getItem("nitroxx_bookmarked_events") || "[]");
+      if (nextState) {
+        if (!localSaved.includes(event.id)) {
+          localStorage.setItem("nitroxx_bookmarked_events", JSON.stringify([...localSaved, event.id]));
+        }
+      } else {
+        localStorage.setItem(
+          "nitroxx_bookmarked_events",
+          JSON.stringify(localSaved.filter((i) => i !== event.id))
+        );
+      }
+    } catch {
+      // ignore
+    }
+
+    try {
+      if (nextState) {
+        await saveFavoriteEvent({ userId: user.uid, event });
+      } else {
+        await removeFavoriteEvent({ userId: user.uid, eventId: event.id });
+      }
+    } catch (err) {
+      console.error("Failed to update bookmark:", err);
+      setIsBookmarked(!nextState);
+    }
+  };
+
+  const handleToggleLike = async () => {
+    if (!event) return;
+
+    const nextLiked = !isLiked;
+    setIsLiked(nextLiked);
+
+    try {
+      const localLikes = JSON.parse(localStorage.getItem("nitroxx_liked_events") || "[]");
+      if (nextLiked) {
+        if (!localLikes.includes(event.id)) {
+          localStorage.setItem("nitroxx_liked_events", JSON.stringify([...localLikes, event.id]));
+        }
+      } else {
+        localStorage.setItem(
+          "nitroxx_liked_events",
+          JSON.stringify(localLikes.filter((i) => i !== event.id))
+        );
+      }
+    } catch {
+      // ignore
+    }
+
+    if (user?.uid) {
+      try {
+        if (nextLiked) {
+          await saveEventLike({ userId: user.uid, eventId: event.id });
+        } else {
+          await removeEventLike({ userId: user.uid, eventId: event.id });
+        }
+      } catch (err) {
+        console.warn("Failed to sync like with Firestore:", err);
+      }
+    }
   };
 
   const gallery = event?.images?.length ? event.images : [event?.image || event?.banner].filter(Boolean);
@@ -115,10 +309,67 @@ export default function EventDetail() {
     setLightboxIndex((prev) => (prev === gallery.length - 1 ? 0 : prev + 1));
   };
 
+  const navHeader = (
+    <header className="ed-navbar">
+      <div className="ed-navbar-blur" />
+      <div className="ed-navbar-inner">
+        <button
+          type="button"
+          className="ed-nav-btn ed-back-btn"
+          onClick={handleBack}
+          aria-label="Go back"
+          title="Go back"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
+
+        {event && (
+          <div className="ed-nav-actions">
+            <button
+              type="button"
+              className={`ed-nav-btn ed-bookmark-btn ${isBookmarked ? "ed-nav-btn--bookmarked" : ""}`}
+              onClick={handleToggleBookmark}
+              aria-label={isBookmarked ? "Remove bookmark" : "Bookmark event"}
+              title={isBookmarked ? "Bookmarked" : "Bookmark event"}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill={isBookmarked ? "#50d735" : "none"}
+                stroke={isBookmarked ? "#50d735" : "currentColor"}
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+              </svg>
+            </button>
+
+          </div>
+        )}
+      </div>
+    </header>
+  );
+
   if (loading) {
     return (
       <div className="event-detail-page">
-        <div className="nx-empty-state">
+        {navHeader}
+        <div className="nx-empty-state" style={{ paddingTop: 120 }}>
           <h3>Loading event</h3>
           <p>Fetching event details from Firestore.</p>
         </div>
@@ -129,7 +380,8 @@ export default function EventDetail() {
   if (!event) {
     return (
       <div className="event-detail-page">
-        <div className="nx-empty-state">
+        {navHeader}
+        <div className="nx-empty-state" style={{ paddingTop: 120 }}>
           <h3>Event not available</h3>
           <p>This event is not published or could not be found in Firestore.</p>
           <button className="ed-book-btn" onClick={() => navigate("/events")}>Browse Events</button>
@@ -157,6 +409,7 @@ export default function EventDetail() {
 
   return (
     <div className="event-detail-page">
+      {navHeader}
       <div className="event-detail-scroll-container">
         <div className="event-detail-canvas">
 
