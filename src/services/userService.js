@@ -36,7 +36,6 @@ export const ensureUserProfile = async (uid, userData = {}) => {
         uid,
         phone: userData.phone || "",
         fullName: userData.fullName || userData.name || userData.displayName || "",
-        role: "user",
         isProfileComplete: false,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),

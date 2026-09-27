@@ -199,30 +199,37 @@ export const saveWishlistItem = async ({ userId, product }) => {
 export const saveFavoriteEvent = async ({ userId, event }) => {
   if (!userId) throw new Error("Please log in to save events.");
   const item = normalizeEvent(event);
+  console.log(event)
+
+  const eventId = item.id || event.id;
+  const title = item.title || item.name || "";
+  const dates = item.dates || item.dateText || item.date || item.dateTimeText || item.startDate || "";
+  const time =
+    item.time ||
+    item.timeText ||
+    item.startTime ||
+    (typeof item.dateTimeText === "string" && item.dateTimeText.includes(",")
+      ? item.dateTimeText.split(",")[1]?.trim()
+      : "") ||
+    "";
+  const location = item.location || item.venue || item.address || "";
+  const banner =
+    item.banner ||
+    item.bannerImage ||
+    item.image ||
+    (item.images && item.images[0]) ||
+    "";
 
   const bookmarkData = compact({
-    id: item.id,
-    eventId: item.id,
+    eventId,
+    title,
+    time,
+    location,
+    banner,
+    image: banner,
+    date: dates,
+    price: item.price ?? 0,
     userId,
-    type: "event",
-    title: item.title || item.name || "",
-    name: item.name || item.title || "",
-    image: item.bannerImage || item.banner || item.image || (item.images && item.images[0]) || "",
-    bannerImage: item.bannerImage || item.banner || item.image || "",
-    images: item.images || [],
-    dateText: item.dateText || item.dateTimeText || "",
-    dateTimeText: item.dateTimeText || item.dateText || "",
-    startDate: item.startDate || "",
-    endDate: item.endDate || "",
-    location: item.location || "",
-    venue: item.venue || item.location || "",
-    price: item.price || 0,
-    priceText: item.priceText || (item.price ? `₹${item.price}` : "Free"),
-    category: item.category || "",
-    description: item.description || item.about || "",
-    about: item.about || item.description || "",
-    eventSnapshot: item,
-    data: item,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
@@ -232,17 +239,17 @@ export const saveFavoriteEvent = async ({ userId, event }) => {
     .collection(COLLECTIONS.users || "users")
     .doc(userId)
     .collection("bookmark")
-    .doc(item.id)
+    .doc(eventId)
     .set(bookmarkData, { merge: true });
 
   // Also maintain in wishlist collection for backwards compatibility
   try {
-    await db().collection(COLLECTIONS.wishlist).doc(`${userId}_event_${item.id}`).set(
+    await db().collection(COLLECTIONS.wishlist).doc(`${userId}_event_${eventId}`).set(
       {
         userId,
         type: "event",
-        eventId: item.id,
-        eventSnapshot: item,
+        eventId,
+        eventSnapshot: bookmarkData,
         createdAt: serverTimestamp(),
       },
       { merge: true }
@@ -262,6 +269,19 @@ export const removeFavoriteEvent = async ({ userId, eventId }) => {
     .collection("bookmark")
     .doc(eventId)
     .delete();
+
+  // Also remove any auto-id docs with matching eventId if any were created
+  try {
+    const snap = await db()
+      .collection(COLLECTIONS.users || "users")
+      .doc(userId)
+      .collection("bookmark")
+      .where("eventId", "==", eventId)
+      .get();
+    snap.forEach((d) => d.ref.delete());
+  } catch (err) {
+    // ignore
+  }
 
   // Also remove from wishlist collection
   try {
@@ -315,6 +335,7 @@ export const bookEvent = async ({
   const hostId = eventSnapshot.hostId || eventSnapshot.organizerId || eventSnapshot.vendorId || "";
   const totalTickets = Object.values(attendeeCounts || {}).reduce((sum, count) => sum + toNumber(count), 0);
   const registrationRef = db().collection("eventRegistrations").doc(`${eventId}_${user.uid}_${bookingRef.id}`);
+  const userJoinedEventRef = db().collection(COLLECTIONS.users || "users").doc(user.uid).collection("joined-event").doc(eventId || bookingRef.id);
 
   await db().runTransaction(async (transaction) => {
     const eventRef = db().collection(COLLECTIONS.events).doc(eventId);
@@ -363,7 +384,49 @@ export const bookEvent = async ({
       updatedAt: serverTimestamp(),
     });
 
+    const joinedEventData = compact({
+      id: eventId || bookingRef.id,
+      eventId,
+      bookingId,
+      bookingRefId: bookingRef.id,
+      userId: user.uid,
+      title: eventSnapshot.title || eventSnapshot.name || "",
+      name: eventSnapshot.name || eventSnapshot.title || "",
+      banner: eventSnapshot.banner || eventSnapshot.bannerImage || eventSnapshot.image || (eventSnapshot.images && eventSnapshot.images[0]) || "",
+      bannerImage: eventSnapshot.bannerImage || eventSnapshot.banner || eventSnapshot.image || "",
+      image: eventSnapshot.image || eventSnapshot.bannerImage || eventSnapshot.banner || "",
+      dates: eventSnapshot.dates || eventSnapshot.dateText || eventSnapshot.date || eventSnapshot.dateTimeText || eventSnapshot.startDate || "",
+      date: eventSnapshot.date || eventSnapshot.dateText || eventSnapshot.dateTimeText || "",
+      dateText: eventSnapshot.dateText || eventSnapshot.dateTimeText || "",
+      time: eventSnapshot.time || eventSnapshot.timeText || "",
+      dateTimeText: eventSnapshot.dateTimeText || eventSnapshot.dateText || "",
+      location: eventSnapshot.location || eventSnapshot.venue || eventSnapshot.address || "",
+      venue: eventSnapshot.venue || eventSnapshot.location || "",
+      price: eventSnapshot.price ?? 0,
+      prices: eventSnapshot.prices || eventSnapshot.priceText || (eventSnapshot.price !== undefined ? eventSnapshot.price : "Free"),
+      total,
+      totalTickets,
+      attendeeCounts,
+      attendees,
+      bikeDetails,
+      joinAs,
+      ticketPlan,
+      addOns,
+      bookingContact,
+      emergencyContact,
+      status: "pending",
+      paymentStatus: "paid",
+      paymentMethod: "online",
+      qrTicket: `NX-${bookingId}`,
+      eventSnapshot: JSON.parse(JSON.stringify(eventSnapshot)),
+      data: eventSnapshot,
+      joinedAt: serverTimestamp(),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+
     transaction.set(bookingRef, payload);
+    transaction.set(userJoinedEventRef, joinedEventData, { merge: true });
     transaction.set(registrationRef, compact({
       registrationId: registrationRef.id,
       bookingId,

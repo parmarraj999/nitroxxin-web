@@ -4,6 +4,7 @@ import Header from './header/header'
 import Marquee from './marquee/marquee'
 import CategoriesSection from './category/category'
 import FeaturedEvents from './featureEvent/featureEvent'
+import CuratedShowcase from './curatedShowcase/curatedShowcase'
 import ShopByCategory from './shopByCategory/shopByCategory'
 import ShopByBrands from './shopByBrand/shopByBrand'
 import FAQ from './FAQ/faq'
@@ -20,6 +21,7 @@ function Foryou() {
             <Marquee />
             <CategoriesSection categories={categories} />
             <FeaturedEvents />
+            <CuratedShowcase />
             <ShopByCategory />
             <ShopByBrands />
             <FAQ />

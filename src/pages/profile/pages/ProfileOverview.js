@@ -2,65 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../../context/AuthContext";
 import "./ProfileOverview.css";
 
-// Fallback Anime Avatar matching the exact illustration from the mockup
-const DefaultAnimeAvatar = () => (
-  <svg
-    viewBox="0 0 100 100"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    className="default-anime-svg"
-  >
-    <circle cx="50" cy="50" r="50" fill="#FFFDF9" />
-    {/* Body / Shirt */}
-    <path
-      d="M20 90C20 75 33 71 50 71C67 71 80 75 80 90"
-      stroke="#1E293B"
-      strokeWidth="3.2"
-      strokeLinecap="round"
-      fill="#FFFFFF"
-    />
-    <path
-      d="M37 71L43 83L50 84L57 83L63 71"
-      stroke="#1E293B"
-      strokeWidth="2.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    {/* Neck */}
-    <rect x="44" y="61" width="12" height="12" fill="#FEE5D8" />
-    {/* Face */}
-    <ellipse cx="50" cy="48" rx="21" ry="19" fill="#FEE5D8" />
-    {/* Hair back */}
-    <circle cx="50" cy="41" r="23" fill="#1E293B" />
-    {/* Hair Bangs */}
-    <path
-      d="M26 44C26 27 35 20 50 20C65 20 74 27 74 44C69 35 61 36 55 38C49 40 41 35 34 40C29 42 27 44 26 44Z"
-      fill="#1E293B"
-    />
-    <path
-      d="M33 37C35 44 39 47 42 45C44 43 44 37 44 37"
-      fill="#1E293B"
-    />
-    <path
-      d="M53 37C56 45 62 46 65 43C66 41 66 36 66 36"
-      fill="#1E293B"
-    />
-    {/* Eyes */}
-    <circle cx="41.5" cy="48" r="2.8" fill="#1E293B" />
-    <circle cx="58.5" cy="48" r="2.8" fill="#1E293B" />
-    {/* Cute blush */}
-    <circle cx="37" cy="53" r="3" fill="#FCA5A5" opacity="0.6" />
-    <circle cx="63" cy="53" r="3" fill="#FCA5A5" opacity="0.6" />
-    {/* Friendly Smile */}
-    <path
-      d="M47 55.5C48.2 57 51.8 57 53 55.5"
-      stroke="#1E293B"
-      strokeWidth="2.4"
-      strokeLinecap="round"
-    />
-  </svg>
-);
-
 export default function ProfileOverview() {
   const {
     user,
@@ -70,24 +11,21 @@ export default function ProfileOverview() {
     uploadUserDrivingLicense,
     removeUserDrivingLicense,
   } = useAuth();
+
   const fileInputRef = useRef(null);
   const licenseFileInputRef = useRef(null);
 
-  const [editing, setEditing] = useState(false);
-  const [showContactModal, setShowContactModal] = useState(false);
-  const [showLicenseModal, setShowLicenseModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [isUploadingLicense, setIsUploadingLicense] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [isBookmarked, setIsBookmarked] = useState(false);
-  const [licensePreviewUrl, setLicensePreviewUrl] = useState(null);
+  const [showLicensePreview, setShowLicensePreview] = useState(false);
 
-  // Profile Form state
+  // Profile Form state matching screenshot fields
   const [form, setForm] = useState({
-    name: "",
     username: "",
+    name: "",
     phone: "",
     email: "",
     drivingLicense: "",
@@ -96,7 +34,16 @@ export default function ProfileOverview() {
 
   // Sync state whenever profile/user updates
   useEffect(() => {
+    const rawUsername =
+      profile?.username ||
+      (user?.phone || user?.phoneNumber
+        ? `user_${(user.phone || user.phoneNumber).slice(-4)}`
+        : "user_9066");
+
+    const formattedUsername = rawUsername.startsWith("@") ? rawUsername : `@${rawUsername}`;
+
     setForm({
+      username: formattedUsername,
       name:
         profile?.fullName ||
         profile?.name ||
@@ -104,11 +51,6 @@ export default function ProfileOverview() {
         user?.fullName ||
         user?.displayName ||
         "",
-      username: profile?.username
-        ? profile.username.replace(/^@/, "")
-        : (user?.phone || user?.phoneNumber)
-        ? `rider_${(user.phone || user.phoneNumber).slice(-4)}`
-        : "",
       phone: profile?.phone || profile?.phoneNumber || user?.phone || user?.phoneNumber || "",
       email: profile?.email || user?.email || "",
       drivingLicense: profile?.drivingLicense || "",
@@ -116,7 +58,14 @@ export default function ProfileOverview() {
     });
   }, [profile, user]);
 
-  // Handle image upload
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+    setSaveSuccess(false);
+    setErrorMessage("");
+  };
+
+  // Handle avatar photo selection and upload
   const handlePhotoSelect = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -133,69 +82,57 @@ export default function ProfileOverview() {
     }
   };
 
-  // Handle driving license document image selection and upload
+  // Handle driving license document photo upload
   const handleLicenseSelect = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      setErrorMessage("License image size must be less than 5MB.");
-      return;
-    }
-
     setIsUploadingLicense(true);
     setErrorMessage("");
     try {
-      const previewUrl = URL.createObjectURL(file);
-      setLicensePreviewUrl(previewUrl);
-
-      const downloadURL = await uploadUserDrivingLicense(file);
-      setLicensePreviewUrl(downloadURL);
+      await uploadUserDrivingLicense(file);
     } catch (err) {
-      console.error("License upload error:", err);
-      setLicensePreviewUrl(null);
-      setErrorMessage(err.message || "Failed to upload driving license image. Please try again.");
+      console.error("License photo upload error:", err);
+      setErrorMessage(err.message || "Failed to upload license photo. Please try again.");
     } finally {
       setIsUploadingLicense(false);
-      if (e.target) e.target.value = "";
     }
   };
 
-  // Remove driving license document image
-  const handleRemoveLicenseImage = async () => {
-    if (!window.confirm("Are you sure you want to remove your driving license image?")) return;
-    setIsUploadingLicense(true);
-    setErrorMessage("");
+  // Handle driving license removal
+  const handleRemoveLicense = async (e) => {
+    e.preventDefault();
+    if (!window.confirm("Remove your attached driving license document?")) return;
+
     try {
       await removeUserDrivingLicense();
-      setLicensePreviewUrl(null);
     } catch (err) {
-      console.error("Remove license error:", err);
-      setErrorMessage(err.message || "Failed to remove license image.");
-    } finally {
-      setIsUploadingLicense(false);
+      console.error("Failed to remove license:", err);
+      setErrorMessage("Could not remove license photo.");
     }
   };
 
-  // Save profile updates to Firestore
+  // Save details
   const handleSave = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     setIsSaving(true);
     setErrorMessage("");
 
     try {
+      const cleanUsername = form.username.trim().replace(/^@/, "");
       const trimmedName = form.name.trim();
-      const rawUsername = form.username.trim().replace(/^@/, "");
-      const formattedUsername = rawUsername ? `@${rawUsername}` : "";
       const trimmedPhone = form.phone.trim();
       const trimmedEmail = form.email.trim();
-      const trimmedLicense = form.drivingLicense.trim();
+      const trimmedLicense = form.drivingLicense.trim().toUpperCase();
       const trimmedEmergency = form.emergencyNumber.trim();
 
       await updateProfile({
         fullName: trimmedName,
-        username: formattedUsername,
+        name: trimmedName,
+        displayName: trimmedName,
+        username: cleanUsername ? `@${cleanUsername}` : "",
         phone: trimmedPhone,
+        phoneNumber: trimmedPhone,
         email: trimmedEmail,
         drivingLicense: trimmedLicense,
         emergencyNumber: trimmedEmergency,
@@ -205,652 +142,336 @@ export default function ProfileOverview() {
       });
 
       setSaveSuccess(true);
-      setTimeout(() => {
-        setSaveSuccess(false);
-        setEditing(false);
-      }, 900);
+      setTimeout(() => setSaveSuccess(false), 2500);
     } catch (err) {
       console.error("Failed to save profile:", err);
-      setErrorMessage(err.message || "Failed to update profile. Please try again.");
+      setErrorMessage(err.message || "Failed to update profile details. Please try again.");
     } finally {
       setIsSaving(false);
     }
   };
 
-  // Display values
-  const displayName =
-    profile?.fullName ||
-    profile?.name ||
-    profile?.displayName ||
-    user?.fullName ||
-    user?.displayName ||
-    "Olivia Rhye";
-
-  const rawUsername = profile?.username || (user?.phone || user?.phoneNumber ? `@rider_${(user.phone || user.phoneNumber).slice(-4)}` : "@Oliviar_");
-  const displayUsername = rawUsername.startsWith("@") ? rawUsername : `@${rawUsername}`;
-
   const currentPhoto = profile?.profilePhoto || profile?.photoURL || user?.profilePhoto || user?.photoURL;
   const currentLicenseImage =
-    licensePreviewUrl ||
     profile?.drivingLicenseImage ||
     profile?.drivingLicensePhoto ||
-    "";
-  const ratingValue = profile?.rating || "4.9";
-  const postsCount = profile?.postsCount || profile?.ridesCount || "125";
-  const followersCount = profile?.followers || "12.4K";
+    "https://upload.wikimedia.org/wikipedia/en/thumb/8/87/McLovin_Driver%27s_License.jpg/300px-McLovin_Driver%27s_License.jpg"; // Default demo fallback if not yet uploaded
+
+  const hasLicenseAttached = Boolean(profile?.drivingLicenseImage || profile?.drivingLicensePhoto || currentLicenseImage);
 
   return (
-    <section className="profile-overview-wrapper">
-      <article className="aurora-profile-card">
-        {/* Hidden File Input for Avatar */}
-        <input
-          type="file"
-          ref={fileInputRef}
-          accept="image/*"
-          style={{ display: "none" }}
-          onChange={handlePhotoSelect}
-        />
+    <div className="nx-details-page-wrap">
+      {/* Hidden File Inputs */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept="image/*"
+        style={{ display: "none" }}
+        onChange={handlePhotoSelect}
+      />
+      <input
+        type="file"
+        ref={licenseFileInputRef}
+        accept="image/*"
+        style={{ display: "none" }}
+        onChange={handleLicenseSelect}
+      />
 
-        {/* Hidden File Input for Driving License */}
-        <input
-          type="file"
-          ref={licenseFileInputRef}
-          accept="image/*"
-          style={{ display: "none" }}
-          onChange={handleLicenseSelect}
-        />
-
-        {/* TOP: Aurora Mesh Gradient Banner */}
-        <div className="aurora-banner">
-          <div className="aurora-glow-1" />
-          <div className="aurora-glow-2" />
-          <div className="aurora-glow-3" />
-        </div>
-
-        {/* AVATAR: Overlaps bottom-left of the banner */}
-        <div className="aurora-avatar-container">
-          <div
-            className="aurora-avatar-ring"
-            onClick={() => fileInputRef.current?.click()}
-            title="Click to change profile picture"
-          >
-            {currentPhoto ? (
-              <img
-                src={currentPhoto}
-                alt={displayName}
-                className="aurora-avatar-img"
-              />
-            ) : (
-              <DefaultAnimeAvatar />
-            )}
-
-            {/* Camera Overlay Icon */}
-            <div className="aurora-avatar-upload-overlay">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                <circle cx="12" cy="13" r="4" />
-              </svg>
-            </div>
-          </div>
-
-          {isUploadingPhoto && (
-            <span className="uploading-badge">Uploading...</span>
+      {/* Top Header matching Screenshot 1 */}
+      <div className="nx-details-header">
+        <h1 className="nx-details-title">Your Details</h1>
+        <button
+          type="button"
+          className="nx-details-check-btn"
+          onClick={handleSave}
+          title="Save Details"
+          aria-label="Save Details"
+          disabled={isSaving}
+        >
+          {isSaving ? (
+            <div className="nx-btn-mini-spinner" />
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
           )}
+        </button>
+      </div>
+
+      {saveSuccess && (
+        <div className="nx-details-alert-success">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          Details saved successfully!
         </div>
+      )}
 
-        {!editing ? (
-          /* ================= VIEW MODE ================= */
-          <div className="aurora-card-body">
-            {/* Header: Name, Username & Action Buttons */}
-            <div className="aurora-header-row">
-              <div className="aurora-user-meta">
-                <h2 className="aurora-name">{displayName}</h2>
-                <p className="aurora-username">{displayUsername}</p>
-              </div>
+      {errorMessage && (
+        <div className="nx-details-alert-error">
+          {errorMessage}
+        </div>
+      )}
 
-              <div className="aurora-actions-group">
+      <form onSubmit={handleSave} className="nx-details-desktop-layout">
+        {/* Left Column: Avatar & License Document */}
+        <div className="nx-details-left-panel">
+          <div className="nx-details-avatar-card">
+            {/* Centered Avatar with Blue Ring & Pencil Badge */}
+            <div className="nx-details-avatar-section">
+              <div
+                className="nx-details-avatar-ring"
+                onClick={() => fileInputRef.current?.click()}
+                title="Change profile picture"
+              >
+                {currentPhoto ? (
+                  <img src={currentPhoto} alt="Profile" className="nx-details-avatar-img" />
+                ) : (
+                  <div className="nx-details-avatar-empty">
+                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="1.5">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
+                  </div>
+                )}
+
+                {/* Blue floating edit pencil button */}
                 <button
                   type="button"
-                  className="aurora-follow-btn"
-                  onClick={() => setEditing(true)}
+                  className="nx-details-pencil-badge"
+                  aria-label="Upload photo"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    fileInputRef.current?.click();
+                  }}
                 >
-                  Edit Profile
-                </button>
-
-                <button
-                  type="button"
-                  className={`aurora-icon-btn ${isBookmarked ? "bookmarked" : ""}`}
-                  onClick={() => setIsBookmarked(!isBookmarked)}
-                  aria-label="Bookmark Profile"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="17"
-                    height="17"
-                    viewBox="0 0 24 24"
-                    fill={isBookmarked ? "currentColor" : "none"}
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
                   </svg>
                 </button>
               </div>
+
+              {isUploadingPhoto && (
+                <span className="nx-details-uploading-tag">Uploading photo...</span>
+              )}
+
+              <h3 className="nx-details-profile-name">{form.name || "Nitroxx Rider"}</h3>
+              <span className="nx-details-profile-handle">{form.username || "@rider"}</span>
+            </div>
+          </div>
+
+          {/* License Document Photo Card */}
+          <div className="nx-details-field">
+            <div className="nx-details-license-label-row">
+              <label className="nx-details-label">License Document Photo</label>
+              {hasLicenseAttached && (
+                <span className="nx-details-attached-badge">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  Attached
+                </span>
+              )}
             </div>
 
-            {/* Additional Details (Driving License & Emergency Number) */}
-            <div className="aurora-details-section">
-              <div className="aurora-pill-badges-row">
-                {profile?.drivingLicense ? (
-                  <div className="aurora-badge license-badge" title="Verified Rider License">
-                    <span className="badge-icon">🪪</span>
-                    <span className="badge-label">DL:</span>
-                    <span className="badge-text">{profile.drivingLicense}</span>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    className="aurora-badge add-badge"
-                    onClick={() => setEditing(true)}
-                  >
-                    <span className="badge-icon">🪪</span>
-                    <span className="badge-text">+ Add Driving License</span>
-                  </button>
-                )}
-
-                {profile?.emergencyNumber ? (
-                  <div className="aurora-badge emergency-badge" title="Emergency Contact">
-                    <span className="badge-icon">🚨</span>
-                    <span className="badge-label">SOS:</span>
-                    <span className="badge-text">{profile.emergencyNumber}</span>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    className="aurora-badge add-badge"
-                    onClick={() => setEditing(true)}
-                  >
-                    <span className="badge-icon">🚨</span>
-                    <span className="badge-text">+ Add Emergency No.</span>
-                  </button>
-                )}
-              </div>
-
-              {/* Driving License Document Attachment Badge */}
+            <div className="nx-details-license-card">
               {currentLicenseImage ? (
-                <div className="aurora-license-chip-card">
-                  <div
-                    className="license-chip-preview"
-                    onClick={() => setShowLicenseModal(true)}
-                    title="Click to view driving license document"
-                  >
-                    <img
-                      src={currentLicenseImage}
-                      alt="Driving License Document"
-                      className="license-chip-img"
-                    />
-                    <div className="license-chip-text-group">
-                      <span className="license-chip-title">License Document Photo</span>
-                      <span className="license-chip-subtitle">Attached & Verified ✓</span>
-                    </div>
-                  </div>
+                <div className="nx-details-license-preview-box">
+                  <img
+                    src={currentLicenseImage}
+                    alt="Driving License Document"
+                    className="nx-details-license-img"
+                  />
                   <button
                     type="button"
-                    className="license-chip-view-btn"
-                    onClick={() => setShowLicenseModal(true)}
+                    className="nx-details-tap-preview-pill"
+                    onClick={() => setShowLicensePreview(true)}
                   >
-                    View
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                    Tap to preview
                   </button>
                 </div>
               ) : (
                 <div
-                  className="aurora-license-empty-chip"
-                  onClick={() => setEditing(true)}
-                  role="button"
-                  tabIndex={0}
-                  title="Attach driving license photo in edit mode"
+                  className="nx-details-license-empty"
+                  onClick={() => licenseFileInputRef.current?.click()}
                 >
-                  <span className="empty-chip-icon">📄</span>
-                  <span className="empty-chip-text">+ Attach License Document Image</span>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="1.5">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <polyline points="21 15 16 10 5 21" />
+                  </svg>
+                  <span>Upload Driving License Photo</span>
                 </div>
               )}
-            </div>
 
-            {/* Divider */}
-            <div className="aurora-divider" />
+              {isUploadingLicense && (
+                <div className="nx-details-license-uploading">Uploading document...</div>
+              )}
 
-            {/* Stats Row */}
-            <div className="aurora-stats-row">
-              <div className="aurora-stat-col">
-                <div className="aurora-stat-top">
-                  <span className="stat-icon star">★</span>
-                  <span className="stat-number">{ratingValue}</span>
-                </div>
-                <span className="aurora-stat-label">Rating</span>
-              </div>
-
-              <div className="aurora-stat-col">
-                <div className="aurora-stat-top">
-                  <span className="stat-icon doc">📄</span>
-                  <span className="stat-number">{postsCount}</span>
-                </div>
-                <span className="aurora-stat-label">Posts</span>
-              </div>
-
-              <div className="aurora-stat-col">
-                <div className="aurora-stat-top">
-                  <span className="stat-icon user">👥</span>
-                  <span className="stat-number">{followersCount}</span>
-                </div>
-                <span className="aurora-stat-label">Followers</span>
-              </div>
-            </div>
-
-          </div>
-        ) : (
-          /* ================= EDIT MODE ================= */
-          <div className="aurora-card-body edit-mode">
-            <div className="edit-header-row">
-              <h3 className="edit-title">Edit Profile</h3>
-              <button
-                type="button"
-                className="edit-close-btn"
-                onClick={() => {
-                  setEditing(false);
-                  setErrorMessage("");
-                }}
-              >
-                ✕
-              </button>
-            </div>
-
-            {errorMessage && (
-              <div className="aurora-alert-error">{errorMessage}</div>
-            )}
-            {saveSuccess && (
-              <div className="aurora-alert-success">✓ Profile saved successfully!</div>
-            )}
-
-            <form className="aurora-edit-form" onSubmit={handleSave}>
-              {/* Photo Upload Shortcut */}
-              <div className="edit-photo-shortcut">
+              <div className="nx-details-license-actions">
                 <button
                   type="button"
-                  className="change-photo-btn"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploadingPhoto}
+                  className="nx-details-btn-change-photo"
+                  onClick={() => licenseFileInputRef.current?.click()}
                 >
-                  📷 {isUploadingPhoto ? "Uploading Photo..." : "Change Profile Photo"}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                  </svg>
+                  Change Photo
                 </button>
-              </div>
 
-              {/* Full Name */}
-              <div className="aurora-form-group">
-                <label>Full Name</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Olivia Rhye"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  required
-                />
-              </div>
-
-              {/* Username */}
-              <div className="aurora-form-group">
-                <label>Username</label>
-                <div className="input-with-prefix">
-                  <span className="input-prefix">@</span>
-                  <input
-                    type="text"
-                    placeholder="Oliviar_"
-                    value={form.username}
-                    onChange={(e) =>
-                      setForm({ ...form, username: e.target.value.replace(/\s+/g, "") })
-                    }
-                  />
-                </div>
-              </div>
-
-              {/* Driving License */}
-              <div className="aurora-form-group">
-                <label className="label-with-icon">
-                  <span>🪪 Driving License Number</span>
-                  <span className="field-tag">Rider ID</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. DL-0420110012345"
-                  value={form.drivingLicense}
-                  onChange={(e) =>
-                    setForm({ ...form, drivingLicense: e.target.value.toUpperCase() })
-                  }
-                />
-                <span className="field-hint">
-                  Used to verify your license for rides and rentals.
-                </span>
-
-                {/* Driving License Document Upload Option */}
-                <div className="license-upload-card">
-                  <div className="license-upload-card-header">
-                    <span className="license-card-label">License Document Photo</span>
-                    {currentLicenseImage && (
-                      <span className="license-card-verified-tag">✓ Attached</span>
-                    )}
-                  </div>
-
-                  {currentLicenseImage ? (
-                    <div className="license-preview-container">
-                      <div
-                        className="license-preview-frame"
-                        onClick={() => setShowLicenseModal(true)}
-                        title="Click to preview full license document"
-                      >
-                        <img
-                          src={currentLicenseImage}
-                          alt="Driving License"
-                          className="license-preview-image"
-                        />
-                        <div className="license-preview-hover">
-                          <span>🔍 View Full</span>
-                        </div>
-                      </div>
-
-                      <div className="license-preview-actions">
-                        <button
-                          type="button"
-                          className="license-action-btn change"
-                          onClick={() => licenseFileInputRef.current?.click()}
-                          disabled={isUploadingLicense}
-                        >
-                          ✏️ {isUploadingLicense ? "Uploading..." : "Change Image"}
-                        </button>
-                        <button
-                          type="button"
-                          className="license-action-btn remove"
-                          onClick={handleRemoveLicenseImage}
-                          disabled={isUploadingLicense}
-                        >
-                          🗑️ Remove
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div
-                      className="license-dropzone"
-                      onClick={() => !isUploadingLicense && licenseFileInputRef.current?.click()}
-                      role="button"
-                      tabIndex={0}
-                    >
-                      <div className="dropzone-body">
-                        <span className="dropzone-icon">
-                          {isUploadingLicense ? "⏳" : "📤"}
-                        </span>
-                        <span className="dropzone-main-text">
-                          {isUploadingLicense
-                            ? "Uploading License Document..."
-                            : "Upload Driving License Image"}
-                        </span>
-                        <span className="dropzone-sub-text">
-                          Tap to select photo (PNG, JPG, WebP up to 5MB)
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Emergency Contact Number */}
-              <div className="aurora-form-group">
-                <label className="label-with-icon">
-                  <span>🚨 Emergency Contact Number</span>
-                  <span className="field-tag emergency">SOS</span>
-                </label>
-                <input
-                  type="tel"
-                  placeholder="e.g. +91 98765 43210"
-                  value={form.emergencyNumber}
-                  onChange={(e) =>
-                    setForm({ ...form, emergencyNumber: e.target.value })
-                  }
-                />
-                <span className="field-hint">
-                  Primary contact notified in case of on-road emergency.
-                </span>
-              </div>
-
-              {/* Phone */}
-              <div className="aurora-form-group">
-                <label>Phone Number</label>
-                <input
-                  type="tel"
-                  placeholder="+91 98765 43210"
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                />
-              </div>
-
-              {/* Email */}
-              <div className="aurora-form-group">
-                <label>Email Address</label>
-                <input
-                  type="email"
-                  placeholder="olivia@nitroxxin.com"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                />
-              </div>
-
-              {/* Action Buttons */}
-              <div className="edit-actions-row">
-                <button
-                  type="button"
-                  className="aurora-cancel-btn"
-                  onClick={() => {
-                    setEditing(false);
-                    setErrorMessage("");
-                  }}
-                  disabled={isSaving}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="aurora-save-btn"
-                  disabled={isSaving}
-                >
-                  {isSaving ? "Saving..." : "Save Changes"}
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
-      </article>
-
-      {/* "GET IN TOUCH" QUICK MODAL */}
-      {showContactModal && (
-        <div
-          className="aurora-modal-backdrop"
-          onClick={() => setShowContactModal(false)}
-        >
-          <div
-            className="aurora-modal-box"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="modal-top">
-              <h3 className="modal-title">Get in Touch</h3>
-              <button
-                type="button"
-                className="modal-close"
-                onClick={() => setShowContactModal(false)}
-              >
-                ✕
-              </button>
-            </div>
-
-            <p className="modal-subtitle">
-              Contact and verified documents for <strong>{displayName}</strong>
-            </p>
-
-            <div className="contact-list">
-              <div className="contact-item">
-                <span className="contact-icon">📞</span>
-                <div className="contact-text">
-                  <span className="contact-label">Phone</span>
-                  <span className="contact-val">
-                    {profile?.phone || user?.phoneNumber || "Not provided"}
-                  </span>
-                </div>
-                {(profile?.phone || user?.phoneNumber) && (
-                  <a
-                    href={`tel:${profile?.phone || user?.phoneNumber}`}
-                    className="contact-action-btn"
-                  >
-                    Call
-                  </a>
-                )}
-              </div>
-
-              <div className="contact-item">
-                <span className="contact-icon">✉️</span>
-                <div className="contact-text">
-                  <span className="contact-label">Email</span>
-                  <span className="contact-val">
-                    {profile?.email || user?.email || "Not provided"}
-                  </span>
-                </div>
-                {(profile?.email || user?.email) && (
-                  <a
-                    href={`mailto:${profile?.email || user?.email}`}
-                    className="contact-action-btn"
-                  >
-                    Email
-                  </a>
-                )}
-              </div>
-
-              <div className="contact-item highlight">
-                <span className="contact-icon">🚨</span>
-                <div className="contact-text">
-                  <span className="contact-label">Emergency SOS</span>
-                  <span className="contact-val">
-                    {profile?.emergencyNumber || "No Emergency Contact Added"}
-                  </span>
-                </div>
-                {profile?.emergencyNumber ? (
-                  <a
-                    href={`tel:${profile.emergencyNumber}`}
-                    className="contact-action-btn sos"
-                  >
-                    SOS Call
-                  </a>
-                ) : (
+                {hasLicenseAttached && (
                   <button
                     type="button"
-                    className="contact-action-btn add"
-                    onClick={() => {
-                      setShowContactModal(false);
-                      setEditing(true);
-                    }}
+                    className="nx-details-btn-remove-photo"
+                    onClick={handleRemoveLicense}
                   >
-                    Add
-                  </button>
-                )}
-              </div>
-
-              <div className="contact-item">
-                <span className="contact-icon">🪪</span>
-                <div className="contact-text">
-                  <span className="contact-label">Driving License</span>
-                  <span className="contact-val">
-                    {profile?.drivingLicense || "No License Attached"}
-                  </span>
-                </div>
-                {!profile?.drivingLicense && (
-                  <button
-                    type="button"
-                    className="contact-action-btn add"
-                    onClick={() => {
-                      setShowContactModal(false);
-                      setEditing(true);
-                    }}
-                  >
-                    Add
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    </svg>
+                    Remove
                   </button>
                 )}
               </div>
             </div>
+          </div>
+        </div>
 
+        {/* Right Column: Personal Info Fields */}
+        <div className="nx-details-right-panel">
+          {/* Username */}
+          <div className="nx-details-field">
+            <label className="nx-details-label">Username</label>
+            <input
+              type="text"
+              name="username"
+              className="nx-details-input"
+              value={form.username}
+              onChange={handleInputChange}
+              placeholder="@username"
+            />
+          </div>
+
+          {/* Name */}
+          <div className="nx-details-field">
+            <label className="nx-details-label">Name</label>
+            <input
+              type="text"
+              name="name"
+              className="nx-details-input"
+              value={form.name}
+              onChange={handleInputChange}
+              placeholder="Full Name"
+            />
+          </div>
+
+          {/* Phone */}
+          <div className="nx-details-field">
+            <label className="nx-details-label">Phone</label>
+            <input
+              type="tel"
+              name="phone"
+              className="nx-details-input"
+              value={form.phone}
+              onChange={handleInputChange}
+              placeholder="+919876543210"
+            />
+          </div>
+
+          {/* Email */}
+          <div className="nx-details-field">
+            <label className="nx-details-label">Email</label>
+            <input
+              type="email"
+              name="email"
+              className="nx-details-input"
+              value={form.email}
+              onChange={handleInputChange}
+              placeholder="name@example.com"
+            />
+          </div>
+
+          {/* Driving License Number */}
+          <div className="nx-details-field">
+            <label className="nx-details-label">Driving License Number</label>
+            <input
+              type="text"
+              name="drivingLicense"
+              className="nx-details-input"
+              value={form.drivingLicense}
+              onChange={handleInputChange}
+              placeholder="e.g. DL7282627272"
+            />
+          </div>
+
+          {/* Emergency Number */}
+          <div className="nx-details-field">
+            <label className="nx-details-label">Emergency Number</label>
+            <input
+              type="tel"
+              name="emergencyNumber"
+              className="nx-details-input"
+              value={form.emergencyNumber}
+              onChange={handleInputChange}
+              placeholder="e.g. 9098959014"
+            />
+          </div>
+
+          {/* Bottom Full Width Blue Button */}
+          <div className="nx-details-submit-wrap">
             <button
-              type="button"
-              className="modal-edit-shortcut-btn"
-              onClick={() => {
-                setShowContactModal(false);
-                setEditing(true);
-              }}
+              type="submit"
+              className="nx-details-save-btn"
+              disabled={isSaving}
             >
-              Edit All Details
+              {isSaving ? "Saving Details..." : "Save Details"}
             </button>
           </div>
         </div>
-      )}
-      {/* Full Screen Driving License Modal */}
-      {showLicenseModal && currentLicenseImage && (
+      </form>
+
+      {/* Full Screen Image Lightbox Preview */}
+      {showLicensePreview && (
         <div
-          className="license-modal-backdrop"
-          onClick={() => setShowLicenseModal(false)}
+          className="profile-modal-backdrop"
+          onClick={() => setShowLicensePreview(false)}
         >
           <div
-            className="license-modal-content"
+            className="profile-modal"
+            style={{ maxWidth: "680px", background: "#0e1115", padding: "16px" }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="license-modal-header">
-              <div className="license-modal-title-box">
-                <span className="modal-title-icon">🪪</span>
-                <span className="modal-title-text">Driving License Document</span>
-              </div>
+            <div className="profile-modal-header" style={{ marginBottom: 12 }}>
+              <h3>Driving License Document</h3>
               <button
                 type="button"
-                className="license-modal-close-btn"
-                onClick={() => setShowLicenseModal(false)}
-                aria-label="Close"
+                className="profile-modal-close"
+                onClick={() => setShowLicensePreview(false)}
               >
-                ✕
+                &times;
               </button>
             </div>
-
-            <div className="license-modal-img-container">
-              <img
-                src={currentLicenseImage}
-                alt="Driving License Document Preview"
-                className="license-modal-full-img"
-              />
-            </div>
-
-            <div className="license-modal-actions">
-              <button
-                type="button"
-                className="license-modal-done-btn"
-                onClick={() => setShowLicenseModal(false)}
-              >
-                Close Preview
-              </button>
-            </div>
+            <img
+              src={currentLicenseImage}
+              alt="Driving License Full Preview"
+              style={{
+                width: "100%",
+                maxHeight: "75vh",
+                objectFit: "contain",
+                borderRadius: "12px",
+                display: "block",
+              }}
+            />
           </div>
         </div>
       )}
-    </section>
+    </div>
   );
 }

@@ -1,60 +1,625 @@
-import FilterPills from "../components/FilterPills";
+import React, { useState, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import { useCollection } from "../../../hooks/useFirestore";
 import { COLLECTIONS } from "../../../services/firebase";
-import { normalizeProduct } from "../../../services/normalizers";
+
+// Sample initial orders matching the user's reference image and motorcycle gear store
+const SAMPLE_ORDERS = [
+  {
+    id: "sample-order-phone",
+    orderNumber: "OD437266130144705100",
+    itemName: "Apple iPhone 16 (Ultramarine, 128 GB)",
+    specs: "Color: Ultramarine  •  Storage: 128 GB",
+    image: "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?auto=format&fit=crop&w=400&q=80",
+    price: 52148,
+    status: "delivered",
+    dateText: "Sep 24, 2025",
+    statusMessage: "Your item has been delivered",
+    sharedNote: "Chartered Accountant shared this order with you.",
+    itemCount: 1,
+    deliveryAddress: "Flat 402, Highrise Palms, Palm Beach Road, Navi Mumbai - 400705",
+    paymentMode: "Prepaid (UPI / Card)",
+    items: [
+      {
+        name: "Apple iPhone 16 (Ultramarine, 128 GB)",
+        specs: "Color: Ultramarine  •  Storage: 128 GB",
+        price: 52148,
+        image: "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?auto=format&fit=crop&w=400&q=80",
+      },
+    ],
+  },
+  {
+    id: "sample-order-jacket",
+    orderNumber: "OD437266130144705101",
+    itemName: "Alpine Star MotoShield Pro Mesh Riding Jacket",
+    specs: "Color: Stealth Black  •  Size: L  •  Qty: 1",
+    image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=400&q=80",
+    price: 18499,
+    status: "delivered",
+    dateText: "Sep 20, 2025",
+    statusMessage: "Your item has been delivered",
+    itemCount: 1,
+    deliveryAddress: "Flat 402, Highrise Palms, Palm Beach Road, Navi Mumbai - 400705",
+    paymentMode: "Net Banking",
+    items: [
+      {
+        name: "Alpine Star MotoShield Pro Mesh Riding Jacket",
+        specs: "Color: Stealth Black  •  Size: L",
+        price: 18499,
+        image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=400&q=80",
+      },
+    ],
+  },
+  {
+    id: "sample-order-helmet",
+    orderNumber: "OD437266130144705102",
+    itemName: "AGV K6 S Carbon Helmet (Matte Black)",
+    specs: "Color: Matte Carbon  •  Size: M  •  Qty: 1",
+    image: "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=400&q=80",
+    price: 44990,
+    status: "shipping",
+    dateText: "Sep 28, 2025",
+    statusMessage: "Your item is out for delivery with courier partner",
+    itemCount: 1,
+    deliveryAddress: "Flat 402, Highrise Palms, Palm Beach Road, Navi Mumbai - 400705",
+    paymentMode: "Credit Card EMI",
+    items: [
+      {
+        name: "AGV K6 S Carbon Helmet (Matte Black)",
+        specs: "Color: Matte Carbon  •  Size: M",
+        price: 44990,
+        image: "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=400&q=80",
+      },
+    ],
+  },
+  {
+    id: "sample-order-dryer",
+    orderNumber: "OD437266130144705103",
+    itemName: "glamblush Hair dryer with round comb",
+    specs: "Color: Multicolor  •  Size: 7cm  •  Qty: 1",
+    image: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=400&q=80",
+    price: 211,
+    status: "cancelled",
+    dateText: "Apr 10, 2025",
+    statusMessage: "Your order was cancelled as per your request.",
+    itemCount: 1,
+    deliveryAddress: "Flat 402, Highrise Palms, Palm Beach Road, Navi Mumbai - 400705",
+    paymentMode: "Refund Credited to Wallet",
+    items: [
+      {
+        name: "glamblush Hair dryer with round comb",
+        specs: "Color: Multicolor  •  Size: 7cm",
+        price: 211,
+        image: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=400&q=80",
+      },
+    ],
+  },
+  {
+    id: "sample-order-socks",
+    orderNumber: "OD437266130144705104",
+    itemName: "Men Ankle Length Riding Breathable Socks (Pack of 3)",
+    specs: "Color: Multicolor  •  Size: Free  •  Qty: 1",
+    image: "https://images.unsplash.com/photo-1586350977771-b3b0abd50c82?auto=format&fit=crop&w=400&q=80",
+    price: 499,
+    status: "delivered",
+    dateText: "Jun 29, 2025",
+    statusMessage: "Your item has been delivered",
+    itemCount: 1,
+    deliveryAddress: "Flat 402, Highrise Palms, Palm Beach Road, Navi Mumbai - 400705",
+    paymentMode: "Cash on Delivery",
+    items: [
+      {
+        name: "Men Ankle Length Riding Breathable Socks (Pack of 3)",
+        specs: "Color: Multicolor  •  Size: Free",
+        price: 499,
+        image: "https://images.unsplash.com/photo-1586350977771-b3b0abd50c82?auto=format&fit=crop&w=400&q=80",
+      },
+    ],
+  },
+];
 
 export default function MyOrders() {
   const { user } = useAuth();
-  const { data } = useCollection(COLLECTIONS.orders, {
-    where: [["userId", "==", user?.uid]],
+  const [searchInput, setSearchInput] = useState("");
+  const [committedSearch, setCommittedSearch] = useState("");
+  const [activeFilter, setActiveFilter] = useState("all");
+
+  // Modals state
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [trackingOrder, setTrackingOrder] = useState(null);
+  const [reviewOrder, setReviewOrder] = useState(null);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
+
+  const { data: firestoreOrders, loading } = useCollection(COLLECTIONS.orders, {
+    where: user?.uid ? [["userId", "==", user.uid]] : [["userId", "==", "NO_USER"]],
     orderBy: [["createdAt", "desc"]],
     limit: 50,
   });
 
+  const parsedFirestoreOrders = useMemo(() => {
+    return (firestoreOrders || []).map((ord) => {
+      const rawStatus = String(ord.status || "confirmed").toLowerCase();
+      let status = "confirmed";
+      let statusMessage = "Your order has been confirmed.";
+      if (rawStatus.includes("cancel")) {
+        status = "cancelled";
+        statusMessage = "Your order was cancelled as per your request.";
+      } else if (rawStatus.includes("ship")) {
+        status = "shipping";
+        statusMessage = "Your item is on its way with courier partner.";
+      } else if (rawStatus.includes("deliver")) {
+        status = "delivered";
+        statusMessage = "Your item has been delivered.";
+      }
+
+      const items = (ord.items || []).map((it) => ({
+        name: it.productSnapshot?.name || it.name || "Motorcycle Gear",
+        specs: it.specs || `Color: ${it.color || "Standard"}  •  Size: ${it.size || "Standard"}`,
+        image: it.productSnapshot?.image || it.image || "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=400&q=80",
+        price: it.price || 0,
+      }));
+
+      const firstItem = items[0] || {
+        name: "Motorcycle Accessory",
+        specs: "Color: Default",
+        image: "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=400&q=80",
+        price: ord.total || 999,
+      };
+
+      const dateText = ord.createdAt?.toDate
+        ? ord.createdAt.toDate().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+        : "Sep 24, 2025";
+
+      return {
+        id: ord.id,
+        orderNumber: ord.orderId || `OD${(ord.id || "43726610447").slice(-16).toUpperCase()}`,
+        itemName: firstItem.name,
+        specs: firstItem.specs,
+        image: firstItem.image,
+        price: ord.total || ord.amount || firstItem.price,
+        status,
+        dateText,
+        statusMessage,
+        itemCount: items.length || 1,
+        deliveryAddress: ord.shippingAddress?.street
+          ? `${ord.shippingAddress.street}, ${ord.shippingAddress.city}`
+          : "Delivery address on file",
+        paymentMode: ord.paymentMethod || "Online Payment",
+        items: items.length > 0 ? items : [firstItem],
+      };
+    });
+  }, [firestoreOrders]);
+
+  const allOrders = parsedFirestoreOrders.length > 0 ? parsedFirestoreOrders : SAMPLE_ORDERS;
+
+  // Search trigger
+  const handleSearchSubmit = (e) => {
+    e?.preventDefault();
+    setCommittedSearch(searchInput);
+  };
+
+  const filteredOrders = useMemo(() => {
+    return allOrders.filter((ord) => {
+      // Filter tab
+      if (activeFilter === "delivered" && ord.status !== "delivered") return false;
+      if (activeFilter === "shipping" && ord.status !== "shipping" && ord.status !== "confirmed") return false;
+      if (activeFilter === "cancelled" && ord.status !== "cancelled") return false;
+
+      // Committed search filter
+      if (committedSearch.trim()) {
+        const q = committedSearch.toLowerCase();
+        const matchNum = ord.orderNumber.toLowerCase().includes(q);
+        const matchName = ord.itemName.toLowerCase().includes(q);
+        const matchSpecs = (ord.specs || "").toLowerCase().includes(q);
+        if (!matchNum && !matchName && !matchSpecs) return false;
+      }
+
+      return true;
+    });
+  }, [allOrders, activeFilter, committedSearch]);
+
+  const handleOpenReview = (ord) => {
+    setReviewOrder(ord);
+    setReviewRating(5);
+    setReviewComment("");
+    setReviewSubmitted(false);
+  };
+
+  const handleSubmitReview = (e) => {
+    e.preventDefault();
+    setReviewSubmitted(true);
+    setTimeout(() => {
+      setReviewOrder(null);
+      setReviewSubmitted(false);
+    }, 1800);
+  };
+
   return (
-    <section className="profile-screen profile-screen--wide">
-      <div className="orders-head">
-        <h1>My Orders</h1>
-        <label className="orders-search">
-          <span>&#8981;</span>
-          <input type="search" placeholder="Search..." />
-        </label>
+    <div className="nx-orders-page-wrap">
+      {/* Search Header Row matching reference screenshot with input + blue button */}
+      <form className="nx-orders-search-form" onSubmit={handleSearchSubmit}>
+        <div className="nx-orders-search-input-wrap">
+          <input
+            type="search"
+            placeholder="Search your orders here"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            className="nx-orders-search-input-field"
+          />
+        </div>
+        <button type="submit" className="nx-orders-search-action-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          Search Orders
+        </button>
+      </form>
+
+      {/* Filter Tabs Bar */}
+      <div className="nx-orders-filter-chips">
+        <button
+          type="button"
+          className={`nx-orders-chip ${activeFilter === "all" ? "is-active" : ""}`}
+          onClick={() => setActiveFilter("all")}
+        >
+          All Orders ({allOrders.length})
+        </button>
+        <button
+          type="button"
+          className={`nx-orders-chip ${activeFilter === "delivered" ? "is-active" : ""}`}
+          onClick={() => setActiveFilter("delivered")}
+        >
+          Delivered
+        </button>
+        <button
+          type="button"
+          className={`nx-orders-chip ${activeFilter === "shipping" ? "is-active" : ""}`}
+          onClick={() => setActiveFilter("shipping")}
+        >
+          In Transit / Shipped
+        </button>
+        <button
+          type="button"
+          className={`nx-orders-chip ${activeFilter === "cancelled" ? "is-active" : ""}`}
+          onClick={() => setActiveFilter("cancelled")}
+        >
+          Cancelled
+        </button>
       </div>
-      <div className="profile-divider" />
-      <FilterPills items={["All", "Delivered", "Confirm", "Shipped"]} />
-      {data.length ? data.map((order) => {
-        const product = normalizeProduct(order.items?.[0]?.productSnapshot || {});
-        const status = String(order.status || "pending").toLowerCase();
-        const timeline = ["pending", "confirmed", "packed", "shipped", "out for delivery", "delivered"];
-        const currentIndex = Math.max(0, timeline.indexOf(status));
-        return (
-          <article className="order-card" key={order.id}>
-            {product.image ? <img src={product.image} alt={product.name} /> : <div className="order-card__image-empty">No image</div>}
-            <div className="order-info">
-              <p>{product.category}</p>
-              <h2>{product.name}</h2>
-              <strong>{product.brand}</strong>
-              <p>Order ID #{order.orderId || order.id}</p>
-              <p>Payment: {order.paymentStatus || "pending"} | Method: {order.paymentMethod || "online"}</p>
-              <p>Courier: {order.courier || order.deliveryPartner || "Awaiting assignment"}</p>
-              <p>Tracking: {order.trackingNumber || "Generated after shipping"}</p>
-              <h3>Rs. {Number(order.totalAmount || order.total || 0).toLocaleString("en-IN")}</h3>
-              <span>{status.replace(/\b\w/g, (letter) => letter.toUpperCase())}</span>
-              <div className="order-progress">
-                {timeline.slice(0, 5).map((step, index) => (
-                  <div className="order-step" key={step}>
-                    <i className={index <= currentIndex ? "is-complete" : ""} />
-                    <strong>{step.replace(/\b\w/g, (letter) => letter.toUpperCase())}</strong>
-                    <span>{status === step ? "Now" : ""}</span>
-                    {index < 4 && <b />}
+
+      {/* Orders List Container */}
+      {loading && !parsedFirestoreOrders.length ? (
+        <div className="profile-loading-state">
+          <div className="profile-spinner" />
+          <p>Loading your orders...</p>
+        </div>
+      ) : filteredOrders.length === 0 ? (
+        <div className="profile-empty-state">
+          <h3>No orders found</h3>
+          <p>We couldn't find any orders matching your search or filters.</p>
+          {committedSearch && (
+            <button
+              type="button"
+              className="profile-btn-primary"
+              onClick={() => {
+                setSearchInput("");
+                setCommittedSearch("");
+              }}
+            >
+              Clear Search
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="nx-orders-horizontal-list">
+          {filteredOrders.map((ord) => {
+            const isDelivered = ord.status === "delivered";
+            const isCancelled = ord.status === "cancelled";
+            const isShipping = ord.status === "shipping" || ord.status === "confirmed";
+
+            return (
+              <div className="nx-order-horizontal-card" key={ord.id}>
+                {/* Optional Alert pill banner like Screenshot */}
+                {ord.sharedNote && (
+                  <div className="nx-order-shared-banner">
+                    <span className="nx-order-shared-icon">👥</span>
+                    <span>{ord.sharedNote}</span>
+                  </div>
+                )}
+
+                <div className="nx-order-horizontal-content">
+                  {/* Column 1: Product Thumbnail */}
+                  <div className="nx-order-thumb-column">
+                    <div className="nx-order-thumb-wrapper">
+                      <img src={ord.image} alt={ord.itemName} className="nx-order-thumb-img" />
+                    </div>
+                  </div>
+
+                  {/* Column 2: Product Name & Specs */}
+                  <div className="nx-order-info-column">
+                    <h3 className="nx-order-item-title" title={ord.itemName}>
+                      {ord.itemName}
+                    </h3>
+                    <p className="nx-order-item-specs">{ord.specs}</p>
+                    <span className="nx-order-id-tag">Order #{ord.orderNumber}</span>
+                  </div>
+
+                  {/* Column 3: Price */}
+                  <div className="nx-order-price-column">
+                    <span className="nx-order-price-val">
+                      ₹{ord.price?.toLocaleString("en-IN")}
+                    </span>
+                  </div>
+
+                  {/* Column 4: Status, Subtext, and Action Buttons */}
+                  <div className="nx-order-status-column">
+                    {/* Status Header with Dot */}
+                    <div className="nx-order-status-head">
+                      <span
+                        className={`nx-order-status-dot ${
+                          isDelivered
+                            ? "dot-delivered"
+                            : isCancelled
+                            ? "dot-cancelled"
+                            : "dot-shipping"
+                        }`}
+                      />
+                      <span className="nx-order-status-text">
+                        {isDelivered && `Delivered on ${ord.dateText}`}
+                        {isCancelled && `Cancelled on ${ord.dateText}`}
+                        {isShipping && `Expected by ${ord.dateText}`}
+                      </span>
+                    </div>
+
+                    {/* Status Subtitle */}
+                    <p className="nx-order-status-subtext">{ord.statusMessage}</p>
+
+                    {/* Rate & Review link like Screenshot */}
+                    {isDelivered && (
+                      <button
+                        type="button"
+                        className="nx-order-review-link"
+                        onClick={() => handleOpenReview(ord)}
+                      >
+                        <span className="nx-order-star-icon">★</span>
+                        Rate & Review Product
+                      </button>
+                    )}
+
+                    {/* Current Action Buttons (View Details, Track Order) */}
+                    <div className="nx-order-cta-group">
+                      <button
+                        type="button"
+                        className="nx-order-detail-btn"
+                        onClick={() => setSelectedOrder(ord)}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                          <polyline points="14 2 14 8 20 8" />
+                          <line x1="16" y1="13" x2="8" y2="13" />
+                          <line x1="16" y1="17" x2="8" y2="17" />
+                        </svg>
+                        View Details
+                      </button>
+
+                      {!isCancelled && (
+                        <button
+                          type="button"
+                          className="nx-order-track-btn"
+                          onClick={() => setTrackingOrder(ord)}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="7" y1="17" x2="17" y2="7" />
+                            <polyline points="7 7 17 7 17 17" />
+                          </svg>
+                          Track Order
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Rate & Review Modal */}
+      {reviewOrder && (
+        <div className="profile-modal-backdrop" onClick={() => setReviewOrder(null)}>
+          <div className="profile-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="profile-modal-header">
+              <h3>Rate & Review Product</h3>
+              <button
+                type="button"
+                className="profile-modal-close"
+                onClick={() => setReviewOrder(null)}
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="nx-review-modal-body">
+              <div className="nx-review-product-preview">
+                <img src={reviewOrder.image} alt={reviewOrder.itemName} />
+                <div>
+                  <h5>{reviewOrder.itemName}</h5>
+                  <span>₹{reviewOrder.price?.toLocaleString("en-IN")}</span>
+                </div>
+              </div>
+
+              {reviewSubmitted ? (
+                <div className="nx-review-success">
+                  <div className="nx-review-check-icon">✓</div>
+                  <h4>Thank you for your feedback!</h4>
+                  <p>Your review has been verified and published.</p>
+                </div>
+              ) : (
+                <form onSubmit={handleSubmitReview} className="nx-review-form">
+                  <div className="nx-review-stars-select">
+                    <label>Overall Rating</label>
+                    <div className="nx-review-stars-row">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          type="button"
+                          key={star}
+                          className={`nx-review-star-btn ${star <= reviewRating ? "is-selected" : ""}`}
+                          onClick={() => setReviewRating(star)}
+                        >
+                          ★
+                        </button>
+                      ))}
+                      <span className="nx-review-rating-label">
+                        {reviewRating === 5 && "Excellent"}
+                        {reviewRating === 4 && "Very Good"}
+                        {reviewRating === 3 && "Average"}
+                        {reviewRating === 2 && "Poor"}
+                        {reviewRating === 1 && "Terrible"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="nx-review-textarea-field">
+                    <label>Your Review</label>
+                    <textarea
+                      placeholder="Write about the product quality, fit, protection, or overall satisfaction..."
+                      value={reviewComment}
+                      onChange={(e) => setReviewComment(e.target.value)}
+                      rows={4}
+                      required
+                    />
+                  </div>
+
+                  <div className="nx-review-actions">
+                    <button
+                      type="button"
+                      className="profile-btn-secondary"
+                      onClick={() => setReviewOrder(null)}
+                    >
+                      Cancel
+                    </button>
+                    <button type="submit" className="profile-btn-primary">
+                      Submit Review
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Details Modal */}
+      {selectedOrder && (
+        <div className="profile-modal-backdrop" onClick={() => setSelectedOrder(null)}>
+          <div className="profile-modal nx-order-details-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="profile-modal-header">
+              <h3>Order Details: #{selectedOrder.orderNumber}</h3>
+              <button
+                type="button"
+                className="profile-modal-close"
+                onClick={() => setSelectedOrder(null)}
+              >
+                &times;
+              </button>
+            </div>
+            <div className="nx-order-modal-body">
+              <div className="nx-order-modal-meta">
+                <div>
+                  <span className="nx-modal-label">Status:</span>
+                  <strong className={`nx-modal-status status-${selectedOrder.status}`}>
+                    {selectedOrder.status.toUpperCase()}
+                  </strong>
+                </div>
+                <div>
+                  <span className="nx-modal-label">Date:</span>
+                  <strong>{selectedOrder.dateText}</strong>
+                </div>
+                <div>
+                  <span className="nx-modal-label">Payment:</span>
+                  <strong>{selectedOrder.paymentMode}</strong>
+                </div>
+              </div>
+
+              <div className="nx-modal-address-box">
+                <span className="nx-modal-label">Delivery Address:</span>
+                <p>{selectedOrder.deliveryAddress}</p>
+              </div>
+
+              <h4 className="nx-modal-items-heading">Items in this Order ({selectedOrder.items.length})</h4>
+              <div className="nx-modal-items-list">
+                {selectedOrder.items.map((item, idx) => (
+                  <div className="nx-modal-item-row" key={idx}>
+                    <img src={item.image} alt={item.name} className="nx-modal-item-img" />
+                    <div className="nx-modal-item-info">
+                      <h5>{item.name}</h5>
+                      <span className="nx-modal-item-specs">{item.specs}</span>
+                      <strong className="nx-modal-item-price">₹{item.price.toLocaleString("en-IN")}</strong>
+                    </div>
                   </div>
                 ))}
               </div>
+
+              <div className="nx-modal-total-row">
+                <span>Total Amount Paid</span>
+                <strong>₹{selectedOrder.price.toLocaleString("en-IN")}</strong>
+              </div>
             </div>
-          </article>
-        );
-      }) : <p>No orders yet.</p>}
-    </section>
+          </div>
+        </div>
+      )}
+
+      {/* Track Order Timeline Modal */}
+      {trackingOrder && (
+        <div className="profile-modal-backdrop" onClick={() => setTrackingOrder(null)}>
+          <div className="profile-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="profile-modal-header">
+              <h3>Shipment Tracking: #{trackingOrder.orderNumber}</h3>
+              <button
+                type="button"
+                className="profile-modal-close"
+                onClick={() => setTrackingOrder(null)}
+              >
+                &times;
+              </button>
+            </div>
+            <div className="nx-tracking-timeline">
+              <div className="nx-track-step is-done">
+                <div className="nx-track-node" />
+                <div className="nx-track-content">
+                  <h5>Order Confirmed</h5>
+                  <p>Order #{trackingOrder.orderNumber} verified and processed</p>
+                </div>
+              </div>
+              <div className="nx-track-step is-done">
+                <div className="nx-track-node" />
+                <div className="nx-track-content">
+                  <h5>Packed & Inspected</h5>
+                  <p>Quality inspection passed and sealed in courier package</p>
+                </div>
+              </div>
+              <div className={`nx-track-step ${trackingOrder.status === "shipping" || trackingOrder.status === "delivered" ? "is-done" : ""}`}>
+                <div className="nx-track-node" />
+                <div className="nx-track-content">
+                  <h5>In Transit (BlueDart Express)</h5>
+                  <p>Tracking ID: BD9827361928IN • Estimated Delivery: {trackingOrder.dateText}</p>
+                </div>
+              </div>
+              <div className={`nx-track-step ${trackingOrder.status === "delivered" ? "is-done" : ""}`}>
+                <div className="nx-track-node" />
+                <div className="nx-track-content">
+                  <h5>Delivered</h5>
+                  <p>Package delivered to recipient address</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

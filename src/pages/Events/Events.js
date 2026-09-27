@@ -1,10 +1,15 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import "./EventPage.css";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useEventsContext } from "../../context/EventsContext";
-import { toDate } from "../../utils/dataFormatters";
+import { toDate, formatDate } from "../../utils/dataFormatters";
 import { EVENT_CATEGORY_CONFIG } from "./eventCategoryConfig";
 import { useDocument } from "../../hooks/useFirestore";
+import { useAuth } from "../../context/AuthContext";
+import { useAuthModal } from "../../components/AuthModal/useAuthModal";
+import { COLLECTIONS, db } from "../../services/firebase";
+import { saveFavoriteEvent, removeFavoriteEvent } from "../../services/commerceService";
+import LocationModal from "../../components/layout/bottomNav/LocationModal";
 
 const timeFilters = ["All", "Today", "Upcoming", "Free", "Paid", "VIP"];
 const isVisibleEvent = (event) => String(event.status || "").toLowerCase() === "published";
@@ -39,53 +44,183 @@ function ChevronLeft() {
   );
 }
 
-function HeartIcon() {
+function BookmarkIcon({ active = false }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none">
-      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <svg
+      viewBox="0 0 24 24"
+      fill={active ? "var(--green, #50d735)" : "none"}
+      stroke={active ? "var(--green, #50d735)" : "currentColor"}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
     </svg>
   );
 }
 
-function SlidersIcon() {
+function SlidersIcon({ color = "currentColor" }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none">
-      <line x1="4" y1="6" x2="20" y2="6" stroke="white" strokeWidth="2" strokeLinecap="round" />
-      <line x1="4" y1="12" x2="20" y2="12" stroke="white" strokeWidth="2" strokeLinecap="round" />
-      <line x1="4" y1="18" x2="20" y2="18" stroke="white" strokeWidth="2" strokeLinecap="round" />
-      <circle cx="9" cy="6" r="2" fill="#17191b" stroke="white" strokeWidth="2" />
-      <circle cx="15" cy="12" r="2" fill="#17191b" stroke="white" strokeWidth="2" />
-      <circle cx="9" cy="18" r="2" fill="#17191b" stroke="white" strokeWidth="2" />
+    <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
+      <line x1="4" y1="6" x2="20" y2="6" stroke={color} strokeWidth="2" strokeLinecap="round" />
+      <line x1="4" y1="12" x2="20" y2="12" stroke={color} strokeWidth="2" strokeLinecap="round" />
+      <line x1="4" y1="18" x2="20" y2="18" stroke={color} strokeWidth="2" strokeLinecap="round" />
+      <circle cx="9" cy="6" r="2" fill="none" stroke={color} strokeWidth="2" />
+      <circle cx="15" cy="12" r="2" fill="none" stroke={color} strokeWidth="2" />
+      <circle cx="9" cy="18" r="2" fill="none" stroke={color} strokeWidth="2" />
     </svg>
   );
 }
 
-function EventCard({ event }) {
-  const [liked, setLiked] = useState(false);
-  const image = event.bannerImage || event.banner;
+function FlameIcon({ size = 15, color = "#ffffff" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3z" />
+    </svg>
+  );
+}
+
+function CalendarIcon({ color = "currentColor", size = 14 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+      <line x1="16" y1="2" x2="16" y2="6" />
+      <line x1="8" y1="2" x2="8" y2="6" />
+      <line x1="3" y1="10" x2="21" y2="10" />
+    </svg>
+  );
+}
+
+function PinIcon({ color = "currentColor", size = 14 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+      <circle cx="12" cy="10" r="3" />
+    </svg>
+  );
+}
+
+export function EventCard({ event, isBookmarked: propIsBookmarked, onToggleBookmark }) {
+  const { user } = useAuth();
+  const { openLogin } = useAuthModal();
+  const [internalBookmarked, setInternalBookmarked] = useState(() => {
+    try {
+      const local = JSON.parse(localStorage.getItem("nitroxx_bookmarked_events") || "[]");
+      return local.includes(event?.id);
+    } catch {
+      return false;
+    }
+  });
+
+  // If user is logged in, and propIsBookmarked is not provided, listen to document
+  useEffect(() => {
+    if (propIsBookmarked !== undefined || !user?.uid || !event?.id) return;
+    try {
+      const unsub = db()
+        .collection(COLLECTIONS.users || "users")
+        .doc(user.uid)
+        .collection("bookmark")
+        .doc(event.id)
+        .onSnapshot((snap) => {
+          setInternalBookmarked(snap.exists);
+        });
+      return () => unsub();
+    } catch {
+      // ignore
+    }
+  }, [propIsBookmarked, user?.uid, event?.id]);
+
+  const isBookmarked = propIsBookmarked !== undefined ? propIsBookmarked : internalBookmarked;
+
+  const handleBookmarkClick = async (clickEvent) => {
+    clickEvent.preventDefault();
+    clickEvent.stopPropagation();
+
+    if (onToggleBookmark) {
+      onToggleBookmark(event, clickEvent);
+      return;
+    }
+
+    if (!user) {
+      openLogin();
+      return;
+    }
+
+    const nextState = !isBookmarked;
+    setInternalBookmarked(nextState);
+
+    try {
+      const localSaved = JSON.parse(localStorage.getItem("nitroxx_bookmarked_events") || "[]");
+      if (nextState) {
+        if (!localSaved.includes(event.id)) {
+          localStorage.setItem("nitroxx_bookmarked_events", JSON.stringify([...localSaved, event.id]));
+        }
+      } else {
+        localStorage.setItem(
+          "nitroxx_bookmarked_events",
+          JSON.stringify(localSaved.filter((i) => i !== event.id))
+        );
+      }
+    } catch {
+      // ignore
+    }
+
+    try {
+      if (nextState) {
+        await saveFavoriteEvent({ userId: user.uid, event });
+      } else {
+        await removeFavoriteEvent({ userId: user.uid, eventId: event.id });
+      }
+    } catch (err) {
+      console.error("Failed to update bookmark:", err);
+      setInternalBookmarked(!nextState);
+    }
+  };
+
+  const image = event.bannerImage || event.banner || event.image;
+  const priceDisplay = event.priceText || (event.price === 0 ? "Free" : event.price ? `₹${event.price}` : "Free");
+  const locationDisplay = event.venue || event.location || event.city || event.address || "";
+
+  // Dynamic throttled count matching the UI: "16k+ are Throttled!"
+  const throttledDisplay = useMemo(() => {
+    if (event.throttledText) return event.throttledText;
+    if (event.throttledCount) return `${event.throttledCount} are Throttled!`;
+    if (event.throttleCount) return `${event.throttleCount} are Throttled!`;
+    if (event.attendeesCount) return `${event.attendeesCount} are Throttled!`;
+    const seed = String(event.id || event.title || event.name || "nx")
+      .split("")
+      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const count = (seed % 18) + 2;
+    return `${count}k+ are Throttled!`;
+  }, [event]);
 
   return (
     <Link className="ep-event-card" to={`/event/${event.id}`}>
       <div className="ep-event-card__image">
         {image ? <img src={image} alt={event.name || event.title} /> : <span>No image</span>}
         <button
-          className={`ep-event-card__heart${liked ? " ep-event-card__heart--liked" : ""}`}
-          onClick={(clickEvent) => {
-            clickEvent.preventDefault();
-            setLiked((previous) => !previous);
-          }}
-          aria-label="Save event"
+          type="button"
+          className={`ep-event-card__bookmark${isBookmarked ? " ep-event-card__bookmark--active" : ""}`}
+          onClick={handleBookmarkClick}
+          aria-label={isBookmarked ? "Remove bookmark" : "Bookmark event"}
+          title={isBookmarked ? "Bookmarked" : "Bookmark event"}
         >
-          <HeartIcon />
+          <BookmarkIcon active={isBookmarked} />
         </button>
       </div>
       <div className="ep-event-card__info">
-        <div className="ep-event-card__name">{event.name || event.title}</div>
-        <div className="ep-event-card__meta">
-          <span className="ep-event-card__date">{event.dateText || event.dateTimeText}</span>
-          <span className="ep-event-card__sep" />
-          <span className="ep-event-card__price">{event.priceText || "Free"}</span>
+        <div className="ep-event-card__title-row">
+          <div className="ep-event-card__name" title={event.name || event.title}>
+            {event.name || event.title}
+          </div>
+          <div className="ep-event-card__price">{priceDisplay}</div>
         </div>
+        {locationDisplay ? (
+          <div className="ep-event-card__location">{locationDisplay}</div>
+        ) : (
+          <div className="ep-event-card__location">{event.dateText || event.dateTimeText || "India"}</div>
+        )}
+        <div className="ep-event-card__throttled">{throttledDisplay}</div>
       </div>
     </Link>
   );
@@ -163,6 +298,95 @@ export default function Events() {
   const [filterDate, setFilterDate] = useState("All"); // All, Today, Tomorrow, Weekend, NextWeek
   const [sortBy, setSortBy] = useState("DateSoonest"); // DateSoonest, PriceLowHigh, PriceHighLow
 
+  const { user } = useAuth();
+  const { openLogin } = useAuthModal();
+  const [bookmarkedEventIds, setBookmarkedEventIds] = useState(() => {
+    try {
+      return new Set(JSON.parse(localStorage.getItem("nitroxx_bookmarked_events") || "[]"));
+    } catch {
+      return new Set();
+    }
+  });
+
+  // Sync bookmarks in real-time
+  useEffect(() => {
+    if (!user?.uid) return;
+
+    try {
+      const unsub = db()
+        .collection(COLLECTIONS.users || "users")
+        .doc(user.uid)
+        .collection("bookmark")
+        .onSnapshot(
+          (snap) => {
+            const ids = new Set();
+            snap.forEach((doc) => {
+              ids.add(doc.id);
+              if (doc.data()?.eventId) {
+                ids.add(doc.data().eventId);
+              }
+            });
+            setBookmarkedEventIds(ids);
+
+            try {
+              localStorage.setItem(
+                "nitroxx_bookmarked_events",
+                JSON.stringify(Array.from(ids))
+              );
+            } catch {
+              // ignore
+            }
+          },
+          (err) => {
+            console.warn("Error listening to user bookmarks:", err);
+          }
+        );
+
+      return () => unsub();
+    } catch (err) {
+      console.warn("Firestore bookmark collection listener failed:", err);
+    }
+  }, [user?.uid]);
+
+  const handleToggleBookmark = async (event, clickEvent) => {
+    if (clickEvent) {
+      clickEvent.preventDefault();
+      clickEvent.stopPropagation();
+    }
+    if (!event?.id) return;
+    if (!user) {
+      openLogin();
+      return;
+    }
+
+    const isCurrentlyBookmarked = bookmarkedEventIds.has(event.id);
+    const nextIds = new Set(bookmarkedEventIds);
+
+    if (isCurrentlyBookmarked) {
+      nextIds.delete(event.id);
+    } else {
+      nextIds.add(event.id);
+    }
+    setBookmarkedEventIds(nextIds);
+
+    try {
+      localStorage.setItem("nitroxx_bookmarked_events", JSON.stringify(Array.from(nextIds)));
+    } catch {
+      // ignore
+    }
+
+    try {
+      if (!isCurrentlyBookmarked) {
+        await saveFavoriteEvent({ userId: user.uid, event });
+      } else {
+        await removeFavoriteEvent({ userId: user.uid, eventId: event.id });
+      }
+    } catch (err) {
+      console.error("Failed to toggle bookmark:", err);
+      setBookmarkedEventIds(bookmarkedEventIds);
+    }
+  };
+
   // Listen to city changes
   useEffect(() => {
     const handleLocationChange = () => {
@@ -176,7 +400,110 @@ export default function Events() {
     };
   }, []);
 
+  const allEventsSectionRef = useRef(null);
+  const [isStickyNavVisible, setIsStickyNavVisible] = useState(false);
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!allEventsSectionRef.current) return;
+      const rect = allEventsSectionRef.current.getBoundingClientRect();
+      setIsStickyNavVisible(rect.top <= 120);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const handleSelectCity = (city) => {
+    setSelectedCity(city);
+    localStorage.setItem("selectedCity", city);
+    window.dispatchEvent(new Event("locationChanged"));
+    setIsLocationModalOpen(false);
+  };
+
+  const upcomingTrackRef = useRef(null);
+
+  const scrollUpcoming = (direction) => {
+    if (!upcomingTrackRef.current) return;
+    const scrollAmount = 340 * 2;
+    upcomingTrackRef.current.scrollBy({
+      left: direction === "left" ? -scrollAmount : scrollAmount,
+      behavior: "smooth",
+    });
+  };
+
+  const toggleToday = () => {
+    if (filterDate === "Today" || activeFilter === "Today") {
+      setFilterDate("All");
+      setActiveFilter("All");
+    } else {
+      setFilterDate("Today");
+      setActiveFilter("Today");
+    }
+  };
+
+  const toggleTomorrow = () => {
+    setFilterDate((prev) => (prev === "Tomorrow" ? "All" : "Tomorrow"));
+  };
+
+  const toggleWeekend = () => {
+    setFilterDate((prev) => (prev === "Weekend" ? "All" : "Weekend"));
+  };
+
+  const toggleFree = () => {
+    if (filterPrice === "Free" || activeFilter === "Free") {
+      setFilterPrice("All");
+      setActiveFilter("All");
+    } else {
+      setFilterPrice("Free");
+      setActiveFilter("Free");
+    }
+  };
+
+  const togglePaid = () => {
+    if (filterPrice === "Paid" || activeFilter === "Paid") {
+      setFilterPrice("All");
+      setActiveFilter("All");
+    } else {
+      setFilterPrice("Paid");
+      setActiveFilter("Paid");
+    }
+  };
+
   const activeCategory = searchParams.get("category") || "All";
+
+  const toggleCategory = (catId) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (activeCategory === catId) {
+      newParams.delete("category");
+    } else {
+      newParams.set("category", catId);
+    }
+    setSearchParams(newParams);
+  };
+
+  const clearAllFilters = () => {
+    setActiveFilter("All");
+    setFilterDate("All");
+    setFilterPrice("All");
+    setSearchParams({});
+    setQuery("");
+  };
+
+  const isTodayActive = filterDate === "Today" || activeFilter === "Today";
+  const isTomorrowActive = filterDate === "Tomorrow";
+  const isWeekendActive = filterDate === "Weekend";
+  const isFreeActive = filterPrice === "Free" || activeFilter === "Free";
+  const isPaidActive = filterPrice === "Paid" || activeFilter === "Paid";
+
+  const activeFiltersCount =
+    (filterDate !== "All" ? 1 : 0) +
+    (filterPrice !== "All" ? 1 : 0) +
+    (activeCategory !== "All" ? 1 : 0) +
+    (activeFilter !== "All" && activeFilter !== "Today" && activeFilter !== "Free" && activeFilter !== "Paid" ? 1 : 0) +
+    (selectedCity ? 1 : 0);
 
   const liveEvents = useMemo(
     () =>
@@ -457,9 +784,263 @@ export default function Events() {
 
   const currentEvent = heroEvents[activeSlide] || heroEvents[0] || {};
 
+  const eventDateString = currentEvent.dateTimeText || currentEvent.dateText || currentEvent.date || "";
+  const displayDate = useMemo(() => {
+    if (!eventDateString) return "";
+    const formatted = formatDate(eventDateString);
+    return formatted || eventDateString;
+  }, [eventDateString]);
+
+  const handleHeroAction = (event) => {
+    const target = event || currentEvent;
+    if (!target) return;
+    if (target.redirectUrl) {
+      if (target.redirectUrl.startsWith("http://") || target.redirectUrl.startsWith("https://")) {
+        window.open(target.redirectUrl, "_blank");
+      } else {
+        navigate(target.redirectUrl);
+      }
+    } else if (target.eventId) {
+      navigate(`/event/${target.eventId}`);
+    } else if (target.id && !String(target.id).startsWith("slide-")) {
+      navigate(`/event/${target.id}`);
+    } else {
+      navigate("/events");
+    }
+  };
+
+  const handleHeroBook = (event) => {
+    const target = event || currentEvent;
+    if (!target) return;
+    if (target.redirectUrl) {
+      if (target.redirectUrl.startsWith("http://") || target.redirectUrl.startsWith("https://")) {
+        window.open(target.redirectUrl, "_blank");
+      } else {
+        navigate(target.redirectUrl);
+      }
+    } else if (target.eventId) {
+      navigate(`/event/${target.eventId}/book`);
+    } else if (target.id && !String(target.id).startsWith("slide-")) {
+      navigate(`/event/${target.id}/book`);
+    } else {
+      navigate("/events");
+    }
+  };
+
+  const handleSlideClick = (index, event) => {
+    if (index !== activeSlide) {
+      setActiveSlide(index);
+    } else {
+      handleHeroAction(event);
+    }
+  };
+
+  const touchStartXRef = useRef(0);
+  const isSwipingRef = useRef(false);
+  const [isHeroPaused, setIsHeroPaused] = useState(false);
+
+  const handleTouchStart = (e) => {
+    if (!e.touches || e.touches.length === 0) return;
+    touchStartXRef.current = e.touches[0].clientX;
+    isSwipingRef.current = true;
+    setIsHeroPaused(true);
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isSwipingRef.current || !e.touches || e.touches.length === 0) return;
+  };
+
+  const handleTouchEnd = (e) => {
+    setIsHeroPaused(false);
+    if (!isSwipingRef.current) return;
+    isSwipingRef.current = false;
+    const touchEndX = e.changedTouches?.[0]?.clientX;
+    if (touchEndX === undefined) return;
+    const diffX = touchStartXRef.current - touchEndX;
+    const minSwipeDistance = 35;
+    if (diffX > minSwipeDistance) {
+      next();
+    } else if (diffX < -minSwipeDistance) {
+      prev();
+    }
+  };
+
+  useEffect(() => {
+    if (isHeroPaused || !heroEvents || heroEvents.length <= 1) return;
+    const timer = setInterval(() => {
+      setActiveSlide((prevIndex) => (prevIndex + 1) % heroEvents.length);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, [isHeroPaused, heroEvents?.length, next]);
+
   return (
     <div className="ep-page">
-      <div className="ep-hero__flex">
+      {/* District-by-Zomato inspired Sticky Top Navbar */}
+      <div className={`ep-sticky-nav${isStickyNavVisible ? " ep-sticky-nav--visible" : ""}`}>
+        {/* Row 1: Brand, Location, Nav Tabs, Search, Profile */}
+        <div className="ep-sticky-nav__header">
+          <div className="ep-sticky-nav__brand-col">
+            <Link to="/" className="ep-sticky-nav__logo">
+              <div className="ep-sticky-nav__logo-title">
+                NITRO<span className="logo-x">X</span>X
+              </div>
+              <div className="ep-sticky-nav__logo-sub">BY NITROXX</div>
+            </Link>
+
+            <button
+              type="button"
+              className="ep-sticky-nav__location"
+              onClick={() => setIsLocationModalOpen(true)}
+              title="Change location"
+            >
+              <div className="ep-sticky-nav__location-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                  <circle cx="12" cy="10" r="3" />
+                </svg>
+              </div>
+              <div className="ep-sticky-nav__location-text">
+                <span className="ep-sticky-nav__location-city">{selectedCity || "Select City"}</span>
+                <span className="ep-sticky-nav__location-sub">
+                  {selectedCity ? "Current location" : "Set location"}
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m6 9 6 6 6-6"/></svg>
+                </span>
+              </div>
+            </button>
+          </div>
+
+          <div className="ep-sticky-nav__tabs">
+            <Link to="/" className="ep-sticky-nav__tab">For you</Link>
+            <Link to="/events" className="ep-sticky-nav__tab ep-sticky-nav__tab--active">Events</Link>
+            <Link to="/accessories" className="ep-sticky-nav__tab">Accessories</Link>
+          </div>
+
+          <div className="ep-sticky-nav__actions">
+            <div className="ep-sticky-nav__search-wrap">
+              <span className="ep-sticky-nav__search-icon">
+                <SearchIcon color="#7c3aed" />
+              </span>
+              <input
+                className="ep-sticky-nav__search-input"
+                type="search"
+                placeholder="Search for events, movies and restaurants"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && query.trim()) {
+                    navigate(`/events/all?search=${encodeURIComponent(query.trim())}`);
+                  }
+                }}
+              />
+              {query && (
+                <button
+                  type="button"
+                  className="ep-sticky-nav__search-clear"
+                  onClick={() => setQuery("")}
+                  aria-label="Clear search"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+
+            <Link to="/profile" className="ep-sticky-nav__profile" title="My Profile">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="#9ca3af" stroke="none">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm0 14c-2.03 0-4.43-.82-6.14-2.88C7.55 15.8 9.68 15 12 15s4.45.8 6.14 2.12C16.43 19.18 14.03 20 12 20z" />
+              </svg>
+            </Link>
+          </div>
+        </div>
+
+        {/* Row 2: Filter Options Bar */}
+        <div className="ep-sticky-nav__filter-bar">
+          <div className="ep-sticky-nav__filter-scroll">
+            <button
+              type="button"
+              className={`ep-sticky-pill ep-sticky-pill--filters${activeFiltersCount > 0 ? " ep-sticky-pill--has-count" : ""}`}
+              onClick={() => setIsFilterDrawerOpen(true)}
+            >
+              <SlidersIcon color="#111827" />
+              <span>Filters</span>
+              {activeFiltersCount > 0 && (
+                <span className="ep-sticky-pill__badge">{activeFiltersCount}</span>
+              )}
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+
+            <button
+              type="button"
+              className={`ep-sticky-pill${isTodayActive ? " ep-sticky-pill--active" : ""}`}
+              onClick={toggleToday}
+            >
+              Today
+            </button>
+
+            <button
+              type="button"
+              className={`ep-sticky-pill${isTomorrowActive ? " ep-sticky-pill--active" : ""}`}
+              onClick={toggleTomorrow}
+            >
+              Tomorrow
+            </button>
+
+            <button
+              type="button"
+              className={`ep-sticky-pill${isWeekendActive ? " ep-sticky-pill--active" : ""}`}
+              onClick={toggleWeekend}
+            >
+              This Weekend
+            </button>
+
+            <button
+              type="button"
+              className={`ep-sticky-pill${isFreeActive ? " ep-sticky-pill--active" : ""}`}
+              onClick={toggleFree}
+            >
+              Free
+            </button>
+
+            <button
+              type="button"
+              className={`ep-sticky-pill${isPaidActive ? " ep-sticky-pill--active" : ""}`}
+              onClick={togglePaid}
+            >
+              Paid
+            </button>
+
+            {eventCategories.map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                className={`ep-sticky-pill${activeCategory === cat.id ? " ep-sticky-pill--active" : ""}`}
+                onClick={() => toggleCategory(cat.id)}
+              >
+                {cat.label}
+              </button>
+            ))}
+
+            {(activeFiltersCount > 0 || query) && (
+              <button
+                type="button"
+                className="ep-sticky-pill ep-sticky-pill--clear"
+                onClick={clearAllFilters}
+              >
+                Clear All
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <LocationModal
+        isOpen={isLocationModalOpen}
+        onClose={() => setIsLocationModalOpen(false)}
+        onSelectCity={handleSelectCity}
+        currentCity={selectedCity}
+        onAutoDetect={() => {}}
+        isDetecting={false}
+      />
+      {/* <div className="ep-hero__flex">
         <div className="ep-hero">
           <h1 className="ep-hero__heading">Discover bike events<br />near you</h1>
           <div className="ep-search">
@@ -478,7 +1059,7 @@ export default function Events() {
             </button>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {eventsLoading ? (
         <EmptyState title="Loading events" text="Fetching live events from Firestore." />
@@ -493,72 +1074,114 @@ export default function Events() {
                 ? `url(${currentEvent.bannerImage || currentEvent.banner})`
                 : 'none'
             }}
+            onMouseEnter={() => setIsHeroPaused(true)}
+            onMouseLeave={() => setIsHeroPaused(false)}
           >
             <div className="ep-featured__bg-overlay" />
             <div className="ep-featured">
-              <button className="ep-featured__slider-btn prev" aria-label="Previous" onClick={prev}><ChevronLeft /></button>
+              {heroEvents.length > 1 && (
+                <button
+                  type="button"
+                  className="ep-featured__slider-btn prev"
+                  aria-label="Previous slide"
+                  onClick={prev}
+                >
+                  <ChevronLeft />
+                </button>
+              )}
 
               <div className="ep-featured__container">
                 <div className="ep-featured__info">
                   {currentEvent.badge && (
-                    <span className="ep-featured__badge">{currentEvent.badge}</span>
+                    <span className="ep-featured__badge">
+                      {currentEvent.badge}
+                    </span>
                   )}
-                  {Boolean(currentEvent.dateTimeText || currentEvent.dateText) && (
-                    <p className="ep-featured__date">{currentEvent.dateTimeText || currentEvent.dateText}</p>
+
+                  {(displayDate || currentEvent.location) && (
+                    <div className="ep-featured__meta-row">
+                      {displayDate && (
+                        <span className="ep-featured__meta-item">
+                          <CalendarIcon size={14} color="#ff3b30" />
+                          <span>{displayDate}</span>
+                        </span>
+                      )}
+                      {displayDate && currentEvent.location && (
+                        <span className="ep-featured__meta-sep">•</span>
+                      )}
+                      {currentEvent.location && (
+                        <span className="ep-featured__meta-item ep-featured__meta-item--loc">
+                          <PinIcon size={14} color="#ff3b30" />
+                          <span>{currentEvent.location}</span>
+                        </span>
+                      )}
+                    </div>
                   )}
-                  <h2 className="ep-featured__title">{currentEvent.title || currentEvent.name}</h2>
+
+                  <h2
+                    className="ep-featured__title"
+                    onClick={() => handleHeroAction(currentEvent)}
+                    title={currentEvent.title || currentEvent.name}
+                  >
+                    {currentEvent.title || currentEvent.name}
+                  </h2>
+
                   {currentEvent.subtitle && (
                     <p className="ep-featured__subtitle">{currentEvent.subtitle}</p>
                   )}
-                  {currentEvent.location && (
-                    <p className="ep-featured__location">{currentEvent.location}</p>
-                  )}
-                  <p className="ep-featured__price">
-                    <span>{currentEvent.priceText || "Free"}</span>
-                    {currentEvent.priceText && currentEvent.priceText !== "Free" && !currentEvent.priceText.startsWith("Starts from") && !currentEvent.priceText.includes("onwards") ? " onwards" : ""}
-                  </p>
-                  <button
-                    className="ep-featured__book-btn"
-                    onClick={() => {
-                      if (currentEvent.redirectUrl) {
-                        if (currentEvent.redirectUrl.startsWith("http://") || currentEvent.redirectUrl.startsWith("https://")) {
-                          window.open(currentEvent.redirectUrl, "_blank");
-                        } else {
-                          navigate(currentEvent.redirectUrl);
-                        }
-                      } else if (currentEvent.eventId) {
-                        navigate(`/event/${currentEvent.eventId}/book`);
-                      } else if (currentEvent.id && !String(currentEvent.id).startsWith("slide-")) {
-                        navigate(`/event/${currentEvent.id}/book`);
-                      } else {
-                        navigate("/events");
-                      }
-                    }}
-                  >
-                    Book tickets
-                  </button>
+
+                  <div className="ep-featured__actions-row">
+                    <div className="ep-featured__price-wrap">
+                      <span className="ep-featured__price-label">Price</span>
+                      <p className="ep-featured__price">
+                        <span>{currentEvent.priceText || "Free"}</span>
+                        {currentEvent.priceText && currentEvent.priceText !== "Free" && !currentEvent.priceText.startsWith("Starts from") && !currentEvent.priceText.includes("onwards") ? " onwards" : ""}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="ep-featured__book-btn"
+                      onClick={() => handleHeroBook(currentEvent)}
+                    >
+                      <span>Book tickets</span>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M5 12h14" />
+                        <path d="M12 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
 
-                <div className="ep-featured__viewport">
-                  <div className="ep-featured__track" style={{ transform: `translateX(-${activeSlide * 100}%)` }}>
+                <div
+                  className="ep-featured__viewport"
+                  onTouchStart={handleTouchStart}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
+                >
+                  <div
+                    className="ep-featured__track"
+                    style={{ transform: `translateX(-${activeSlide * 100}%)` }}
+                  >
                     {heroEvents.map((event, index) => (
                       <div
                         key={event.id || index}
                         className={`ep-featured__slide${index === activeSlide ? " ep-featured__slide--active" : ""}`}
-                        onClick={() => setActiveSlide(index)}
-                        style={{ cursor: "pointer" }}
+                        onClick={() => handleSlideClick(index, event)}
+                        title={event.title || event.name}
                       >
-                        <div className="ep-stamp-card">
-                          <div className="ep-stamp-perforations top" />
-                          <div className="ep-stamp-perforations bottom" />
-                          <div className="ep-stamp-perforations left" />
-                          <div className="ep-stamp-perforations right" />
-                          <div className="ep-stamp-inner">
+                        <div className="ep-banner-card">
+                          <div className="ep-banner-card__inner">
                             {event.bannerImage || event.banner ? (
-                              <img src={event.bannerImage || event.banner} alt={event.title || event.name} />
+                              <img
+                                src={event.bannerImage || event.banner}
+                                alt={event.title || event.name}
+                                loading={index === 0 ? "eager" : "lazy"}
+                              />
                             ) : (
                               <div className="ep-slide-placeholder">{event.title || `Event ${index + 1}`}</div>
                             )}
+                            <div className="ep-banner-card__overlay" />
                           </div>
                         </div>
                       </div>
@@ -567,19 +1190,31 @@ export default function Events() {
                 </div>
               </div>
 
-              <button className="ep-featured__slider-btn next" aria-label="Next" onClick={next}><ChevronRight /></button>
+              {heroEvents.length > 1 && (
+                <button
+                  type="button"
+                  className="ep-featured__slider-btn next"
+                  aria-label="Next slide"
+                  onClick={next}
+                >
+                  <ChevronRight />
+                </button>
+              )}
             </div>
 
-            <div className="ep-dots">
-              {heroEvents.map((event, index) => (
-                <button
-                  key={event.id || index}
-                  className={`ep-dot${index === activeSlide ? " ep-dot--active" : ""}`}
-                  onClick={() => setActiveSlide(index)}
-                  aria-label={`Slide ${index + 1}`}
-                />
-              ))}
-            </div>
+            {heroEvents.length > 1 && (
+              <div className="ep-dots">
+                {heroEvents.map((event, index) => (
+                  <button
+                    key={event.id || index}
+                    type="button"
+                    className={`ep-dot${index === activeSlide ? " ep-dot--active" : ""}`}
+                    onClick={() => setActiveSlide(index)}
+                    aria-label={`Slide ${index + 1}`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
           {eventCategories.length > 0 && (
@@ -600,36 +1235,70 @@ export default function Events() {
             </div>
           )}
 
-          {/* Section: Events Near Me */}
-          <div className="ep-section">
-            <p className="ep-section__title">
-              Events Near Me
-              {selectedCity && (
-                <span className="ep-section__subtitle-tag"> — {selectedCity}</span>
-              )}
-            </p>
-            {nearMeEvents.length > 0 ? (
-              <div className="ep-events-grid">
-                {nearMeEvents.slice(0, 6).map((event) => (
-                  <EventCard key={`near-${event.id}`} event={event} />
-                ))}
+          {/* Section: Events Near You (Crimson Banner Card matching screenshot) */}
+          <div className="ep-section ep-section--near-banner">
+            <Link to="/events/near-you" className="ep-near-you-banner">
+              <div className="ep-near-you-banner__content">
+                <h3 className="ep-near-you-banner__title">Events Near You</h3>
+                <p className="ep-near-you-banner__subtitle">
+                  {selectedCity
+                    ? `There are ${nearMeEvents.length} events in ${selectedCity}`
+                    : `There are ${liveEvents.length} events near you`}
+                </p>
               </div>
-            ) : (
-              <EmptyState
-                title="No events near you"
-                text={selectedCity ? `No events found in ${selectedCity} right now.` : "No nearby events available."}
-              />
-            )}
+              <span className="ep-near-you-banner__arrow">
+                <ChevronRight />
+              </span>
+            </Link>
           </div>
 
-          {/* Section: Upcoming Events */}
-          <div className="ep-section">
-            <p className="ep-section__title">Upcoming Events</p>
+          {/* Section: Upcoming Event > (Screenshot-inspired Horizontal Carousel) */}
+          <div className="ep-section ep-section--upcoming-carousel">
+            <div className="ep-upcoming-header">
+              <Link to="/events/upcoming" className="ep-upcoming-header__link">
+                <h2 className="ep-upcoming-header__title">
+                  Upcoming Event
+                  <span className="ep-upcoming-header__chevron">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 18l6-6-6-6" />
+                    </svg>
+                  </span>
+                </h2>
+              </Link>
+              <p className="ep-upcoming-header__subtitle">Latest upcoming events listed here</p>
+            </div>
+
             {upcomingEventsList.length > 0 ? (
-              <div className="ep-events-grid">
-                {upcomingEventsList.slice(0, 6).map((event) => (
-                  <EventCard key={`upcoming-${event.id}`} event={event} />
-                ))}
+              <div className="ep-upcoming-carousel-wrap">
+                <button
+                  type="button"
+                  className="ep-upcoming-arrow prev"
+                  onClick={() => scrollUpcoming("left")}
+                  aria-label="Previous upcoming events"
+                >
+                  <ChevronLeft />
+                </button>
+
+                <div className="ep-upcoming-track" ref={upcomingTrackRef}>
+                  {upcomingEventsList.map((event) => (
+                    <div className="ep-upcoming-item" key={`upcoming-slide-${event.id}`}>
+                      <EventCard
+                        event={event}
+                        isBookmarked={bookmarkedEventIds.has(event.id)}
+                        onToggleBookmark={handleToggleBookmark}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  className="ep-upcoming-arrow next"
+                  onClick={() => scrollUpcoming("right")}
+                  aria-label="Next upcoming events"
+                >
+                  <ChevronRight />
+                </button>
               </div>
             ) : (
               <EmptyState
@@ -645,7 +1314,12 @@ export default function Events() {
             {topEvents.length > 0 ? (
               <div className="ep-events-grid">
                 {topEvents.slice(0, 6).map((event) => (
-                  <EventCard key={`top-${event.id}`} event={event} />
+                  <EventCard
+                    key={`top-${event.id}`}
+                    event={event}
+                    isBookmarked={bookmarkedEventIds.has(event.id)}
+                    onToggleBookmark={handleToggleBookmark}
+                  />
                 ))}
               </div>
             ) : (
@@ -656,8 +1330,30 @@ export default function Events() {
             )}
           </div>
 
-          <div className="ep-section">
-            <p className="ep-section__title">All Events</p>
+          <div className="ep-section" ref={allEventsSectionRef}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.8rem", flexWrap: "wrap", gap: "0.5rem" }}>
+              <p className="ep-section__title" style={{ margin: 0 }}>All Events</p>
+              <Link
+                to="/events/all"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.4rem",
+                  fontSize: "0.88rem",
+                  fontWeight: 600,
+                  color: "#50d735",
+                  textDecoration: "none",
+                  padding: "5px 14px",
+                  borderRadius: "999px",
+                  background: "rgba(80, 215, 53, 0.08)",
+                  border: "1px solid rgba(80, 215, 53, 0.2)",
+                  transition: "all 0.2s ease",
+                }}
+              >
+                <span>View Full Page</span>
+                <span style={{ fontSize: "1.05rem", lineHeight: 1 }}>→</span>
+              </Link>
+            </div>
             <div className="ep-filters">
               <button className="ep-filter-btn" onClick={() => setIsFilterDrawerOpen(true)}><SlidersIcon /> Filters</button>
               {timeFilters.map((filter) => (
@@ -711,7 +1407,14 @@ export default function Events() {
 
             {filteredEvents.length > 0 ? (
               <div className="ep-events-grid">
-                {filteredEvents.map((event) => <EventCard key={`all-${event.id}`} event={event} />)}
+                {filteredEvents.map((event) => (
+                  <EventCard
+                    key={`all-${event.id}`}
+                    event={event}
+                    isBookmarked={bookmarkedEventIds.has(event.id)}
+                    onToggleBookmark={handleToggleBookmark}
+                  />
+                ))}
               </div>
             ) : (
               <EmptyState title="No matching events" text="Try a different search, category, or date filter." />

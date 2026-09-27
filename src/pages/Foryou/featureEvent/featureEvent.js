@@ -1,8 +1,8 @@
 import React, { useMemo } from "react";
 import "./featureEvent.css";
-import { Link } from "react-router-dom";
 import { useEventsContext } from "../../../context/EventsContext";
 import { toDate } from "../../../utils/dataFormatters";
+import { EventCard } from "../../Events/Events";
 
 const HIDDEN_STATUSES = new Set(["archived", "deleted", "rejected", "removed"]);
 const isVisibleEvent = (event) => !HIDDEN_STATUSES.has(String(event.status || "").toLowerCase());
@@ -11,27 +11,13 @@ const eventSortTime = (event) => {
   return date ? date.getTime() : Number.MAX_SAFE_INTEGER;
 };
 
-const EventCard = ({ id, image, title, date, price }) => (
-  <Link className="event-card" to={`/event/${id}`}>
-    <div className="event-image-wrapper">
-      {image ? <img src={image} alt={title} className="event-image" /> : <span>No image</span>}
-    </div>
-    <div className="event-info">
-      <h3 className="event-title">{title}</h3>
-      <div className="event-details">
-        <span className="event-date">{date}</span>
-        <span className="event-divider"></span>
-        <span className="event-price">{price}</span>
-      </div>
-    </div>
-  </Link>
-);
-
 const FeaturedEvents = () => {
   const { events: cachedEvents, eventsLoading: loading } = useEventsContext();
   const events = useMemo(() => {
-    return (cachedEvents || [])
-      .filter((e) => isVisibleEvent(e) && e.featuredForYou === true)
+    const list = (cachedEvents || []).filter(isVisibleEvent);
+    const featured = list.filter((e) => e.featuredForYou === true);
+    const source = featured.length > 0 ? featured : list;
+    return source
       .sort((first, second) => eventSortTime(first) - eventSortTime(second))
       .slice(0, 9);
   }, [cachedEvents]);
@@ -41,16 +27,9 @@ const FeaturedEvents = () => {
   return (
     <section className="featured-events">
       <h2 className="section-title events-title">FEATURED EVENTS</h2>
-      <div className="events-grid">
+      <div className="events-grid ep-events-grid">
         {events.map((event) => (
-          <EventCard
-            key={event.id}
-            id={event.id}
-            image={event.banner || event.image}
-            title={event.name || event.title}
-            date={event.dateText || event.dateTimeText}
-            price={event.priceText || event.price || "Free"}
-          />
+          <EventCard key={event.id} event={event} />
         ))}
       </div>
     </section>

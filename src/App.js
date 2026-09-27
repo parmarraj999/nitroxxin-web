@@ -7,6 +7,9 @@ import Footer from './components/layout/footer/footer';
 
 import Foryou from './pages/Foryou/Foryou';
 import Events from './pages/Events/Events';
+import AllEvents from './pages/Events/allEvents/AllEvents';
+import NearYouEvents from './pages/Events/nearYou/NearYouEvents';
+import UpcomingEvents from './pages/Events/upcoming/UpcomingEvents';
 import EventDetail from './pages/Events/eventDetail/eventDetail';
 import EventBooking from './pages/Events/eventBooking/EventBooking';
 
@@ -26,19 +29,26 @@ import { AccessoriesProvider } from './context/AccessoriesContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Profile from './pages/profile/profile';
 import ProfileOverview from './pages/profile/pages/ProfileOverview';
-import MyRides from './pages/profile/pages/MyRides';
-import Wishlist from './pages/profile/pages/Wishlist';
-import Wallet from './pages/profile/pages/Wallet';
+import MyBikes from './pages/profile/pages/MyBikes';
+import JoinedEvents from './pages/profile/pages/JoinedEvents';
 import MyOrders from './pages/profile/pages/MyOrders';
-import Support from './pages/profile/pages/Support';
+import MyTickets from './pages/profile/pages/MyTickets';
+import Wishlist from './pages/profile/pages/Wishlist';
+import SavedAddresses from './pages/profile/pages/SavedAddresses';
+import SavedEvents from './pages/profile/pages/SavedEvents';
+import Payments from './pages/profile/pages/Payments';
+import Wallet from './pages/profile/pages/Wallet';
+import ThrottleList from './pages/profile/pages/ThrottleList';
+import ShareFeedback from './pages/profile/pages/ShareFeedback';
 
 import AuthModalContainer from './components/AuthModal/AuthModalContainer';
 
 const Navigation = () => {
   const location = useLocation();
   const isBookingPage = location.pathname.includes('/book');
+  const isProfilePage = location.pathname.includes('/profile');
 
-  if (isBookingPage) return null;
+  if (isBookingPage || isProfilePage) return null;
 
   return (
     <>
@@ -62,21 +72,23 @@ const AccessoriesLayout = () => {
   return <Outlet />;
 };
 
-function App() {
+const AppShell = () => {
+  const location = useLocation();
+  const isProfilePage = location.pathname.includes('/profile');
 
   return (
-    <FirebaseAuthProvider>
-      <EventsProvider>
-        <AccessoriesProvider>
-          <Router>
-            <AuthProvider>
-              <div className="app-container">
-                <Navigation />
+    <div className={`app-container${isProfilePage ? ' is-profile-view' : ''}`}>
+      <Navigation />
 
-                <Routes>
-                  <Route path="/" element={<Foryou />} />
+      <Routes>
+        <Route path="/" element={<Foryou />} />
 
                   <Route path="/events" element={<Events />} />
+                  <Route path="/events/all" element={<AllEvents />} />
+                  <Route path="/all-events" element={<AllEvents />} />
+                  <Route path="/events/near-you" element={<NearYouEvents />} />
+                  <Route path="/events/near-me" element={<NearYouEvents />} />
+                  <Route path="/events/upcoming" element={<UpcomingEvents />} />
                   <Route path="/events/:id" element={<EventDetail />} />
                   <Route path="/events/:id/book" element={<EventBooking />} />
                   <Route path="/event/:id" element={<EventDetail />} />
@@ -115,16 +127,39 @@ function App() {
 
                   <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>}>
                     <Route index element={<ProfileOverview />} />
-                    <Route path="events" element={<MyRides />} />
+                    <Route path="edit-details" element={<ProfileOverview />} />
+                    <Route path="my-bikes" element={<MyBikes />} />
+                    <Route path="joined-events" element={<JoinedEvents />} />
+                    <Route path="my-orders" element={<MyOrders />} />
+                    <Route path="my-tickets" element={<MyTickets />} />
                     <Route path="wishlist" element={<Wishlist />} />
+                    <Route path="saved-addresses" element={<SavedAddresses />} />
+                    <Route path="saved-events" element={<SavedEvents />} />
+                    <Route path="payments" element={<Payments />} />
+                    <Route path="my-wallet" element={<Wallet />} />
+                    <Route path="throttle-list" element={<ThrottleList />} />
+                    <Route path="feedback" element={<ShareFeedback />} />
+                    {/* Backward compatibility aliases */}
+                    <Route path="events" element={<JoinedEvents />} />
                     <Route path="accessories" element={<MyOrders />} />
                     <Route path="wallet" element={<Wallet />} />
-                    <Route path="support" element={<Support />} />
+                    <Route path="support" element={<ShareFeedback />} />
                   </Route>
                 </Routes>
-                <FooterWrapper />
-                <AuthModalContainer />
-              </div>
+      <FooterWrapper />
+      <AuthModalContainer />
+    </div>
+  );
+};
+
+function App() {
+  return (
+    <FirebaseAuthProvider>
+      <EventsProvider>
+        <AccessoriesProvider>
+          <Router>
+            <AuthProvider>
+              <AppShell />
             </AuthProvider>
           </Router>
         </AccessoriesProvider>
