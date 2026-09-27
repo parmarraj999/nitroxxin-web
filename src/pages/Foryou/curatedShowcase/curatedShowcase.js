@@ -147,21 +147,20 @@ export default function CuratedShowcase() {
     return map;
   }, [contextCategories]);
 
-  // Helper to get fallback subcategory image
-  const getSubcategoryImage = (subcatName) => {
-    const targetKey = norm(subcatName);
-    if (!targetKey) return "";
-    for (const [key, url] of Object.entries(subcategoryImageMap)) {
-      if (key === targetKey || key.includes(targetKey) || targetKey.includes(key)) {
-        return url;
-      }
-    }
-    return "";
-  };
-
   // Extract and format ONLY REAL products from Firestore
   const realProducts = useMemo(() => {
     if (!contextProducts || contextProducts.length === 0) return [];
+
+    const getSubcategoryImage = (subcatName) => {
+      const targetKey = norm(subcatName);
+      if (!targetKey) return "";
+      for (const [key, url] of Object.entries(subcategoryImageMap)) {
+        if (key === targetKey || key.includes(targetKey) || targetKey.includes(key)) {
+          return url;
+        }
+      }
+      return "";
+    };
 
     return contextProducts
       .filter((p) => {
