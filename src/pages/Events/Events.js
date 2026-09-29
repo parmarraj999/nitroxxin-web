@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import "./EventPage.css";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useEventsContext } from "../../context/EventsContext";
@@ -643,8 +643,8 @@ export default function Events() {
   }, [liveEvents, layoutData]);
 
   const total = Math.max(heroEvents.length, 1);
-  const prev = () => setActiveSlide((previous) => (previous - 1 + total) % total);
-  const next = () => setActiveSlide((previous) => (previous + 1) % total);
+  const prev = useCallback(() => setActiveSlide((previous) => (previous - 1 + total) % total), [total]);
+  const next = useCallback(() => setActiveSlide((previous) => (previous + 1) % total), [total]);
 
   useEffect(() => {
     if (activeSlide >= heroEvents.length && heroEvents.length > 0) {
@@ -920,7 +920,7 @@ export default function Events() {
       setActiveSlide((prevIndex) => (prevIndex + 1) % heroEvents.length);
     }, 6000);
     return () => clearInterval(timer);
-  }, [isHeroPaused, heroEvents, next]);
+  }, [isHeroPaused, heroEvents]);
 
   return (
     <div className="ep-page">
