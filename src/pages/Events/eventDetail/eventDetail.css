@@ -98,6 +98,25 @@
   pointer-events: auto;
 }
 
+.ed-logo-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+.ed-logo-link:hover {
+  opacity: 0.85;
+}
+
+.ed-logo-img {
+  height: 50px;
+  /* width: auto; */
+  max-width: 200px;
+  object-fit: contain;
+  display: block;
+}
+
 .ed-nav-actions {
   display: flex;
   align-items: center;

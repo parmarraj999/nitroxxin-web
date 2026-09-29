@@ -147,7 +147,7 @@ export default function CategoryPage() {
               return (
                 <Link
                   key={subcat.id}
-                  to={`/accessories?subcategory=${encodeURIComponent(subcatName)}`}
+                  to={`/shop?subcategory=${encodeURIComponent(subcatName)}`}
                   className="category-page__card"
                 >
                   <div className="category-page__image-box">

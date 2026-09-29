@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect, useRef } from "react";
 import "./EventPage.css";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useEventsContext } from "../../context/EventsContext";
-import { toDate, formatDate } from "../../utils/dataFormatters";
+import { toDate } from "../../utils/dataFormatters";
 import { EVENT_CATEGORY_CONFIG } from "./eventCategoryConfig";
 import { useDocument } from "../../hooks/useFirestore";
 import { useAuth } from "../../context/AuthContext";
@@ -72,33 +72,7 @@ function SlidersIcon({ color = "currentColor" }) {
   );
 }
 
-function FlameIcon({ size = 15, color = "#ffffff" }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3z" />
-    </svg>
-  );
-}
 
-function CalendarIcon({ color = "currentColor", size = 14 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-      <line x1="16" y1="2" x2="16" y2="6" />
-      <line x1="8" y1="2" x2="8" y2="6" />
-      <line x1="3" y1="10" x2="21" y2="10" />
-    </svg>
-  );
-}
-
-function PinIcon({ color = "currentColor", size = 14 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-      <circle cx="12" cy="10" r="3" />
-    </svg>
-  );
-}
 
 export function EventCard({ event, isBookmarked: propIsBookmarked, onToggleBookmark }) {
   const { user } = useAuth();
@@ -782,14 +756,89 @@ export default function Events() {
     return result;
   }, [activeFilter, activeCategory, displayedCategories, liveEvents, query, selectedCity, filterDate, filterPrice, sortBy]);
 
-  const currentEvent = heroEvents[activeSlide] || heroEvents[0] || {};
+  const currentEvent = useMemo(
+    () => heroEvents[activeSlide] || heroEvents[0] || {},
+    [heroEvents, activeSlide]
+  );
 
-  const eventDateString = currentEvent.dateTimeText || currentEvent.dateText || currentEvent.date || "";
   const displayDate = useMemo(() => {
-    if (!eventDateString) return "";
-    const formatted = formatDate(eventDateString);
-    return formatted || eventDateString;
-  }, [eventDateString]);
+    if (!currentEvent) return "";
+
+    const explicit = currentEvent.dateTimeText || currentEvent.rawEvent?.dateTimeText;
+    if (explicit && typeof explicit === "string" && /[a-zA-Z]{3,}/.test(explicit) && !explicit.includes("T00:00") && !explicit.includes("Z")) {
+      return explicit;
+    }
+
+    const raw =
+      currentEvent.date ||
+      currentEvent.eventDate ||
+      currentEvent.startsAt ||
+      currentEvent.startDate ||
+      explicit ||
+      currentEvent.rawEvent?.date ||
+      currentEvent.rawEvent?.eventDate ||
+      currentEvent.rawEvent?.startsAt ||
+      currentEvent.rawEvent?.startDate;
+
+    const timeStr =
+      currentEvent.time ||
+      currentEvent.startTime ||
+      currentEvent.rawEvent?.time ||
+      currentEvent.rawEvent?.startTime ||
+      "";
+
+    if (raw) {
+      if (typeof raw === "string" && /^\d{4}-\d{2}-\d{2}$/.test(raw.trim())) {
+        const [y, m, d] = raw.trim().split("-").map(Number);
+        const dateObj = new Date(y, m - 1, d);
+        const formatted = new Intl.DateTimeFormat("en-IN", {
+          weekday: "short",
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        }).format(dateObj);
+        return timeStr ? `${formatted}, ${timeStr}` : formatted;
+      }
+
+      const d = toDate(raw);
+      if (d && !Number.isNaN(d.getTime())) {
+        const hasTime = Boolean(timeStr) || d.getHours() !== 0 || d.getMinutes() !== 0;
+        const options = {
+          weekday: "short",
+          day: "numeric",
+          month: "short",
+          ...(d.getFullYear() !== new Date().getFullYear() ? { year: "numeric" } : {}),
+          ...(hasTime ? { hour: "numeric", minute: "2-digit" } : {}),
+        };
+        const formatted = new Intl.DateTimeFormat("en-IN", options).format(d);
+        if (timeStr && !hasTime) {
+          return `${formatted}, ${timeStr}`;
+        }
+        return formatted;
+      }
+    }
+
+    if (currentEvent.dateText) {
+      return timeStr ? `${currentEvent.dateText}, ${timeStr}` : currentEvent.dateText;
+    }
+
+    return "";
+  }, [currentEvent]);
+
+  const displayPrice = useMemo(() => {
+    if (currentEvent.price === 0) return "Free";
+    const pt = currentEvent.priceText;
+    if (!pt) return "Free";
+    const str = String(pt).trim();
+    if (str.toLowerCase() === "free" || str === "₹0" || str === "0") return "Free";
+
+    let clean = str.replace(/^starts\s+from\s+/i, "").trim();
+    if (clean === "₹0" || clean === "0" || clean.toLowerCase() === "free") return "Free";
+    if (!clean.toLowerCase().includes("onwards")) {
+      clean = `${clean} onwards`;
+    }
+    return clean;
+  }, [currentEvent.price, currentEvent.priceText]);
 
   const handleHeroAction = (event) => {
     const target = event || currentEvent;
@@ -925,10 +974,15 @@ export default function Events() {
                 type="search"
                 placeholder="Search for events, movies and restaurants"
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onFocus={() => navigate('/events/search')}
+                onClick={() => navigate('/events/search')}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  navigate(`/events/search?q=${encodeURIComponent(e.target.value)}`);
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && query.trim()) {
-                    navigate(`/events/all?search=${encodeURIComponent(query.trim())}`);
+                    navigate(`/events/search?q=${encodeURIComponent(query.trim())}`);
                   }
                 }}
               />
@@ -1069,14 +1123,17 @@ export default function Events() {
         <>
           <div
             className="ep-featured-wrap"
-            style={{
-              backgroundImage: currentEvent.bannerImage || currentEvent.banner
-                ? `url(${currentEvent.bannerImage || currentEvent.banner})`
-                : 'none'
-            }}
             onMouseEnter={() => setIsHeroPaused(true)}
             onMouseLeave={() => setIsHeroPaused(false)}
           >
+            <div
+              className="ep-featured__blurred-bg"
+              style={{
+                backgroundImage: currentEvent.bannerImage || currentEvent.banner
+                  ? `url(${currentEvent.bannerImage || currentEvent.banner})`
+                  : 'none'
+              }}
+            />
             <div className="ep-featured__bg-overlay" />
             <div className="ep-featured">
               {heroEvents.length > 1 && (
@@ -1092,30 +1149,8 @@ export default function Events() {
 
               <div className="ep-featured__container">
                 <div className="ep-featured__info">
-                  {currentEvent.badge && (
-                    <span className="ep-featured__badge">
-                      {currentEvent.badge}
-                    </span>
-                  )}
-
-                  {(displayDate || currentEvent.location) && (
-                    <div className="ep-featured__meta-row">
-                      {displayDate && (
-                        <span className="ep-featured__meta-item">
-                          <CalendarIcon size={14} color="#ff3b30" />
-                          <span>{displayDate}</span>
-                        </span>
-                      )}
-                      {displayDate && currentEvent.location && (
-                        <span className="ep-featured__meta-sep">•</span>
-                      )}
-                      {currentEvent.location && (
-                        <span className="ep-featured__meta-item ep-featured__meta-item--loc">
-                          <PinIcon size={14} color="#ff3b30" />
-                          <span>{currentEvent.location}</span>
-                        </span>
-                      )}
-                    </div>
+                  {displayDate && (
+                    <div className="ep-featured__date-line">{displayDate}</div>
                   )}
 
                   <h2
@@ -1126,31 +1161,23 @@ export default function Events() {
                     {currentEvent.title || currentEvent.name}
                   </h2>
 
-                  {currentEvent.subtitle && (
-                    <p className="ep-featured__subtitle">{currentEvent.subtitle}</p>
+                  {currentEvent.location && (
+                    <div className="ep-featured__location-line">
+                      {currentEvent.location}
+                    </div>
                   )}
 
-                  <div className="ep-featured__actions-row">
-                    <div className="ep-featured__price-wrap">
-                      <span className="ep-featured__price-label">Price</span>
-                      <p className="ep-featured__price">
-                        <span>{currentEvent.priceText || "Free"}</span>
-                        {currentEvent.priceText && currentEvent.priceText !== "Free" && !currentEvent.priceText.startsWith("Starts from") && !currentEvent.priceText.includes("onwards") ? " onwards" : ""}
-                      </p>
-                    </div>
-
-                    <button
-                      type="button"
-                      className="ep-featured__book-btn"
-                      onClick={() => handleHeroBook(currentEvent)}
-                    >
-                      <span>Book tickets</span>
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M5 12h14" />
-                        <path d="M12 5l7 7-7 7" />
-                      </svg>
-                    </button>
+                  <div className="ep-featured__price-line">
+                    {displayPrice}
                   </div>
+
+                  <button
+                    type="button"
+                    className="ep-featured__book-btn"
+                    onClick={() => handleHeroBook(currentEvent)}
+                  >
+                    Book tickets
+                  </button>
                 </div>
 
                 <div

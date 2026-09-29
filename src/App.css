@@ -32,7 +32,7 @@ body,
   }
 }
 
-/* Profile Section: FULL SCREEN 100vh - NO ZOOM - NO WHITE GAPS */
+/* Profile & Search Sections: FULL SCREEN 100vh - NO ZOOM - NO GAPS */
 .app-container.is-profile-view,
 .app-container:has(.nx-profile-layout) {
   zoom: 1 !important;
@@ -45,6 +45,23 @@ body,
   padding: 0 !important;
   overflow: hidden !important;
   background: #000000 !important;
+}
+
+.app-container.is-search-view,
+.app-container:has(.ep-search-page) {
+  zoom: 1 !important;
+  width: 100% !important;
+  min-height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: linear-gradient(
+    to bottom,
+    #211739 0%,
+    #131517 240px,
+    #131517 100%
+  ) !important;
+  overflow: visible !important;
+  overflow-x: clip !important;
 }
 
 * {

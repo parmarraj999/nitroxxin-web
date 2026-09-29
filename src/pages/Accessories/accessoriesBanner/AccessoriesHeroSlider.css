@@ -1,0 +1,334 @@
+/* ===== ACCESSORIES MARQUEE & HERO SLIDER ===== */
+
+.ap-hero-slider-section {
+  width: 100%;
+  position: relative;
+  background: #111113;
+  overflow: hidden;
+  box-sizing: border-box;
+  height:65vh;
+}
+
+/* ═══════════════════════════════════════
+   1. MARQUEE ANNOUNCEMENT BAR
+   ═══════════════════════════════════════ */
+.ap-marquee-bar {
+  width: 100%;
+  background: #000000;
+  overflow: hidden;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  position: relative;
+  z-index: 15;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  user-select: none;
+}
+
+.ap-marquee-track {
+  display: flex;
+  white-space: nowrap;
+  animation: ap-marquee-scroll 24s linear infinite;
+  will-change: transform;
+}
+
+.ap-marquee-bar:hover .ap-marquee-track {
+  animation-play-state: paused;
+}
+
+.ap-marquee-group {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.ap-marquee-item {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 2px;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 16px;
+  text-transform: uppercase;
+}
+
+.ap-marquee-item::after {
+  content: '•';
+  color: #ffffff;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+@keyframes ap-marquee-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* ═══════════════════════════════════════
+   2. HERO SLIDER
+   ═══════════════════════════════════════ */
+.ap-hero-slider {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1024 / 240;
+  min-height: 65vh;
+  overflow: hidden;
+  background: #111113;
+  display: flex;
+  align-items: center;
+}
+
+.ap-hero-slider__track {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.ap-hero-slide {
+  min-width: 100%;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  flex-shrink: 0;
+  background: #111113;
+  overflow: hidden;
+}
+
+.ap-hero-slide__inner {
+  display: block;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.ap-hero-slide__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+/* Overlay for text-based banners */
+.ap-hero-slide__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(17, 17, 19, 0.92) 0%,
+    rgba(17, 17, 19, 0.7) 45%,
+    rgba(17, 17, 19, 0.1) 100%
+  );
+  display: flex;
+  align-items: center;
+  padding: 0 clamp(24px, 6vw, 80px);
+  z-index: 2;
+}
+
+.ap-hero-slide__content {
+  max-width: 580px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.ap-hero-slide__badge-pill {
+  display: inline-block;
+  background: #ff1f1f;
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-bottom: 12px;
+}
+
+.ap-hero-slide__title {
+  font-family: 'Inter', sans-serif;
+  font-weight: 900;
+  font-size: clamp(24px, 3.8vw, 48px);
+  line-height: 1.05;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: -0.5px;
+  margin: 0 0 10px 0;
+}
+
+.ap-hero-slide__tagline {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: clamp(13px, 1.4vw, 18px);
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0 0 16px 0;
+  line-height: 1.4;
+}
+
+.ap-hero-slide__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  color: #000000;
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  padding: 10px 22px;
+  border-radius: 30px;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+}
+
+.ap-hero-slide__inner:hover .ap-hero-slide__btn {
+  background: #ff1f1f;
+  color: #ffffff;
+  transform: translateX(4px);
+}
+
+/* ═══════════════════════════════════════
+   3. NAVIGATION CHEVRONS (< and >)
+   ═══════════════════════════════════════ */
+.ap-hero-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 12;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.ap-hero-nav-btn:hover {
+  background: rgba(0, 0, 0, 0.85);
+  border-color: rgba(255, 255, 255, 0.45);
+  transform: translateY(-50%) scale(1.08);
+}
+
+.ap-hero-nav-btn:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.ap-hero-nav-btn--prev {
+  left: clamp(12px, 2vw, 28px);
+}
+
+.ap-hero-nav-btn--next {
+  right: clamp(12px, 2vw, 28px);
+}
+
+/* ═══════════════════════════════════════
+   4. DOT PAGINATION INDICATORS
+   ═══════════════════════════════════════ */
+.ap-hero-dots {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 12;
+}
+
+.ap-hero-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ap-hero-dot:hover {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.ap-hero-dot--active {
+  width: 24px;
+  border-radius: 6px;
+  background: #ff1f1f;
+}
+
+/* ═══════════════════════════════════════
+   5. RESPONSIVE BREAKPOINTS
+   ═══════════════════════════════════════ */
+@media (max-width: 900px) {
+  .ap-hero-slider {
+    aspect-ratio: 16 / 6;
+    min-height: 200px;
+  }
+
+  .ap-hero-nav-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .ap-hero-nav-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+@media (max-width: 600px) {
+  .ap-marquee-bar {
+    height: 32px;
+  }
+
+  .ap-marquee-item {
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    gap: 12px;
+    padding: 0 12px;
+  }
+
+  .ap-hero-slider {
+    aspect-ratio: 16 / 7.5;
+    min-height: 170px;
+  }
+
+  .ap-hero-nav-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .ap-hero-dots {
+    bottom: 8px;
+  }
+
+  .ap-hero-dot {
+    width: 6px;
+    height: 6px;
+  }
+
+  .ap-hero-dot--active {
+    width: 18px;
+  }
+}

@@ -12,6 +12,7 @@ import NearYouEvents from './pages/Events/nearYou/NearYouEvents';
 import UpcomingEvents from './pages/Events/upcoming/UpcomingEvents';
 import EventDetail from './pages/Events/eventDetail/eventDetail';
 import EventBooking from './pages/Events/eventBooking/EventBooking';
+import EventSearch from './pages/Events/search/EventSearch';
 
 import AccessoriesPage from './pages/Accessories/AccessoriesPage';
 import AccessoriesDetail from './pages/Accessories/accessoriesDetail/accessoriesDetail';
@@ -20,6 +21,7 @@ import ProductsPage from './pages/Accessories/productPage/productsPage';
 import BrandPage from './pages/Accessories/brands/brandPage';
 import BikeBrandPage from './pages/Accessories/bikeBrandPage/bikeBrandPage';
 import CategoryPage from './pages/Accessories/categoryPage/categoryPage';
+import ShopPage from './pages/Accessories/shopPage/ShopPage';
 import CartPage from './pages/Cart/CartPage';
 
 import { AuthProvider } from './components/AuthModal/useAuthModal';
@@ -47,8 +49,9 @@ const Navigation = () => {
   const location = useLocation();
   const isBookingPage = location.pathname.includes('/book');
   const isProfilePage = location.pathname.includes('/profile');
+  const isSearchPage = location.pathname.includes('/search');
 
-  if (isBookingPage || isProfilePage) return null;
+  if (isBookingPage || isProfilePage || isSearchPage) return null;
 
   return (
     <>
@@ -62,8 +65,9 @@ const FooterWrapper = () => {
   const location = useLocation();
   const isBookingPage = location.pathname.includes('/book');
   const isProfilePage = location.pathname.includes('/profile');
+  const isSearchPage = location.pathname.includes('/search');
 
-  if (isBookingPage || isProfilePage) return null;
+  if (isBookingPage || isProfilePage || isSearchPage) return null;
 
   return <Footer />;
 };
@@ -75,15 +79,18 @@ const AccessoriesLayout = () => {
 const AppShell = () => {
   const location = useLocation();
   const isProfilePage = location.pathname.includes('/profile');
+  const isSearchPage = location.pathname.includes('/search');
 
   return (
-    <div className={`app-container${isProfilePage ? ' is-profile-view' : ''}`}>
+    <div className={`app-container${isProfilePage ? ' is-profile-view' : ''}${isSearchPage ? ' is-search-view' : ''}`}>
       <Navigation />
 
       <Routes>
         <Route path="/" element={<Foryou />} />
 
                   <Route path="/events" element={<Events />} />
+                  <Route path="/events/search" element={<EventSearch />} />
+                  <Route path="/search" element={<EventSearch />} />
                   <Route path="/events/all" element={<AllEvents />} />
                   <Route path="/all-events" element={<AllEvents />} />
                   <Route path="/events/near-you" element={<NearYouEvents />} />
@@ -104,17 +111,16 @@ const AppShell = () => {
                       element={<AccessoriesDetail />}
                     />
                     <Route path="/product/:id" element={<AccessoriesDetail />} />
-                    <Route
-                      path="/accessories/products"
-                      element={<ProductsPage />}
-                    />
+                    <Route path="/shop" element={<ShopPage />} />
+                    <Route path="/accessories/shop" element={<ShopPage />} />
+                    <Route path="/accessories/products" element={<ShopPage />} />
                     <Route
                       path="/accessories/products/:id"
-                      element={<ProductsPage />}
+                      element={<ShopPage filterType="category" />}
                     />
-                    <Route path="/category/:id" element={<ProductsPage filterType="category" />} />
-                    <Route path="/brand/:id" element={<ProductsPage filterType="brand" />} />
-                    <Route path="/bike/:id" element={<ProductsPage filterType="bike" />} />
+                    <Route path="/category/:id" element={<ShopPage filterType="category" />} />
+                    <Route path="/brand/:id" element={<ShopPage filterType="brand" />} />
+                    <Route path="/bike/:id" element={<ShopPage filterType="bike" />} />
                     <Route path="/accessories/bike/:id" element={<ProductsPage filterType="bike" />} />
                     <Route path="/vendor/:id" element={<ProductsPage filterType="vendor" />} />
                     <Route

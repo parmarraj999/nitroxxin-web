@@ -6,6 +6,7 @@ import { useAuthModal } from "../../components/AuthModal/useAuthModal";
 import { addToCart, saveWishlistItem } from "../../services/commerceService";
 import { useAccessoriesContext } from "../../context/AccessoriesContext";
 import AccessoriesHeader from "./accessoriesNav/AccessoriesHeader";
+import AccessoriesHeroSlider from "./accessoriesBanner/AccessoriesHeroSlider";
 
 const productFilters = ["All", "Best Seller", "New Arrival", "Trending", "Deals"];
 
@@ -149,7 +150,22 @@ export default function AccessoriesPage() {
   const [activeFilter, setActiveFilter] = useState("All");
 
   // Sidebar filter states
-  const [filterOpen, setFilterOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(() => {
+    if (typeof window !== "undefined") {
+      return window.innerWidth > 1024;
+    }
+    return true;
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 1024) {
+        setFilterOpen(true);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
   const [availability, setAvailability] = useState({ inStock: false, outOfStock: false });
   const [priceRange, setPriceRange] = useState([0, 100000]);
   const [selectedCategories, setSelectedCategories] = useState([]);
@@ -374,30 +390,23 @@ export default function AccessoriesPage() {
     <div className="ap-page">
       <AccessoriesHeader search={search} onSearchChange={setSearch} />
 
-      {(heroBanner?.image || heroBanner?.imageUrl) && (
-        <div className="ap-hero">
-          <div className="ap-hero__image-slot">
-            <img src={heroBanner.image || heroBanner.imageUrl} alt={heroBanner.title || "Nitroxx accessories"} />
-          </div>
-        </div>
-      )}
+      {/* ═══ MARQUEE & HERO SLIDER SECTION ═══ */}
+      <AccessoriesHeroSlider banners={banners} />
 
       {displayCategories.length > 0 && (
         <div className="ap-section">
           <h2 className="ap-section__title">SHOP BY CATEGORY</h2>
           <div className="ap-category-slider">
-            <button className="ap-category-slider__btn" aria-label="Previous" onClick={() => scrollLeft(categoryTrackRef)}><ChevronLeftIcon /></button>
             <div className="ap-category-track" ref={categoryTrackRef}>
               {displayCategories.map((cat) => (
                 <Link to={`/accessories/category/${cat.id}`} key={cat.id} className="ap-cat-card">
                   <div className="ap-cat-card__image-bg">
-                    {cat.image ? <img src={cat.image} alt={cat.label} /> : <span>{cat.label}</span>}
+                    {cat.image ? <img src={cat.image} alt={cat.label} /> : <span></span>}
                   </div>
-                  <span className="ap-cat-card__label">{cat.label}</span>
+                  {/* <span className="ap-cat-card__label">{cat.label}</span> */}
                 </Link>
               ))}
             </div>
-            <button className="ap-category-slider__btn" aria-label="Next" onClick={() => scrollRight(categoryTrackRef)}><ChevronRightIcon /></button>
           </div>
         </div>
       )}

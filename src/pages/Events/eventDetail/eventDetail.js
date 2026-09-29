@@ -313,27 +313,33 @@ export default function EventDetail() {
     <header className="ed-navbar">
       <div className="ed-navbar-blur" />
       <div className="ed-navbar-inner">
-        <button
-          type="button"
-          className="ed-nav-btn ed-back-btn"
-          onClick={handleBack}
-          aria-label="Go back"
-          title="Go back"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="22"
-            height="22"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <button
+            type="button"
+            className="ed-nav-btn ed-back-btn"
+            onClick={handleBack}
+            aria-label="Go back"
+            title="Go back"
           >
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-        </button>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+
+          <Link to="/" className="ed-logo-link" aria-label="Nitroxx Home">
+            <img src="/assets/images/logo-white.png" alt="Nitroxx" className="ed-logo-img" />
+          </Link>
+        </div>
 
         {event && (
           <div className="ed-nav-actions">

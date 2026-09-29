@@ -1,0 +1,318 @@
+/* ===== ACCESSORIES HEADER & CATEGORY SUB-MENU DROPDOWN ===== */
+
+.ap-header {
+  position: fixed;
+  width: 100%;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  height: 84px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid #e5e5e5;
+  display: flex;
+  align-items: center;
+  padding: 0 clamp(16px, 3vw, 48px);
+  gap: clamp(14px, 2.5vw, 40px);
+  box-sizing: border-box;
+}
+
+.ap-header__logo {
+  font-family: 'Inter', sans-serif;
+  font-weight: 800;
+  font-style: italic;
+  font-size: clamp(23px, 2.1vw, 32px);
+  letter-spacing: -1px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.ap-header__logo span {
+  color: #ff1f1f;
+}
+
+.ap-header__logo-suffix {
+  color: #000;
+}
+
+.ap-header__logo-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+  flex-shrink: 0;
+  transition: opacity 0.2s ease;
+}
+
+.ap-header__logo-link:hover {
+  opacity: 0.85;
+}
+
+.ap-header__logo-img {
+  height: 60px;
+  width: auto;
+  max-width: 160px;
+  object-fit: contain;
+  display: block;
+}
+
+.ap-header__divider {
+  width: 1px;
+  height: 36px;
+  background: #d4d4d4;
+  flex-shrink: 0;
+}
+
+/* Nav links container */
+.ap-header__nav {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex: 1;
+  position: relative;
+  height: 100%;
+}
+
+/* Each category nav item with dropdown */
+.ap-header__nav-item {
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.ap-header__nav-link {
+  text-decoration: none;
+  color: #111;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  padding: 0 4px;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+  user-select: none;
+}
+
+.ap-header__nav-link:hover,
+.ap-header__nav-link.is-active {
+  color: #ff1f1f;
+}
+
+.ap-header__cat-chevron {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  color: #888;
+  flex-shrink: 0;
+}
+
+.ap-header__nav-item:hover .ap-header__cat-chevron,
+.ap-header__cat-chevron.is-open {
+  transform: rotate(180deg);
+  color: #ff1f1f;
+}
+
+/* Invisible bridge so mouse moving from category to dropdown never breaks */
+.ap-header__dropdown-bridge {
+  position: absolute;
+  top: 100%;
+  left: -20px;
+  right: -20px;
+  height: 16px;
+  z-index: 1001;
+}
+
+/* Dropdown showing ONLY the sub-categories of hovered category */
+.ap-header__subcat-dropdown {
+  position: absolute;
+  top: 84px; /* Flush with bottom of 84px header */
+  left: 0;
+  min-width: 250px;
+  max-width: 320px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-top: 2px solid #ff1f1f; /* Nitroxxin red top accent */
+  border-radius: 0 0 10px 10px;
+  box-shadow: 0 20px 42px -6px rgba(0, 0, 0, 0.16), 0 4px 14px -2px rgba(0, 0, 0, 0.08);
+  padding: 8px 0;
+  z-index: 1002;
+  max-height: 520px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+  animation: apSubcatEnter 0.16s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.ap-header__subcat-dropdown::-webkit-scrollbar {
+  width: 5px;
+}
+
+.ap-header__subcat-dropdown::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+
+@keyframes apSubcatEnter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Sub-category Row matching screenshot style */
+.ap-header__subcat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  cursor: pointer;
+  user-select: none;
+  background: transparent;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.ap-header__subcat-row:hover {
+  background: #f0f0f0;
+}
+
+.ap-header__subcat-title {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: #374151;
+  white-space: nowrap;
+  letter-spacing: -0.2px;
+  transition: color 0.12s ease;
+}
+
+.ap-header__subcat-row:hover .ap-header__subcat-title {
+  color: #ff1f1f;
+  font-weight: 600;
+}
+
+.ap-header__subcat-arrow {
+  color: #9ca3af;
+  flex-shrink: 0;
+  margin-left: 16px;
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+
+.ap-header__subcat-row:hover .ap-header__subcat-arrow {
+  color: #ff1f1f;
+  transform: translateX(3px);
+}
+
+.ap-header__subcat-empty {
+  padding: 24px 20px;
+  text-align: center;
+  color: #888;
+  font-size: 14px;
+}
+
+/* Right side icons & search */
+.ap-header__right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.ap-header__search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(40, 40, 40, 0.08);
+  border-radius: 28px;
+  padding: 0 18px;
+  height: 48px;
+  width: clamp(180px, 18vw, 290px);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ap-header__search:focus-within {
+  background: #fff;
+  box-shadow: 0 0 0 2px #ff1f1f;
+}
+
+.ap-header__search svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: #555;
+}
+
+.ap-header__search input {
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: #000;
+  width: 100%;
+}
+
+.ap-header__search input::placeholder {
+  color: #777;
+}
+
+.ap-header__icon-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(40, 40, 40, 0.08);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  color: #000;
+  text-decoration: none;
+  transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+.ap-header__icon-btn:hover {
+  background: rgba(40, 40, 40, 0.16);
+  transform: translateY(-1px);
+}
+
+.ap-header__icon-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.ap-header__login-btn {
+  width: auto !important;
+  border-radius: 24px !important;
+  padding: 0 20px !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  background: #000 !important;
+  color: #fff !important;
+  transition: background-color 0.2s ease, transform 0.15s ease !important;
+}
+
+.ap-header__login-btn:hover {
+  background: #ff1f1f !important;
+  color: #fff !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+  .ap-header__nav {
+    display: none;
+  }
+}

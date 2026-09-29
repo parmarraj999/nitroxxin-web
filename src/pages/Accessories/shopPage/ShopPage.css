@@ -1,0 +1,546 @@
+/* ===== SHOP PAGE STYLING (matching Accessories Page UI & Card UI) ===== */
+
+.sp-page {
+  min-height: 100vh;
+  background: #ffffff;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #000;
+  padding-top: 84px;
+  padding-bottom: 100px;
+}
+
+.sp-container {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 24px clamp(16px, 3.5vw, 48px);
+}
+
+/* ── Breadcrumb ── */
+.sp-breadcrumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.sp-breadcrumb a {
+  color: #888;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.sp-breadcrumb a:hover {
+  color: #111;
+}
+
+.sp-breadcrumb__sep {
+  color: #ccc;
+}
+
+.sp-breadcrumb__current {
+  color: #111;
+}
+
+/* ── Hero Title & Subtitle (matching screenshot) ── */
+.sp-header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.sp-title {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: clamp(32px, 3.5vw, 46px);
+  color: #000;
+  margin: 0 0 8px;
+  letter-spacing: -0.5px;
+}
+
+.sp-subtitle {
+  font-size: 15px;
+  color: #666;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* ── Top Filter Bar & Horizontal Quick Pills (matching screenshot) ── */
+.sp-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 32px;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Filters & Sort Button */
+.sp-filter-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  height: 44px;
+  border: 1.5px solid #d1d5db;
+  background: #ffffff;
+  border-radius: 30px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #111;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.sp-filter-toggle:hover {
+  background: #f7f7f8;
+  border-color: #000;
+}
+
+.sp-filter-toggle.is-active {
+  background: #000;
+  color: #fff;
+  border-color: #000;
+}
+
+.sp-filter-toggle svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.sp-filter-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ff1f1f;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+/* Horizontal Quick Filter Pills */
+.sp-pills-scroll {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  padding: 4px 0;
+  flex: 1;
+}
+
+.sp-pills-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.sp-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 20px;
+  height: 44px;
+  border: 1px solid #e5e7eb;
+  background: #f8f8f9;
+  border-radius: 30px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.sp-pill:hover {
+  background: #ebebeb;
+  border-color: #d1d5db;
+  color: #000;
+}
+
+.sp-pill.is-active {
+  background: #000000;
+  color: #ffffff;
+  border-color: #000000;
+  font-weight: 600;
+}
+
+/* ── Main Layout: Optional Sidebar Drawer + Products Grid ── */
+.sp-layout {
+  display: flex;
+  gap: 36px;
+  position: relative;
+  align-items: flex-start;
+}
+
+/* ── Sidebar Filters (Collapsible) ── */
+.sp-sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+  display: none;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
+}
+
+.sp-sidebar.is-open {
+  display: block;
+}
+
+.sp-sidebar__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #eee;
+}
+
+.sp-sidebar__title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #000;
+}
+
+.sp-sidebar__clear-btn {
+  background: none;
+  border: none;
+  color: #ff1f1f;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.sp-sidebar__clear-btn:hover {
+  text-decoration: underline;
+}
+
+.sp-filter-group {
+  margin-bottom: 24px;
+}
+
+.sp-filter-group__title {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #222;
+  margin-bottom: 12px;
+}
+
+.sp-filter-group select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  background: #fff;
+  color: #000;
+  outline: none;
+  cursor: pointer;
+}
+
+.sp-checkbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 200px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  padding-right: 4px;
+}
+
+.sp-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #374151;
+  cursor: pointer;
+  user-select: none;
+}
+
+.sp-checkbox-item input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  accent-color: #ff1f1f;
+  cursor: pointer;
+}
+
+.sp-price-inputs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sp-price-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+/* ── Product Grid Area ── */
+.sp-products-area {
+  flex: 1;
+  min-width: 0;
+}
+
+.sp-products-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 28px;
+}
+
+.sp-sidebar.is-open ~ .sp-products-area .sp-products-grid {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+/* ── EXACT Product Card UI from Accessories Page (.ap-product-card) ── */
+.ap-product-card {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  color: inherit;
+  text-decoration: none;
+  position: relative;
+  transition: transform 0.2s ease;
+}
+
+.ap-product-card:hover {
+  transform: translateY(-4px);
+}
+
+.ap-product-card__image {
+  width: 100%;
+  aspect-ratio: 1 / 1.1;
+  border-radius: 12px;
+  background: #f4f4f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #aaa;
+  font-size: 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+.ap-product-card__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.35s ease;
+}
+
+.ap-product-card:hover .ap-product-card__image img {
+  transform: scale(1.04);
+}
+
+.ap-product-card__heart {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(6, 6, 6, 0.25);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  transition: background 0.2s ease, transform 0.15s ease;
+  z-index: 2;
+}
+
+.ap-product-card__heart:hover {
+  background: rgba(6, 6, 6, 0.45);
+  transform: scale(1.08);
+}
+
+.ap-product-card__heart svg {
+  width: 18px;
+  height: 18px;
+  stroke: #ffffff;
+  fill: none;
+  transition: all 0.2s ease;
+}
+
+.ap-product-card__heart--liked svg {
+  fill: #ff4d4d;
+  stroke: #ff4d4d;
+}
+
+.ap-product-card__info {
+  padding: 12px 0 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.ap-product-card__top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 4px;
+  gap: 12px;
+}
+
+.ap-product-card__category {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 15px;
+  color: #888888;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ap-product-card__price {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  color: #000000;
+  white-space: nowrap;
+}
+
+.ap-product-card__name {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 17px;
+  color: #111;
+  margin-bottom: 12px;
+  min-height: 44px;
+  line-height: 22px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ap-product-card__cart-btn {
+  width: 100%;
+  height: 48px;
+  background: #000000;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  margin-top: auto;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+
+.ap-product-card__cart-btn:hover {
+  background: #ff1f1f;
+}
+
+.ap-product-card__cart-btn svg {
+  width: 20px;
+  height: 20px;
+  stroke: #ffffff;
+  fill: none;
+}
+
+/* ── Empty State ── */
+.sp-empty {
+  text-align: center;
+  padding: 80px 20px;
+  background: #fafafa;
+  border-radius: 12px;
+  margin: 20px 0;
+}
+
+.sp-empty__icon {
+  font-size: 40px;
+  margin-bottom: 16px;
+}
+
+.sp-empty h3 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111;
+  margin-bottom: 8px;
+}
+
+.sp-empty p {
+  color: #666;
+  font-size: 15px;
+  margin-bottom: 20px;
+}
+
+.sp-empty__reset-btn {
+  padding: 10px 24px;
+  background: #000;
+  color: #fff;
+  border: none;
+  border-radius: 24px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.sp-empty__reset-btn:hover {
+  background: #ff1f1f;
+}
+
+/* ── Responsive Breakpoints ── */
+@media (max-width: 1280px) {
+  .sp-products-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .sp-sidebar.is-open ~ .sp-products-area .sp-products-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .sp-products-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  .sp-layout {
+    flex-direction: column;
+  }
+  .sp-sidebar {
+    width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .sp-products-grid {
+    grid-template-columns: 1fr;
+  }
+  .ap-product-card__image {
+    aspect-ratio: 1 / 1;
+  }
+}

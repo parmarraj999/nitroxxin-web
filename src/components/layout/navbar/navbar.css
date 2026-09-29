@@ -23,6 +23,25 @@
     padding: 0 clamp(16px, 3vw, 40px);
 }
 
+.navbar-logo-link {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    transition: opacity 0.2s ease;
+}
+
+.navbar-logo-link:hover {
+    opacity: 0.85;
+}
+
+.navbar-logo-img {
+    height: 50px;
+    width: auto;
+    max-width: 160px;
+    object-fit: contain;
+    display: block;
+}
+
 .navbar-logo {
     font-family: 'Inter', sans-serif;
     font-weight: 800;
