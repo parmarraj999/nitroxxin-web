@@ -920,7 +920,7 @@ export default function Events() {
       setActiveSlide((prevIndex) => (prevIndex + 1) % heroEvents.length);
     }, 6000);
     return () => clearInterval(timer);
-  }, [isHeroPaused, heroEvents?.length, next]);
+  }, [isHeroPaused, heroEvents, next]);
 
   return (
     <div className="ep-page">

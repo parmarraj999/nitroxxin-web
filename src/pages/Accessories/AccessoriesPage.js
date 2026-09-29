@@ -160,7 +160,7 @@ export default function AccessoriesPage() {
     bikeBrands,
     banners,
   } = useAccessoriesContext();
-  const { bikeBrands: fetchedBikeBrands, bikeBrandsLoading } = useBikeBrandsContext();
+  const { bikeBrands: fetchedBikeBrands } = useBikeBrandsContext();
   const [search, setSearch] = useState(bikeParam);
   const [activeFilter, setActiveFilter] = useState("All");
 
@@ -247,7 +247,6 @@ export default function AccessoriesPage() {
     }
     return [];
   }, [fetchedBikeBrands, bikeBrands]);
-  const heroBanner = banners[0];
 
   // Price bounds from live products
   const priceBounds = useMemo(() => {
