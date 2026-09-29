@@ -7,6 +7,8 @@ import { addToCart, saveWishlistItem } from "../../services/commerceService";
 import { useAccessoriesContext } from "../../context/AccessoriesContext";
 import AccessoriesHeader from "./accessoriesNav/AccessoriesHeader";
 import AccessoriesHeroSlider from "./accessoriesBanner/AccessoriesHeroSlider";
+import { useBikeBrandsContext } from "../../context/BikeBrandsContext";
+import SuggestedForYou from "./suggestedForYou/SuggestedForYou";
 
 const productFilters = ["All", "Best Seller", "New Arrival", "Trending", "Deals"];
 
@@ -146,6 +148,7 @@ export default function AccessoriesPage() {
     bikeBrands,
     banners,
   } = useAccessoriesContext();
+  const { bikeBrands: fetchedBikeBrands, bikeBrandsLoading } = useBikeBrandsContext();
   const [search, setSearch] = useState(bikeParam);
   const [activeFilter, setActiveFilter] = useState("All");
 
@@ -224,11 +227,14 @@ export default function AccessoriesPage() {
   const displayCategories = categories;
   const displayBrands = brands;
   const displayBikeBrands = useMemo(() => {
+    if (fetchedBikeBrands && fetchedBikeBrands.length > 0) {
+      return fetchedBikeBrands;
+    }
     if (bikeBrands && bikeBrands.length > 0) {
       return bikeBrands;
     }
-    return displayBrands;
-  }, [bikeBrands, displayBrands]);
+    return [];
+  }, [fetchedBikeBrands, bikeBrands]);
   const heroBanner = banners[0];
 
   // Price bounds from live products
@@ -393,6 +399,8 @@ export default function AccessoriesPage() {
       {/* ═══ MARQUEE & HERO SLIDER SECTION ═══ */}
       <AccessoriesHeroSlider banners={banners} />
 
+      <img src={'/assets/images/strip-banner.png'} style={{ width: '100%', height: '200px', marginTop:'2rem' }} alt='stripe-banner' />
+
       {displayCategories.length > 0 && (
         <div className="ap-section">
           <h2 className="ap-section__title">SHOP BY CATEGORY</h2>
@@ -449,6 +457,9 @@ export default function AccessoriesPage() {
           </div>
         </div>
       )}
+
+      {/* ═══ SUGGESTED FOR YOU SECTION ═══ */}
+      <SuggestedForYou liveProducts={liveProducts} />
 
       {/* ═══ SHOP SECTION with sidebar filters ═══ */}
       <div className="ap-section ap-shop-section">

@@ -1,0 +1,249 @@
+/* ===== SUGGESTED FOR YOU SECTION ===== */
+
+.sfy-section {
+  width: 100%;
+  max-width: 100%;
+  padding: 0 clamp(16px, 3.5vw, 48px);
+  margin-top: 8.5rem;
+  box-sizing: border-box;
+}
+
+/* ── Header ── */
+.sfy-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.sfy-title {
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: clamp(20px, 2.2vw, 24px);
+  font-weight: 700;
+  color: #1a1a1a;
+  letter-spacing: -0.3px;
+  margin: 0;
+}
+
+.sfy-view-all-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #1a1a1a;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: transform 0.2s ease, background 0.2s ease;
+  flex-shrink: 0;
+}
+
+.sfy-view-all-btn:hover {
+  background: #000000;
+  transform: scale(1.08);
+}
+
+/* ── Slider Wrapper ── */
+.sfy-slider-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.sfy-track {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  padding: 6px 4px 14px 4px;
+}
+
+.sfy-track::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── Product Card ── */
+.sfy-card {
+  width: 232px;
+  flex-shrink: 0;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #ebebeb;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+  box-sizing: border-box;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
+}
+
+.sfy-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+  border-color: #dedede;
+}
+
+/* Image Box */
+.sfy-card__img-box {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 8px;
+  background: #f5f6f8;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sfy-card__img-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 10px;
+  box-sizing: border-box;
+  transition: transform 0.3s ease;
+}
+
+.sfy-card:hover .sfy-card__img-box img {
+  transform: scale(1.05);
+}
+
+.sfy-card__no-img {
+  color: #aaa;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Rating Badge (4 ★) */
+.sfy-card__rating {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: #ffffff;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: #111;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  line-height: 1;
+}
+
+.sfy-card__star {
+  color: #0f9d58;
+  font-size: 11px;
+}
+
+/* Body */
+.sfy-card__body {
+  padding: 8px 4px 2px;
+  display: flex;
+  flex-direction: column;
+}
+
+.sfy-card__name {
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #222222;
+  margin: 0 0 6px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.35;
+}
+
+.sfy-card__price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.sfy-card__mrp {
+  font-family: 'Inter', sans-serif;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #888888;
+  text-decoration: line-through;
+}
+
+.sfy-card__price {
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #111111;
+}
+
+/* ── Floating Navigation Buttons (< and >) ── */
+.sfy-nav-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1px solid #eaeaea;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
+  color: #222222;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 8;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sfy-nav-btn:hover {
+  background: #fcfcfc;
+  transform: translateY(-50%) scale(1.08);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.sfy-nav-btn:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.sfy-nav-btn--prev {
+  left: -12px;
+}
+
+.sfy-nav-btn--next {
+  right: -12px;
+}
+
+/* ── Mobile responsiveness ── */
+@media (max-width: 768px) {
+  .sfy-card {
+    width: 190px;
+    padding: 8px;
+  }
+
+  .sfy-card__name {
+    font-size: 12.5px;
+  }
+
+  .sfy-card__price {
+    font-size: 14px;
+  }
+
+  .sfy-nav-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .sfy-nav-btn--prev {
+    left: -6px;
+  }
+
+  .sfy-nav-btn--next {
+    right: -6px;
+  }
+}

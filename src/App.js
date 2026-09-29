@@ -28,6 +28,7 @@ import { AuthProvider } from './components/AuthModal/useAuthModal';
 import { FirebaseAuthProvider } from './context/AuthContext';
 import { EventsProvider } from './context/EventsContext';
 import { AccessoriesProvider } from './context/AccessoriesContext';
+import { BikeBrandsProvider } from './context/BikeBrandsContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Profile from './pages/profile/profile';
 import ProfileOverview from './pages/profile/pages/ProfileOverview';
@@ -163,11 +164,13 @@ function App() {
     <FirebaseAuthProvider>
       <EventsProvider>
         <AccessoriesProvider>
-          <Router>
-            <AuthProvider>
-              <AppShell />
-            </AuthProvider>
-          </Router>
+          <BikeBrandsProvider>
+            <Router>
+              <AuthProvider>
+                <AppShell />
+              </AuthProvider>
+            </Router>
+          </BikeBrandsProvider>
         </AccessoriesProvider>
       </EventsProvider>
     </FirebaseAuthProvider>
