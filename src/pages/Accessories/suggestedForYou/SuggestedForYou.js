@@ -129,9 +129,9 @@ export default function SuggestedForYou({ liveProducts = [] }) {
       {/* ── Header ── */}
       <div className="sfy-header">
         <h2 className="sfy-title">Suggested For You</h2>
-        <Link to="/accessories" className="sfy-view-all-btn" aria-label="View all suggestions">
+        {/* <Link to="/accessories" className="sfy-view-all-btn" aria-label="View all suggestions">
           <ArrowRightIcon />
-        </Link>
+        </Link> */}
       </div>
 
       {/* ── Slider Area ── */}
@@ -163,12 +163,12 @@ export default function SuggestedForYou({ liveProducts = [] }) {
                     <div className="sfy-card__no-img">No image</div>
                   )}
 
-                  {item.rating && (
+                  {/* {item.rating && (
                     <div className="sfy-card__rating">
                       <span>{item.rating}</span>
                       <span className="sfy-card__star">★</span>
                     </div>
-                  )}
+                  )} */}
                 </div>
 
                 <div className="sfy-card__body">

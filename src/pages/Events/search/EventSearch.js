@@ -163,6 +163,92 @@ export default function EventSearch() {
     }
   };
 
+  // Recent searches and recently visited state
+  const [recentSearches, setRecentSearches] = useState(() => {
+    try {
+      const stored = localStorage.getItem("nitroxx_recent_event_searches");
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [recentlyVisited, setRecentlyVisited] = useState(() => {
+    try {
+      const stored = localStorage.getItem("nitroxx_recently_visited_events");
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [recentsFilter, setRecentsFilter] = useState("all");
+
+  const saveRecentSearch = (text) => {
+    if (!text || !text.trim()) return;
+    const clean = text.trim();
+    setRecentSearches((prev) => {
+      const updated = [clean, ...prev.filter((item) => item.toLowerCase() !== clean.toLowerCase())].slice(0, 10);
+      try {
+        localStorage.setItem("nitroxx_recent_event_searches", JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  };
+
+  const saveRecentlyVisited = (item) => {
+    if (!item || !item.id) return;
+    setRecentlyVisited((prev) => {
+      const updated = [item, ...prev.filter((ev) => ev.id !== item.id)].slice(0, 8);
+      try {
+        localStorage.setItem("nitroxx_recently_visited_events", JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  };
+
+  const clearRecentSearches = () => {
+    setRecentSearches([]);
+    try {
+      localStorage.removeItem("nitroxx_recent_event_searches");
+    } catch {}
+  };
+
+  const clearRecentlyVisited = () => {
+    setRecentlyVisited([]);
+    try {
+      localStorage.removeItem("nitroxx_recently_visited_events");
+    } catch {}
+  };
+
+  const removeRecentSearchItem = (e, keyword) => {
+    e.stopPropagation();
+    setRecentSearches((prev) => {
+      const updated = prev.filter((k) => k !== keyword);
+      try {
+        localStorage.setItem("nitroxx_recent_event_searches", JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  };
+
+  const removeRecentlyVisitedItem = (e, id) => {
+    e.stopPropagation();
+    setRecentlyVisited((prev) => {
+      const updated = prev.filter((item) => item.id !== id);
+      try {
+        localStorage.setItem("nitroxx_recently_visited_events", JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && query.trim()) {
+      saveRecentSearch(query.trim());
+    }
+  };
+
   // Format real Firestore events into unified search item format
   const normalizedLiveEvents = useMemo(() => {
     return events.map((ev) => {

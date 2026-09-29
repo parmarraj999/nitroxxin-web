@@ -129,15 +129,27 @@ export default function AccessoriesPage() {
 
   const scrollLeft = (ref) => {
     if (ref.current) {
-      ref.current.scrollBy({ left: -340, behavior: "smooth" });
+      const card = ref.current.firstElementChild;
+      const cardWidth = card ? card.offsetWidth : 280;
+      const gap = 32;
+      ref.current.scrollBy({ left: -(cardWidth + gap), behavior: "smooth" });
     }
   };
 
   const scrollRight = (ref) => {
     if (ref.current) {
-      ref.current.scrollBy({ left: 340, behavior: "smooth" });
+      const card = ref.current.firstElementChild;
+      const cardWidth = card ? card.offsetWidth : 280;
+      const gap = 32;
+      ref.current.scrollBy({ left: (cardWidth + gap), behavior: "smooth" });
     }
   };
+
+  useEffect(() => {
+    if (categoryTrackRef.current) categoryTrackRef.current.scrollLeft = 0;
+    if (bikeTrackRef.current) bikeTrackRef.current.scrollLeft = 0;
+    if (brandTrackRef.current) brandTrackRef.current.scrollLeft = 0;
+  }, []);
 
   const {
     products,
@@ -405,6 +417,7 @@ export default function AccessoriesPage() {
         <div className="ap-section">
           <h2 className="ap-section__title">SHOP BY CATEGORY</h2>
           <div className="ap-category-slider">
+            <button className="ap-category-slider__btn" aria-label="Previous" onClick={() => scrollLeft(categoryTrackRef)}><ChevronLeftIcon /></button>
             <div className="ap-category-track" ref={categoryTrackRef}>
               {displayCategories.map((cat) => (
                 <Link to={`/accessories/category/${cat.id}`} key={cat.id} className="ap-cat-card">
@@ -415,6 +428,7 @@ export default function AccessoriesPage() {
                 </Link>
               ))}
             </div>
+            <button className="ap-category-slider__btn" aria-label="Next" onClick={() => scrollRight(categoryTrackRef)}><ChevronRightIcon /></button>
           </div>
         </div>
       )}
