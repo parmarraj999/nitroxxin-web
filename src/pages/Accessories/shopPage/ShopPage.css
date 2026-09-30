@@ -544,3 +544,116 @@
     aspect-ratio: 1 / 1;
   }
 }
+
+/* ── Modern 20-Product Pagination Controls ── */
+.sp-pagination {
+  margin-top: 48px;
+  padding: 24px 0 10px;
+  border-top: 1px solid #e5e5e5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.sp-pagination__info {
+  font-size: 13.5px;
+  color: #666666;
+}
+
+.sp-pagination__info strong {
+  color: #111111;
+  font-weight: 700;
+}
+
+.sp-pagination__controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.sp-page-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border: 1px solid #e0e0e0;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #111111;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  user-select: none;
+}
+
+.sp-page-btn:hover:not(:disabled) {
+  border-color: #111111;
+  background: #000000;
+  color: #ffffff;
+}
+
+.sp-page-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  border-color: #e5e5e5;
+}
+
+.sp-pagination__numbers {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sp-page-num {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid #e5e5e5;
+  background: #ffffff;
+  color: #222222;
+  font-size: 13.5px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sp-page-num:hover:not(.is-active) {
+  border-color: #000000;
+  background: #f7f7f8;
+}
+
+.sp-page-num.is-active {
+  background: #000000;
+  color: #ffffff;
+  border-color: #000000;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+}
+
+.sp-page-ellipsis {
+  padding: 0 4px;
+  color: #999999;
+  font-size: 14px;
+  user-select: none;
+}
+
+.sp-loading-more-indicator {
+  font-size: 12.5px;
+  color: #ff1f1f;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  animation: spPulse 1.2s infinite ease-in-out;
+}
+
+@keyframes spPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}

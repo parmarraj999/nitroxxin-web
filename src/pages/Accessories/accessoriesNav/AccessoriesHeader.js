@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { useAuthModal } from '../../../components/AuthModal/useAuthModal';
 import { useAccessoriesContext } from '../../../context/AccessoriesContext';
+import SearchPopup from './SearchPopup';
 import './AccessoriesHeader.css';
 
 // ── Default fallback categories if database is loading or empty ──
@@ -156,7 +157,9 @@ export default function AccessoriesHeader({ showBack = false, search = '', onSea
 
   const [activeHoveredCat, setActiveHoveredCat] = useState(null);
   const [localSearch, setLocalSearch] = useState(search);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const closeTimeoutRef = useRef(null);
+  const searchContainerRef = useRef(null);
 
   useEffect(() => {
     setLocalSearch(search);
@@ -290,6 +293,7 @@ export default function AccessoriesHeader({ showBack = false, search = '', onSea
   const handleSearchKeyDown = (e) => {
     if (e.key === 'Enter') {
       const term = localSearch.trim();
+      setIsSearchOpen(false);
       if (term) {
         navigate(`/shop?search=${encodeURIComponent(term)}`);
       } else {
@@ -298,8 +302,18 @@ export default function AccessoriesHeader({ showBack = false, search = '', onSea
     }
   };
 
+  const handleSearchIconClick = () => {
+    const term = localSearch.trim();
+    setIsSearchOpen(false);
+    if (term) {
+      navigate(`/shop?search=${encodeURIComponent(term)}`);
+    } else {
+      navigate('/shop');
+    }
+  };
+
   return (
-    <header className="ap-header">
+    <header className={`ap-header${isSearchOpen ? ' has-search-open' : ''}`}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0px', flexShrink: 0 }}>
         {showBack && (
           <div
@@ -409,15 +423,30 @@ export default function AccessoriesHeader({ showBack = false, search = '', onSea
 
       {/* Right side: search + cart + login + profile (Logout button removed) */}
       <div className="ap-header__right">
-        {/* Search bar redirects to /shop?search=... on Enter */}
-        <div className="ap-header__search">
-          <SearchIcon />
+        {/* Search bar: Click/type opens SearchPopup; clicking search icon redirects to /shop */}
+        <div
+          className="ap-header__search"
+          ref={searchContainerRef}
+          onClick={() => setIsSearchOpen(true)}
+        >
+          <span
+            className="ap-header__search-icon-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleSearchIconClick();
+            }}
+            title="Search in Shop"
+          >
+            <SearchIcon />
+          </span>
           <input
             type="text"
             placeholder="Search Accessories.."
             value={localSearch}
+            onFocus={() => setIsSearchOpen(true)}
             onChange={(e) => {
               setLocalSearch(e.target.value);
+              if (!isSearchOpen) setIsSearchOpen(true);
               if (onSearchChange) onSearchChange(e.target.value);
             }}
             onKeyDown={handleSearchKeyDown}
@@ -471,6 +500,27 @@ export default function AccessoriesHeader({ showBack = false, search = '', onSea
           </svg>
         </Link>
       </div>
+
+      {/* Search Popup Dropdown (Culture Circle Inspired) */}
+      <SearchPopup
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        searchQuery={localSearch}
+        onSearchChange={(val) => {
+          setLocalSearch(val);
+          if (onSearchChange) onSearchChange(val);
+        }}
+        inputRef={searchContainerRef}
+        onSearchSubmit={(val) => {
+          const term = (val !== undefined ? val : localSearch).trim();
+          setIsSearchOpen(false);
+          if (term) {
+            navigate(`/shop?search=${encodeURIComponent(term)}`);
+          } else {
+            navigate('/shop');
+          }
+        }}
+      />
     </header>
   );
 }

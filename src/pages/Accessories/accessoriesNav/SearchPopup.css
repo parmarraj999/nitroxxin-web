@@ -1,0 +1,819 @@
+/* ══════════════════════════════════════════════════════════════════
+   SEARCH POPUP & DROPDOWN MODAL (Culture Circle Inspired)
+   Desktop 2-Column: 80% width, 80% height of screen
+   Search bar is crisp & clear (NO blur, backdrop starts under header)
+   Perfect Product Grid with 1:1 Aspect Ratio Containment
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Backdrop: starts below the 84px header so the search bar is NEVER blurred ── */
+.sp-backdrop {
+  position: fixed;
+  top: 84px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.26);
+  z-index: 1050;
+  animation: spFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes spFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ── Main Container: exactly 80vw width and 80vh height on desktop ── */
+.sp-popup-container {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90vw;
+  height: 87vh;
+  max-height: 87vh;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.16), 0 4px 16px rgba(0, 0, 0, 0.06);
+  border: 1px solid #ebebeb;
+  z-index: 1100;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: spPopDown 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #111111;
+  box-sizing: border-box;
+}
+
+@keyframes spPopDown {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* Mobile topbar hidden on desktop */
+.sp-mobile-topbar {
+  display: none;
+}
+
+/* ── Popup Body (Two Columns filling 80vh height) ── */
+.sp-body {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   LEFT COLUMN: Recent & Popular Searches (310px width)
+   ══════════════════════════════════════════════════════════════════ */
+.sp-left-col {
+  width: 310px;
+  flex-shrink: 0;
+  border-right: 1px solid #f0f0f0;
+  padding: 24px 20px;
+  height: 100%;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #e5e5e5 transparent;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.sp-left-col::-webkit-scrollbar {
+  width: 5px;
+}
+.sp-left-col::-webkit-scrollbar-thumb {
+  background: #e2e2e2;
+  border-radius: 4px;
+}
+
+/* Section Header */
+.sp-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.sp-section__header {
+  margin-bottom: 12px;
+}
+
+.sp-section__header--flex {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sp-section__title {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: #8c8c8c;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.sp-clear-all-link {
+  background: none;
+  border: none;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #8c8c8c;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  transition: color 0.15s ease;
+}
+
+.sp-clear-all-link:hover {
+  color: #ff1f1f;
+}
+
+/* 1. Recent Searches Chips with individual remove button */
+.sp-recent-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sp-chip-wrap {
+  display: inline-flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #e2e2e2;
+  border-radius: 9999px;
+  padding: 2px 8px 2px 14px;
+  gap: 4px;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.sp-chip-wrap:hover {
+  border-color: #111111;
+  background: #f7f7f8;
+}
+
+.sp-chip {
+  background: none;
+  border: none;
+  padding: 5px 0;
+  color: #333333;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.sp-chip:hover {
+  color: #000000;
+}
+
+.sp-chip-delete {
+  background: none;
+  border: none;
+  color: #a1a1aa;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 3px 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+.sp-chip-delete:hover {
+  color: #ff1f1f;
+}
+
+/* 2. Recently Viewed Thumbnails Box */
+.sp-viewed-card-box {
+  background: #f7f7f8;
+  border-radius: 14px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.sp-viewed-card-box::-webkit-scrollbar {
+  display: none;
+}
+
+.sp-viewed-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid #ebebeb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  padding: 4px;
+  box-sizing: border-box;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sp-viewed-thumb:hover {
+  transform: translateY(-2px);
+  border-color: #000000;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
+
+.sp-viewed-thumb img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* 3. Popular Searches List */
+.sp-popular-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.sp-popular-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 4px;
+  cursor: pointer;
+  border-bottom: 1px solid #f5f5f5;
+  transition: background-color 0.12s ease, padding-left 0.12s ease;
+  border-radius: 6px;
+}
+
+.sp-popular-row:last-child {
+  border-bottom: none;
+}
+
+.sp-popular-row:hover {
+  background: #f9f9f9;
+  padding-left: 8px;
+}
+
+.sp-popular-row__left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.sp-popular-row__icon {
+  color: #737373;
+  flex-shrink: 0;
+}
+
+.sp-popular-row__text {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #262626;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sp-popular-row:hover .sp-popular-row__text {
+  color: #000000;
+}
+
+.sp-popular-row__arrow {
+  color: #a3a3a3;
+  flex-shrink: 0;
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+
+.sp-popular-row:hover .sp-popular-row__arrow {
+  color: #111111;
+  transform: translateX(3px);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   RIGHT COLUMN: Perfect 4-Column Product Grid (Max 20 Products)
+   ══════════════════════════════════════════════════════════════════ */
+.sp-right-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 22px 28px 24px;
+  height: 100%;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #e5e5e5 transparent;
+  box-sizing: border-box;
+}
+
+.sp-right-col::-webkit-scrollbar {
+  width: 6px;
+}
+.sp-right-col::-webkit-scrollbar-thumb {
+  background: #d8d8d8;
+  border-radius: 4px;
+}
+
+.sp-right-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 4px;
+}
+
+.sp-see-all-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: #111111;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.sp-see-all-btn:hover {
+  background: #f4f4f5;
+  color: #ff1f1f;
+}
+
+/* Perfect 4-column product grid with equal distribution */
+.sp-product-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px 14px;
+}
+
+/* Single Product Card */
+.sp-product-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* Critical for grid text truncation */
+  cursor: pointer;
+  transition: transform 0.16s ease;
+  user-select: none;
+}
+
+.sp-product-card:hover {
+  transform: translateY(-3px);
+}
+
+/* Edge-to-edge product image covering whole card width with no padding */
+.sp-product-card__img-box {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: #f8f8f9;
+  border: 1px solid #f0f0f2;
+  border-radius: 14px;
+  overflow: hidden;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.sp-product-card__img {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.22s ease;
+}
+
+.sp-product-card:hover .sp-product-card__img {
+  transform: scale(1.05);
+}
+
+/* Heart Wishlist Icon */
+.sp-product-card__heart {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.85);
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+  padding: 0;
+  z-index: 3;
+}
+
+.sp-product-card__heart:hover {
+  background: #ffffff;
+  transform: scale(1.1);
+}
+
+.sp-product-card__heart.is-active svg {
+  stroke: #ff1f1f;
+  fill: #ff1f1f;
+}
+
+/* Carousel dots at bottom center */
+.sp-product-card__dots {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 3.5px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.sp-dot {
+  width: 3.5px;
+  height: 3.5px;
+  border-radius: 50%;
+  background: #d4d4d8;
+  transition: all 0.2s ease;
+}
+
+.sp-dot.is-active {
+  width: 12px;
+  height: 3.5px;
+  border-radius: 3px;
+  background: #8e8e93;
+}
+
+/* Quick Add (+) button in bottom-right */
+.sp-product-card__add-btn {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: #ffffff;
+  border: 1px solid #e4e4e7;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  z-index: 3;
+  padding: 0;
+}
+
+.sp-product-card__add-btn:hover {
+  background: #111111;
+  border-color: #111111;
+  transform: scale(1.06);
+}
+
+.sp-product-card__add-btn:hover svg {
+  stroke: #ffffff;
+}
+
+.sp-product-card__add-btn.is-added {
+  background: #ecfdf5;
+  border-color: #10b981;
+}
+
+/* Product Info below image */
+.sp-product-card__info {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 2px 2px;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sp-product-card__brand {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #111111;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sp-product-card__name {
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 400;
+  color: #4b5563;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Price row with offer price and green EMI */
+.sp-product-card__price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 3px;
+}
+
+.sp-product-card__price {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #111111;
+}
+
+.sp-product-card__emi {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #16a34a; /* Culture Circle green */
+  white-space: nowrap;
+}
+
+/* Yellow XPRESS Badge matching screenshot */
+.sp-product-card__badge-row {
+  margin-top: 4px;
+  display: flex;
+}
+
+.sp-badge-xpress {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: #ffdb15; /* Bright Culture Circle yellow */
+  color: #000000;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  user-select: none;
+}
+
+.sp-badge-icon {
+  font-size: 10px;
+}
+
+/* No results state */
+.sp-no-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px;
+  gap: 16px;
+  text-align: center;
+  color: #666;
+}
+
+.sp-no-results p {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+/* Right footer prompt for >= 20 matches */
+.sp-right-footer {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #71717a;
+}
+
+.sp-footer-link {
+  background: none;
+  border: none;
+  color: #ff1f1f;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  transition: opacity 0.15s ease;
+}
+
+.sp-footer-link:hover {
+  opacity: 0.8;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVENESS (<= 840px)
+   Matches Screenshots 2 & 3:
+   Screenshot 2: Initial view (Recent + Thumbnails + Popular list)
+   Screenshot 3: Active search (SEARCH RESULTS + 2-Column Product Grid)
+   ══════════════════════════════════════════════════════════════════ */
+@media (max-width: 840px) {
+  .sp-backdrop {
+    display: none;
+  }
+
+  .sp-popup-container {
+    position: fixed;
+    inset: 0;
+    top: 0;
+    left: 0;
+    transform: none;
+    width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+    background: #ffffff;
+    z-index: 99999;
+    animation: spMobileSlide 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes spMobileSlide {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Mobile Topbar with Back button and Rounded Search Input */
+  .sp-mobile-topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #ffffff;
+    border-bottom: 1px solid #f0f0f0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .sp-mobile-back-btn {
+    width: 38px;
+    height: 38px;
+    background: none;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #111111;
+    padding: 0;
+    flex-shrink: 0;
+    border-radius: 50%;
+    transition: background-color 0.15s ease;
+  }
+
+  .sp-mobile-back-btn:hover {
+    background: #f4f4f5;
+  }
+
+  .sp-mobile-input-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f4f4f5;
+    border-radius: 12px;
+    padding: 0 14px;
+    height: 44px;
+    box-sizing: border-box;
+  }
+
+  .sp-mobile-search-icon {
+    display: flex;
+    align-items: center;
+    color: #71717a;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .sp-mobile-search-icon:hover {
+    color: #000000;
+  }
+
+  .sp-mobile-search-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 15px;
+    font-weight: 500;
+    color: #111111;
+    outline: none;
+    width: 100%;
+    font-family: inherit;
+  }
+
+  .sp-mobile-search-input::placeholder {
+    color: #71717a;
+  }
+
+  .sp-mobile-clear-btn {
+    background: #d4d4d8;
+    color: #52525b;
+    border: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+  }
+
+  /* Body becomes a single scrollable column on mobile */
+  .sp-body {
+    flex-direction: column;
+    height: calc(100vh - 68px);
+    overflow-y: auto;
+  }
+
+  /* In mobile: When searchQuery is empty, show Left Col (Screenshot 2); hide Right Col */
+  .sp-popup-container.is-empty-query .sp-left-col {
+    display: flex;
+    width: 100%;
+    border-right: none;
+    padding: 18px 16px 36px;
+    gap: 24px;
+  }
+
+  .sp-popup-container.is-empty-query .sp-right-col {
+    display: none;
+  }
+
+  /* In mobile: When searchQuery is present, show Right Col (Screenshot 3); hide Left Col */
+  .sp-popup-container.has-query .sp-left-col {
+    display: none;
+  }
+
+  .sp-popup-container.has-query .sp-right-col {
+    display: flex;
+    width: 100%;
+    padding: 16px 16px 40px;
+  }
+
+  /* Screenshot 3: Uppercase "SEARCH RESULTS" header */
+  .sp-right-header {
+    margin-bottom: 14px;
+  }
+
+  .sp-right-header .sp-section__title {
+    font-size: 12px;
+    letter-spacing: 0.6px;
+    color: #8c8c8c;
+  }
+
+  /* 2-column product grid on mobile matching Screenshot 3 */
+  .sp-product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 10px;
+  }
+
+  .sp-product-card__img-box {
+    border-radius: 12px;
+  }
+
+  .sp-product-card__brand {
+    font-size: 12px;
+  }
+
+  .sp-product-card__name {
+    font-size: 11px;
+  }
+
+  .sp-product-card__price {
+    font-size: 13px;
+  }
+
+  .sp-product-card__emi {
+    font-size: 11px;
+  }
+
+  .sp-badge-xpress {
+    font-size: 9px;
+    padding: 2px 6px;
+  }
+}

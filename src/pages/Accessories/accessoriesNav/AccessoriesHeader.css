@@ -18,6 +18,10 @@
   box-sizing: border-box;
 }
 
+.ap-header.has-search-open {
+  z-index: 99999;
+}
+
 .ap-header__logo {
   font-family: 'Inter', sans-serif;
   font-weight: 800;
@@ -228,6 +232,8 @@
 }
 
 .ap-header__search {
+  position: relative;
+  z-index: 1060;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -239,9 +245,24 @@
   transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
+.ap-header.has-search-open .ap-header__search,
 .ap-header__search:focus-within {
-  background: #fff;
-  box-shadow: 0 0 0 2px #ff1f1f;
+  background: #ffffff;
+  box-shadow: 0 0 0 2px #111111, 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.ap-header__search-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.ap-header__search-icon-btn:hover {
+  transform: scale(1.12);
+  opacity: 0.85;
 }
 
 .ap-header__search svg {

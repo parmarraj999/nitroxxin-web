@@ -22,6 +22,7 @@ import BrandPage from './pages/Accessories/brands/brandPage';
 import BikeBrandPage from './pages/Accessories/bikeBrandPage/bikeBrandPage';
 import CategoryPage from './pages/Accessories/categoryPage/categoryPage';
 import ShopPage from './pages/Accessories/shopPage/ShopPage';
+import MarketplaceSearch from './pages/Accessories/search/MarketplaceSearch';
 import CartPage from './pages/Cart/CartPage';
 
 import { AuthProvider } from './components/AuthModal/useAuthModal';
@@ -104,6 +105,7 @@ const AppShell = () => {
 
                   <Route element={<AccessoriesLayout />}>
                     <Route path="/accessories" element={<AccessoriesPage />} />
+                    <Route path="/accessories/search" element={<MarketplaceSearch />} />
                     <Route path="/accessories/collection" element={<Collection />} />
                     <Route path="/accessories/collection/:categoryId" element={<Collection />} />
                     <Route path="/accessories/category/:categoryId" element={<CategoryPage />} />

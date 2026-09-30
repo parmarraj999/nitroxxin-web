@@ -374,21 +374,7 @@ export default function Events() {
     };
   }, []);
 
-  const allEventsSectionRef = useRef(null);
-  const [isStickyNavVisible, setIsStickyNavVisible] = useState(false);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (!allEventsSectionRef.current) return;
-      const rect = allEventsSectionRef.current.getBoundingClientRect();
-      setIsStickyNavVisible(rect.top <= 120);
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   const handleSelectCity = (city) => {
     setSelectedCity(city);
@@ -924,167 +910,6 @@ export default function Events() {
 
   return (
     <div className="ep-page">
-      {/* District-by-Zomato inspired Sticky Top Navbar */}
-      <div className={`ep-sticky-nav${isStickyNavVisible ? " ep-sticky-nav--visible" : ""}`}>
-        {/* Row 1: Brand, Location, Nav Tabs, Search, Profile */}
-        <div className="ep-sticky-nav__header">
-          <div className="ep-sticky-nav__brand-col">
-            <Link to="/" className="ep-sticky-nav__logo">
-              <div className="ep-sticky-nav__logo-title">
-                NITRO<span className="logo-x">X</span>X
-              </div>
-              <div className="ep-sticky-nav__logo-sub">BY NITROXX</div>
-            </Link>
-
-            <button
-              type="button"
-              className="ep-sticky-nav__location"
-              onClick={() => setIsLocationModalOpen(true)}
-              title="Change location"
-            >
-              <div className="ep-sticky-nav__location-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-                  <circle cx="12" cy="10" r="3" />
-                </svg>
-              </div>
-              <div className="ep-sticky-nav__location-text">
-                <span className="ep-sticky-nav__location-city">{selectedCity || "Select City"}</span>
-                <span className="ep-sticky-nav__location-sub">
-                  {selectedCity ? "Current location" : "Set location"}
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m6 9 6 6 6-6"/></svg>
-                </span>
-              </div>
-            </button>
-          </div>
-
-          <div className="ep-sticky-nav__tabs">
-            <Link to="/" className="ep-sticky-nav__tab">For you</Link>
-            <Link to="/events" className="ep-sticky-nav__tab ep-sticky-nav__tab--active">Events</Link>
-            <Link to="/accessories" className="ep-sticky-nav__tab">Accessories</Link>
-          </div>
-
-          <div className="ep-sticky-nav__actions">
-            <div className="ep-sticky-nav__search-wrap">
-              <span className="ep-sticky-nav__search-icon">
-                <SearchIcon color="#7c3aed" />
-              </span>
-              <input
-                className="ep-sticky-nav__search-input"
-                type="search"
-                placeholder="Search for events, movies and restaurants"
-                value={query}
-                onFocus={() => navigate('/events/search')}
-                onClick={() => navigate('/events/search')}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  navigate(`/events/search?q=${encodeURIComponent(e.target.value)}`);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && query.trim()) {
-                    navigate(`/events/search?q=${encodeURIComponent(query.trim())}`);
-                  }
-                }}
-              />
-              {query && (
-                <button
-                  type="button"
-                  className="ep-sticky-nav__search-clear"
-                  onClick={() => setQuery("")}
-                  aria-label="Clear search"
-                >
-                  ×
-                </button>
-              )}
-            </div>
-
-            <Link to="/profile" className="ep-sticky-nav__profile" title="My Profile">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="#9ca3af" stroke="none">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm0 14c-2.03 0-4.43-.82-6.14-2.88C7.55 15.8 9.68 15 12 15s4.45.8 6.14 2.12C16.43 19.18 14.03 20 12 20z" />
-              </svg>
-            </Link>
-          </div>
-        </div>
-
-        {/* Row 2: Filter Options Bar */}
-        <div className="ep-sticky-nav__filter-bar">
-          <div className="ep-sticky-nav__filter-scroll">
-            <button
-              type="button"
-              className={`ep-sticky-pill ep-sticky-pill--filters${activeFiltersCount > 0 ? " ep-sticky-pill--has-count" : ""}`}
-              onClick={() => setIsFilterDrawerOpen(true)}
-            >
-              <SlidersIcon color="#111827" />
-              <span>Filters</span>
-              {activeFiltersCount > 0 && (
-                <span className="ep-sticky-pill__badge">{activeFiltersCount}</span>
-              )}
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m6 9 6 6 6-6"/></svg>
-            </button>
-
-            <button
-              type="button"
-              className={`ep-sticky-pill${isTodayActive ? " ep-sticky-pill--active" : ""}`}
-              onClick={toggleToday}
-            >
-              Today
-            </button>
-
-            <button
-              type="button"
-              className={`ep-sticky-pill${isTomorrowActive ? " ep-sticky-pill--active" : ""}`}
-              onClick={toggleTomorrow}
-            >
-              Tomorrow
-            </button>
-
-            <button
-              type="button"
-              className={`ep-sticky-pill${isWeekendActive ? " ep-sticky-pill--active" : ""}`}
-              onClick={toggleWeekend}
-            >
-              This Weekend
-            </button>
-
-            <button
-              type="button"
-              className={`ep-sticky-pill${isFreeActive ? " ep-sticky-pill--active" : ""}`}
-              onClick={toggleFree}
-            >
-              Free
-            </button>
-
-            <button
-              type="button"
-              className={`ep-sticky-pill${isPaidActive ? " ep-sticky-pill--active" : ""}`}
-              onClick={togglePaid}
-            >
-              Paid
-            </button>
-
-            {eventCategories.map((cat) => (
-              <button
-                key={cat.id}
-                type="button"
-                className={`ep-sticky-pill${activeCategory === cat.id ? " ep-sticky-pill--active" : ""}`}
-                onClick={() => toggleCategory(cat.id)}
-              >
-                {cat.label}
-              </button>
-            ))}
-
-            {(activeFiltersCount > 0 || query) && (
-              <button
-                type="button"
-                className="ep-sticky-pill ep-sticky-pill--clear"
-                onClick={clearAllFilters}
-              >
-                Clear All
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
 
       <LocationModal
         isOpen={isLocationModalOpen}
@@ -1357,7 +1182,7 @@ export default function Events() {
             )}
           </div>
 
-          <div className="ep-section" ref={allEventsSectionRef}>
+          <div className="ep-section">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.8rem", flexWrap: "wrap", gap: "0.5rem" }}>
               <p className="ep-section__title" style={{ margin: 0 }}>All Events</p>
               <Link

@@ -169,10 +169,17 @@ export default function ShopPage({ filterType }) {
   const {
     products = [],
     productsLoading,
+    fetchMoreProducts,
+    hasMore,
+    loadingMore,
     categories = [],
     subcategories = [],
     brands = [],
   } = useAccessoriesContext();
+
+  const PRODUCTS_PER_PAGE = 20;
+  const [currentPage, setCurrentPage] = useState(1);
+  const productsAreaRef = useRef(null);
 
   // Filter out unpublished products
   const liveProducts = useMemo(() => {
@@ -338,6 +345,58 @@ export default function ShopPage({ filterType }) {
     priceRange,
     sortBy,
   ]);
+
+  // Reset to page 1 when any filter or search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    search,
+    selectedCategory,
+    selectedSubcategory,
+    selectedBrand,
+    queryBike,
+    availability,
+    priceRange,
+    sortBy,
+  ]);
+
+  // Pagination calculations
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE));
+  const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
+  const endIndex = Math.min(startIndex + PRODUCTS_PER_PAGE, filteredProducts.length);
+  const paginatedProducts = useMemo(() => {
+    return filteredProducts.slice(startIndex, endIndex);
+  }, [filteredProducts, startIndex, endIndex]);
+
+  const handlePageChange = (newPage) => {
+    if (newPage < 1) return;
+    setCurrentPage(newPage);
+
+    if (newPage * PRODUCTS_PER_PAGE >= products.length && hasMore && fetchMoreProducts) {
+      fetchMoreProducts();
+    }
+
+    if (productsAreaRef.current) {
+      productsAreaRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  // Generate page numbers with ellipses
+  const pageNumbers = useMemo(() => {
+    const pages = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (currentPage > 3) pages.push('...');
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+      for (let i = start; i <= end; i++) pages.push(i);
+      if (currentPage < totalPages - 2) pages.push('...');
+      pages.push(totalPages);
+    }
+    return pages;
+  }, [totalPages, currentPage]);
 
   // Count active filters for badge
   const activeFilterCount = useMemo(() => {
@@ -613,18 +672,72 @@ export default function ShopPage({ filterType }) {
           </aside>
 
           {/* ── Products Grid Area ── */}
-          <main className="sp-products-area">
+          <main className="sp-products-area" ref={productsAreaRef}>
             {productsLoading ? (
               <div className="sp-empty">
                 <div className="sp-empty__icon">⏳</div>
                 <h3>Loading gear & accessories…</h3>
               </div>
             ) : filteredProducts.length > 0 ? (
-              <div className="sp-products-grid">
-                {filteredProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
+              <>
+                <div className="sp-products-grid">
+                  {paginatedProducts.map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </div>
+
+                {/* ── Pagination Controls ── */}
+                <div className="sp-pagination">
+                  <div className="sp-pagination__info">
+                    Showing <strong>{startIndex + 1}–{endIndex}</strong> of <strong>{filteredProducts.length}</strong> products
+                  </div>
+
+                  <div className="sp-pagination__controls">
+                    <button
+                      type="button"
+                      className="sp-page-btn sp-page-btn--prev"
+                      disabled={currentPage === 1}
+                      onClick={() => handlePageChange(currentPage - 1)}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m15 18-6-6 6-6"/></svg>
+                      <span>Previous</span>
+                    </button>
+
+                    <div className="sp-pagination__numbers">
+                      {pageNumbers.map((p, idx) =>
+                        p === '...' ? (
+                          <span key={`ellipsis-${idx}`} className="sp-page-ellipsis">…</span>
+                        ) : (
+                          <button
+                            key={p}
+                            type="button"
+                            className={`sp-page-num${p === currentPage ? ' is-active' : ''}`}
+                            onClick={() => handlePageChange(p)}
+                          >
+                            {p}
+                          </button>
+                        )
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      className="sp-page-btn sp-page-btn--next"
+                      disabled={currentPage === totalPages && !hasMore}
+                      onClick={() => handlePageChange(currentPage + 1)}
+                    >
+                      <span>Next</span>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m9 18 6-6-6-6"/></svg>
+                    </button>
+                  </div>
+
+                  {loadingMore && (
+                    <div className="sp-loading-more-indicator">
+                      <span>Loading next 20 products from catalog…</span>
+                    </div>
+                  )}
+                </div>
+              </>
             ) : (
               <div className="sp-empty">
                 <div className="sp-empty__icon">🔍</div>
