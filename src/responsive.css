@@ -1,4 +1,4 @@
-/* Final cross-site responsive layer. Keep this import after App so these rules
+  /* Final cross-site responsive layer. Keep this import after App so these rules
    consistently override page-level desktop styles. */
 
 @media (max-width: 900px) {
@@ -28,9 +28,21 @@
   .slider-wrapper > .nav-arrow { width: 42px; height: 42px; top: auto; bottom: 18px; transform: none; }
   .slider-wrapper > .nav-arrow.left { left: 28px; }
   .slider-wrapper > .nav-arrow.right { right: 28px; }
-  .slide-dots { top: auto; bottom: 34px; gap: 6px; }
-  .dot { width: 16px; }
-  .dot.active { width: 22px; }
+  .slide-dots {
+    position: relative;
+    top: auto;
+    bottom: auto;
+    left: auto;
+    transform: none;
+    margin-top: 14px;
+    margin-bottom: 6px;
+    gap: 7px;
+    display: flex;
+    justify-content: center;
+    z-index: 10;
+  }
+  .dot { width: 16px; height: 4px; }
+  .dot.active { width: 24px; background: #ffffff; }
 
   /* All horizontally scrollable home/catalog rails */
   .categories-row, .brands-row, .ap-category-row {
@@ -70,7 +82,7 @@
   .faq-toggle { width: 46px; height: 46px; flex: 0 0 46px; }
 
   .categories-section { padding-top: 60px; }
-  .categories-wrapper { height: 400px; max-height: none; scroll-snap-type: x mandatory; }
+  .categories-wrapper { height: 300px; max-height: none; scroll-snap-type: x mandatory; }
   .category-card { scroll-snap-align: center; }
 
   /* Events listing */
@@ -113,6 +125,18 @@
 
 @media (max-width: 600px) {
   .nx-empty-state { width: calc(100% - 32px); margin-top: 88px; padding: 24px 18px; }
+  .slider-wrapper {
+    padding: 72px 12px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: auto;
+  }
+  .slide-container {
+    margin-top: 0;
+    width: 100%;
+    max-width: 100%;
+  }
   .navbar-action-btn { gap: 6px; }
   .navbar-login { padding: 8px 12px; }
 

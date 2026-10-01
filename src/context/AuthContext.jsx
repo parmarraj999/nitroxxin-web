@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback, useMemo } 
 import { firestoreInstance } from "../services/firebase";
 import { doc, onSnapshot } from "firebase/firestore";
 import { subscribeToAuth, sendOTP, verifyOTP, logoutUser } from "../services/authService";
-import { createUserProfile, updateUserProfile, ensureUserProfile } from "../services/userService";
+import { createUserProfile, updateUserProfile, ensureUserProfile, findExistingUser } from "../services/userService";
 import { uploadProfileImage, uploadDrivingLicenseImage } from "../services/storageService";
 
 const AuthContext = createContext(null);
@@ -70,14 +70,9 @@ export const FirebaseAuthProvider = ({ children }) => {
                   isDevMock: true,
                 });
               } else {
+                localStorage.removeItem("nitroxxin_dev_test_uid");
                 setProfile(null);
-                setUser({
-                  uid: savedDevUid,
-                  phone: "+919999999999",
-                  fullName: "Test User",
-                  email: `${savedDevUid}@test.nitroxxin.com`,
-                  isDevMock: true,
-                });
+                setUser(null);
               }
               setLoading(false);
             },
@@ -189,39 +184,40 @@ export const FirebaseAuthProvider = ({ children }) => {
 
   const loginWithUid = useCallback(async (customUid) => {
     if (!customUid || !customUid.trim()) {
-      const err = new Error("Please enter a valid UID");
+      const err = new Error("Please enter a valid UID, Phone, or Email");
       setModalError(err.message);
       throw err;
     }
-    const trimmedUid = customUid.trim();
+    const trimmedInput = customUid.trim();
     setModalLoading(true);
     setModalError(null);
 
     try {
-      localStorage.setItem("nitroxxin_dev_test_uid", trimmedUid);
+      // Find present user in Firestore - DO NOT CREATE A NEW DOCUMENT
+      const presentUser = await findExistingUser(trimmedInput);
 
-      let profileData = null;
-      try {
-        profileData = await ensureUserProfile(trimmedUid, {
-          phone: "+919999999999",
-          fullName: "Test User (" + (trimmedUid.length > 6 ? trimmedUid.slice(0, 6) : trimmedUid) + ")",
-        });
-      } catch (err) {
-        console.warn("Could not ensure profile document for test UID:", err);
+      if (!presentUser) {
+        const notFoundErr = new Error(
+          `No existing user found for "${trimmedInput}". Please enter a valid existing UID or select from the present users below.`
+        );
+        setModalError(notFoundErr.message);
+        throw notFoundErr;
       }
 
+      const realUid = presentUser.id || presentUser.uid;
+      localStorage.setItem("nitroxxin_dev_test_uid", realUid);
+
       const mockUser = {
-        uid: trimmedUid,
-        phone: profileData?.phone || profileData?.phoneNumber || "+919999999999",
-        fullName: profileData?.fullName || profileData?.name || profileData?.displayName || "Test User",
-        email: profileData?.email || `${trimmedUid}@test.nitroxxin.com`,
+        uid: realUid,
+        phone: presentUser.phone || presentUser.phoneNumber || "+919999999999",
+        fullName: presentUser.fullName || presentUser.name || presentUser.displayName || "User",
+        email: presentUser.email || `${realUid}@test.nitroxxin.com`,
+        ...presentUser,
         isDevMock: true,
       };
 
       setUser(mockUser);
-      if (profileData) {
-        setProfile(profileData);
-      }
+      setProfile(presentUser);
 
       setIsAuthOpen(false);
       setConfirmationResult(null);

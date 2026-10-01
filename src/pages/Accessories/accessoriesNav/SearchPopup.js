@@ -375,16 +375,29 @@ export default function SearchPopup({
     const mapped = live.map((p) => {
       const name = p.name || p.title || "Accessory Product";
       const brand = p.brand || p.brandName || "Nitroxx";
-      const price = Number(p.regularPrice || p.price || 0);
-      const offerPrice = Number(p.offerPrice || p.salePrice || p.price || 0);
+      const category = p.category || p.categoryName || "Accessories";
+      const subcategory = p.subcategory || p.subCategory || "";
+      const price = Number(p.regularPrice || p.price || p.mrp || 0);
+      const offerPrice = Number(p.offerPrice || p.salePrice || p.sellingPrice || price || 0);
       const emi = offerPrice ? `₹${Math.round(offerPrice / 9)}/month` : "";
 
       return {
         id: p.id,
         name,
+        title: p.title || name,
         brand,
-        category: p.category || "Accessories",
-        price,
+        brandName: brand,
+        category,
+        categoryName: category,
+        subcategory,
+        subCategory: subcategory,
+        vendorName: p.vendorName || "",
+        manufacturer: p.manufacturer || "",
+        subtitle: p.subtitle || "",
+        shortDescription: p.shortDescription || "",
+        keywords: Array.isArray(p.keywords) ? p.keywords : (Array.isArray(p.seo?.keywords) ? p.seo.keywords : []),
+        tags: Array.isArray(p.tags) ? p.tags : (Array.isArray(p.seo?.tags) ? p.seo.tags : []),
+        price: price || offerPrice,
         offerPrice: offerPrice || price,
         emiText: emi,
         badge: "XPRESS",
@@ -407,7 +420,26 @@ export default function SearchPopup({
     if (q) {
       const words = q.split(/\s+/).filter(Boolean);
       list = list.filter((p) => {
-        const text = `${p.name} ${p.brand} ${p.category}`.toLowerCase();
+        const text = [
+          p.name,
+          p.title,
+          p.brand,
+          p.brandName,
+          p.category,
+          p.categoryName,
+          p.subcategory,
+          p.subCategory,
+          p.vendorName,
+          p.manufacturer,
+          p.subtitle,
+          p.shortDescription,
+          ...(Array.isArray(p.keywords) ? p.keywords : []),
+          ...(Array.isArray(p.tags) ? p.tags : []),
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
         return words.every((w) => text.includes(w));
       });
     }

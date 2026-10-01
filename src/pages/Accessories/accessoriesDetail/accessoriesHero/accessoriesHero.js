@@ -161,6 +161,15 @@ export function AccessoriesHero({ product }) {
           <span className="product-hero__stock product-hero__stock--in">In Stock</span>
         ) : null}
 
+        {/* Vendor pill */}
+        <div className="product-hero__seller-pill">
+          <span className="product-hero__seller-label">Sold & Shipped by:</span>
+          <a href="#about-vendor" className="product-hero__seller-link">
+            {product.vendorName || product.brand || "Nitroxx Official Store"}
+            <span className="product-hero__seller-badge" title="Verified Marketplace Seller">✓</span>
+          </a>
+        </div>
+
         {/* Color options */}
         {colorOptions.length > 0 && (
           <>

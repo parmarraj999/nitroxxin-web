@@ -202,13 +202,13 @@ export default function ShopPage({ filterType }) {
 
   // Dynamic lists of unique categories, subcategories & brands
   const categoryOptions = useMemo(() => {
-    const fromProducts = liveProducts.map((p) => p.category).filter(Boolean);
+    const fromProducts = liveProducts.map((p) => p.category || p.categoryName).filter(Boolean);
     const fromContext = categories.map((c) => c.label || c.name).filter(Boolean);
     return [...new Set([...fromProducts, ...fromContext])].sort();
   }, [liveProducts, categories]);
 
   const brandOptions = useMemo(() => {
-    const fromProducts = liveProducts.map((p) => p.brand).filter(Boolean);
+    const fromProducts = liveProducts.map((p) => p.brand || p.brandName).filter(Boolean);
     const fromContext = brands.map((b) => b.label || b.name).filter(Boolean);
     return [...new Set([...fromProducts, ...fromContext])].sort();
   }, [liveProducts, brands]);
@@ -230,7 +230,7 @@ export default function ShopPage({ filterType }) {
 
       // From products
       const matchedFromProducts = liveProducts
-        .filter((p) => String(p.category || '').toLowerCase() === activeCatLower)
+        .filter((p) => String(p.category || p.categoryName || '').toLowerCase() === activeCatLower)
         .map((p) => p.subcategory || p.subCategory)
         .filter(Boolean);
 
@@ -263,40 +263,72 @@ export default function ShopPage({ filterType }) {
     // Search query
     const term = search.trim().toLowerCase();
     if (term) {
-      result = result.filter((p) =>
-        [p.name, p.title, p.category, p.subcategory, p.subCategory, p.brand, p.description]
-          .some((v) => String(v || '').toLowerCase().includes(term))
-      );
+      const searchWords = term.split(/\s+/).filter(Boolean);
+      result = result.filter((p) => {
+        const fullSearchableText = [
+          p.name,
+          p.title,
+          p.category,
+          p.categoryName,
+          p.subcategory,
+          p.subCategory,
+          p.brand,
+          p.brandName,
+          p.vendorName,
+          p.manufacturer,
+          p.subtitle,
+          p.shortDescription,
+          p.description,
+          ...(Array.isArray(p.keywords) ? p.keywords : []),
+          ...(Array.isArray(p.tags) ? p.tags : []),
+          ...(Array.isArray(p.seo?.keywords) ? p.seo.keywords : []),
+          ...(Array.isArray(p.seo?.tags) ? p.seo.tags : []),
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+
+        return searchWords.every((word) => fullSearchableText.includes(word));
+      });
     }
 
     // Category
     if (selectedCategory) {
-      const catLower = selectedCategory.toLowerCase();
+      const catNorm = selectedCategory.toLowerCase().replace(/[-_]/g, ' ').trim();
       result = result.filter((p) => {
-        const pCat = String(p.category || '').toLowerCase();
-        return pCat === catLower || pCat === `${catLower}s` || catLower === `${pCat}s`;
+        const pCat = String(p.category || p.categoryName || '').toLowerCase().replace(/[-_]/g, ' ').trim();
+        return (
+          pCat === catNorm ||
+          pCat === `${catNorm}s` ||
+          catNorm === `${pCat}s` ||
+          pCat.includes(catNorm) ||
+          catNorm.includes(pCat)
+        );
       });
     }
 
     // Subcategory
     if (selectedSubcategory) {
-      const subLower = selectedSubcategory.toLowerCase();
+      const subNorm = selectedSubcategory.toLowerCase().replace(/[-_]/g, ' ').trim();
       result = result.filter((p) => {
-        const pSub = String(p.subcategory || p.subCategory || '').toLowerCase();
+        const pSub = String(p.subcategory || p.subCategory || '').toLowerCase().replace(/[-_]/g, ' ').trim();
         return (
-          pSub === subLower ||
-          pSub === `${subLower}s` ||
-          subLower === `${pSub}s` ||
-          pSub.includes(subLower) ||
-          subLower.includes(pSub)
+          pSub === subNorm ||
+          pSub === `${subNorm}s` ||
+          subNorm === `${pSub}s` ||
+          pSub.includes(subNorm) ||
+          subNorm.includes(pSub)
         );
       });
     }
 
     // Brand
     if (selectedBrand) {
-      const brandLower = selectedBrand.toLowerCase();
-      result = result.filter((p) => String(p.brand || '').toLowerCase() === brandLower);
+      const brandNorm = selectedBrand.toLowerCase().replace(/[-_]/g, ' ').trim();
+      result = result.filter((p) => {
+        const pBrand = String(p.brand || p.brandName || '').toLowerCase().replace(/[-_]/g, ' ').trim();
+        return pBrand === brandNorm || pBrand.includes(brandNorm) || brandNorm.includes(pBrand);
+      });
     }
 
     // Bike model / brand
@@ -318,6 +350,7 @@ export default function ShopPage({ filterType }) {
     // Price bounds
     result = result.filter((p) => {
       const price = Number(p.offerPrice || p.price || 0);
+      if (price <= 0) return true;
       return price >= priceRange[0] && price <= priceRange[1];
     });
 

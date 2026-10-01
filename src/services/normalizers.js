@@ -3,18 +3,45 @@ import { firstImage, formatDate, formatDateTime, formatPrice } from "../utils/da
 export const normalizeProduct = (doc) => {
   const data = doc.data ? doc.data() : doc;
   const id = doc.id || data.id;
-  const price = data.price ?? data.pricing?.mrp ?? data.mrp ?? data.regularPrice;
-  const offerPrice = data.offerPrice ?? data.pricing?.sellingPrice ?? data.salePrice ?? data.discountPrice ?? price;
+
+  const mrp = Number(data.price ?? data.pricing?.mrp ?? data.mrp ?? data.regularPrice ?? 0);
+  const selling = Number(data.pricing?.sellingPrice ?? data.salePrice ?? data.discountPrice ?? 0);
+  const rawOffer = Number(data.offerPrice ?? data.pricing?.offerPrice ?? 0);
+
+  const offerPrice = rawOffer > 0 ? rawOffer : (selling > 0 ? selling : (mrp > 0 ? mrp : 0));
+  const price = mrp > 0 ? mrp : offerPrice;
+
+  const category = data.categoryName || data.category || data.categoryId || "";
+  const subcategory = data.subcategory || data.subCategory || data.subCategoryName || data.subcategoryId || "";
+  const brand = data.brandName || data.brand || data.brandId || "";
+  const vendorName = data.vendorName || data.vendor?.name || data.shopName || data.businessName || "";
+  const manufacturer = data.manufacturer || data.maker || "";
+
+  const keywords = [
+    ...(Array.isArray(data.seo?.keywords) ? data.seo.keywords : []),
+    ...(Array.isArray(data.keywords) ? data.keywords : []),
+  ];
+  const tags = [
+    ...(Array.isArray(data.seo?.tags) ? data.seo.tags : []),
+    ...(Array.isArray(data.tags) ? data.tags : []),
+  ];
 
   return {
     ...data,
     id,
     name: data.title || data.name || "Product",
     title: data.title || data.name || "Product",
-    category: data.categoryName || data.category || data.categoryId || "",
-    brand: data.brandName || data.brand || data.brandId || "",
+    category,
+    categoryName: category,
+    subcategory,
+    subCategory: subcategory,
+    brand,
+    brandName: brand,
     vendorId: data.vendorId || data.vendor?.id || "",
-    vendorName: data.vendorName || data.vendor?.name || data.shopName || "",
+    vendorName,
+    manufacturer,
+    keywords,
+    tags,
     image: firstImage(data),
     images: data.media?.galleryImages || data.images || data.gallery || [firstImage(data)].filter(Boolean),
     price,

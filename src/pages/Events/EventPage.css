@@ -1730,5 +1730,8 @@ BAR (heading + search side by side) ===== */
   .ep-sticky-nav__profile {
     display: none;
   }
+  .ep-event-card__image img {
+    max-height: 200px;
+  }
 }
 

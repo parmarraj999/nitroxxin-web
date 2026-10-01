@@ -332,24 +332,35 @@ export default function AccessoriesPage() {
     // Search / Bike filter
     const term = search.trim().toLowerCase();
     if (term) {
-      const words = term.split(/\s+/).filter((w) => w.length > 1);
+      const words = term.split(/\s+/).filter(Boolean);
       result = result.filter((product) => {
         const searchable = [
           product.name,
+          product.title,
           product.category,
+          product.categoryName,
+          product.subcategory,
+          product.subCategory,
           product.brand,
+          product.brandName,
+          product.vendorName,
+          product.manufacturer,
+          product.subtitle,
+          product.shortDescription,
           product.description,
           product.bikeModel,
           product.model,
           product.compatibility,
           product.bikeBrand,
+          ...(Array.isArray(product.keywords) ? product.keywords : []),
+          ...(Array.isArray(product.tags) ? product.tags : []),
+          ...(Array.isArray(product.seo?.keywords) ? product.seo.keywords : []),
+          ...(Array.isArray(product.seo?.tags) ? product.seo.tags : []),
         ]
           .map((value) => String(value || "").toLowerCase())
           .join(" ");
 
-        return words.length > 0
-          ? words.some((w) => searchable.includes(w))
-          : searchable.includes(term);
+        return words.every((w) => searchable.includes(w));
       });
     }
 
@@ -373,24 +384,33 @@ export default function AccessoriesPage() {
     // Price range
     result = result.filter((p) => {
       const price = Number(p.offerPrice || p.price || 0);
+      if (price <= 0) return true;
       return price >= priceRange[0] && price <= priceRange[1];
     });
 
     // Categories
     if (selectedCategories.length) {
-      result = result.filter((p) => selectedCategories.includes(p.category));
+      result = result.filter((p) => {
+        const pCat = String(p.category || p.categoryName || "").toLowerCase().replace(/[-_]/g, " ").trim();
+        return selectedCategories.some((sel) => {
+          const selNorm = String(sel || "").toLowerCase().replace(/[-_]/g, " ").trim();
+          return pCat === selNorm || pCat.includes(selNorm) || selNorm.includes(pCat);
+        });
+      });
     }
 
     // Subcategories
     if (selectedSubcategories.length) {
       result = result.filter((p) => {
-        const prodSub = String(p.subcategory || p.subCategory || "").toLowerCase().trim();
+        const prodSub = String(p.subcategory || p.subCategory || "").toLowerCase().replace(/[-_]/g, " ").trim();
         return selectedSubcategories.some((sel) => {
-          const selSub = String(sel || "").toLowerCase().trim();
+          const selSub = String(sel || "").toLowerCase().replace(/[-_]/g, " ").trim();
           return (
             prodSub === selSub ||
             prodSub === `${selSub}s` ||
-            selSub === `${prodSub}s`
+            selSub === `${prodSub}s` ||
+            prodSub.includes(selSub) ||
+            selSub.includes(prodSub)
           );
         });
       });
@@ -398,7 +418,13 @@ export default function AccessoriesPage() {
 
     // Brands
     if (selectedBrands.length) {
-      result = result.filter((p) => selectedBrands.includes(p.brand));
+      result = result.filter((p) => {
+        const prodBrand = String(p.brand || p.brandName || "").toLowerCase().replace(/[-_]/g, " ").trim();
+        return selectedBrands.some((sel) => {
+          const selBrand = String(sel || "").toLowerCase().replace(/[-_]/g, " ").trim();
+          return prodBrand === selBrand || prodBrand.includes(selBrand) || selBrand.includes(prodBrand);
+        });
+      });
     }
 
     // Sort

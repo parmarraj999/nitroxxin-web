@@ -9,6 +9,7 @@ import {
 } from "../services/normalizers";
 
 const PAGE_SIZE = 20;
+const CATALOG_LIMIT = 500;
 
 const AccessoriesContext = createContext();
 
@@ -20,8 +21,8 @@ export function AccessoriesProvider({ children }) {
   const bikeBrandsQuery = useCollection(COLLECTIONS.bikeBrands, { limit: 100 });
   const bannersQuery = useCollection(COLLECTIONS.banners, { limit: 5 });
 
-  // ── Paginated Product State (Cached in Context to eliminate duplicate Firestore reads) ──
-  const [productLimit, setProductLimit] = useState(PAGE_SIZE);
+  // ── Product Collection (Loads all catalog items so search, filters, and categories work seamlessly) ──
+  const [productLimit, setProductLimit] = useState(CATALOG_LIMIT);
   const productsQuery = useCollection(COLLECTIONS.products, { limit: productLimit });
 
   const rawProducts = useMemo(
@@ -44,17 +45,16 @@ export function AccessoriesProvider({ children }) {
   const productsError = productsQuery.error;
   const hasMore = (productsQuery.data || []).length >= productLimit;
 
-  // Fetch next 20 products for pagination
+  // Fetch more products if catalog exceeds current limit
   const fetchMoreProducts = useCallback(() => {
     if (productsQuery.loading || !hasMore) {
       return;
     }
-    setProductLimit((prev) => prev + PAGE_SIZE);
+    setProductLimit((prev) => prev + 200);
   }, [productsQuery.loading, hasMore]);
 
   // Refetch / reset products if needed
   const refetchProducts = useCallback(() => {
-    setProductLimit(PAGE_SIZE);
     if (productsQuery.retry) {
       productsQuery.retry();
     }

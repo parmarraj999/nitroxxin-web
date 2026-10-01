@@ -121,15 +121,15 @@
 @media (max-width: 768px) {
   .categories-wrapper {
     flex-direction: row;
-    height: 400px;
+    height: 300px;
     gap: 15px;
     padding: 0 20px;
     justify-content: flex-start;
   }
 
   .category-card {
-    min-width: 250px;
-    width: 250px;
+    min-width: 200px;
+    width: 200px;
     height: 100%;
     transform: none;
     margin-left: 0;
@@ -137,6 +137,7 @@
 
   .category-card h3 {
     transform: none;
+    font-size: 16px;
   }
 
   .category-card:hover {
@@ -144,6 +145,11 @@
   }
 
   .categories-title {
-    font-size: 32px;
+    font-size: 24px;
+  }
+  
+  .category-slider-btn .arrow-btn{
+    width: 30px;
+    height: 30px;
   }
 }

@@ -48,10 +48,10 @@ export default function RaceDay({ banners }) {
                     {activeBanners.map((slide, index) => {
                         const img = (
                             <img
-                                key={slide.id || index} 
-                                src={slide.imageUrl || slide.image} 
+                                key={slide.id || index}
+                                src={slide.imageUrl || slide.image}
                                 className="slide-image"
-                                alt={`Slide ${index + 1}`} 
+                                alt={`Slide ${index + 1}`}
                             />
                         );
                         const wrapperStyle = {
@@ -85,9 +85,6 @@ export default function RaceDay({ banners }) {
                         );
                     })}
                 </div>
-
-                {/* Dots */}
-
             </div>
             <div className="slide-dots">
                 {activeBanners.map((_, index) => (
@@ -100,6 +97,7 @@ export default function RaceDay({ banners }) {
                     />
                 ))}
             </div>
+
             {/* Right Arrow */}
             <button className="nav-arrow-header right" onClick={() => setActive((a) => (total > 0 ? (a + 1) % total : 0))}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>

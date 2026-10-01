@@ -325,16 +325,27 @@ export default function MarketplaceSearch() {
       }
 
       const regularPrice = Number(p.regularPrice || p.price || p.mrp || 0);
-      const offerPrice = Number(p.offerPrice || p.salePrice || p.price || 0);
+      const offerPrice = Number(p.offerPrice || p.salePrice || p.sellingPrice || regularPrice || 0);
 
       return {
         id: p.id,
         name,
+        title: p.title || name,
         category: cat,
+        categoryName: cat,
         categoryTab,
+        subcategory: p.subcategory || p.subCategory || "",
+        subCategory: p.subCategory || p.subcategory || "",
         brand: p.brand || p.brandName || "Nitroxx",
+        brandName: p.brandName || p.brand || "Nitroxx",
+        vendorName: p.vendorName || "",
+        manufacturer: p.manufacturer || "",
+        subtitle: p.subtitle || "",
+        shortDescription: p.shortDescription || "",
+        keywords: Array.isArray(p.keywords) ? p.keywords : (Array.isArray(p.seo?.keywords) ? p.seo.keywords : []),
+        tags: Array.isArray(p.tags) ? p.tags : (Array.isArray(p.seo?.tags) ? p.seo.tags : []),
         image: p.image || p.imageUrl || p.images?.[0] || "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=450&auto=format&fit=crop&q=80",
-        price: regularPrice,
+        price: regularPrice || offerPrice,
         offerPrice: offerPrice || regularPrice,
         rating: p.rating || p.averageRating || 4.7,
         ratingCount: p.ratingCount || p.reviewsCount || 48,
@@ -374,12 +385,27 @@ export default function MarketplaceSearch() {
       });
     }
 
-    // Filter by query (name, category, brand, bike compatibility)
+    // Filter by query (name, category, brand, subcategory, keywords, tags, vendor)
     if (query.trim()) {
       const q = query.trim().toLowerCase();
       const tokens = q.split(/\s+/).filter((t) => t.length > 0);
       list = list.filter((item) => {
-        const searchable = [item.name, item.category, item.brand, item.categoryTab]
+        const searchable = [
+          item.name,
+          item.title,
+          item.category,
+          item.categoryTab,
+          item.subcategory,
+          item.subCategory,
+          item.brand,
+          item.brandName,
+          item.vendorName,
+          item.manufacturer,
+          item.subtitle,
+          item.shortDescription,
+          ...(Array.isArray(item.keywords) ? item.keywords : []),
+          ...(Array.isArray(item.tags) ? item.tags : []),
+        ]
           .map((v) => String(v || "").toLowerCase())
           .join(" ");
         return tokens.every((token) => searchable.includes(token));

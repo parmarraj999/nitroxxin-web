@@ -2,6 +2,7 @@
 
 .slider-wrapper {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   background: transparent;
@@ -18,7 +19,7 @@
   background: #f0f0f0;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  /* box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); */
 }
 
 /* Dotted texture overlay */
@@ -91,14 +92,14 @@
   fill: #333;
 }
 
-/* Dots */
+/* Dots placed cleanly below banner */
 .slide-dots {
-  position: absolute;
-  /* bottom: 12px; */
-  top: 105%;
-  left: 50%;
-  transform: translateX(-50%);
+  position: relative;
+  margin-top: 18px;
+  left: auto;
+  transform: none;
   display: flex;
+  justify-content: center;
   gap: 10px;
   z-index: 10;
 }
@@ -108,7 +109,7 @@
   height: 5px;
   border-radius: 5px;
   background: rgba(169, 169, 169, 0.35);
-  transition: background 0.2s;
+  transition: background 0.2s, width 0.2s;
   padding: 0;
   border: 0;
   cursor: pointer;
@@ -116,27 +117,30 @@
 
 .dot.active {
   background: #ffffff;
-  width: 30px;
-  border-radius: 4px;
+  width: 32px;
+  border-radius: 5px;
 }
 
 @media (max-width: 900px) {
-  .slide-image { height: clamp(360px, 62vh, 560px); }
-}
-
-@media (max-width: 600px) {
-  .slide-image { height: clamp(300px, 56vh, 460px); }
+  .slide-image { 
+    height: 200px;
+    border-radius: 12px;
+  }
+  .slider-wrapper {
+    margin-top: 1rem;
+    min-height: auto;
+  }
+  .slide-dots {
+    margin-top: 14px;
+    gap: 8px;
+  }
 }
 
 @media screen and (max-width:645px) {
-  .slide-container{
-    min-height: 50vh;
-    max-height: 75vh;
-  }
-  .nav-arrow-header{
+  .nav-arrow-header {
     display: none;
   }
-  .slide-image{
-    min-height: 80vh;
+  .slide-image { 
+    border-radius: 12px;
   }
 }

@@ -229,6 +229,55 @@
 .product-hero__stock--low { background: #fef3c7; color: #92400e; }
 .product-hero__stock--out { background: #fee2e2; color: #991b1b; }
 
+/* ── Seller Pill ── */
+.product-hero__seller-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+}
+
+.product-hero__seller-label {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.product-hero__seller-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: #0f172a;
+  text-decoration: none;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 4px 10px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.product-hero__seller-link:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #ff4d4f;
+  transform: translateY(-1px);
+}
+
+.product-hero__seller-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  background: #16a34a;
+  color: #ffffff;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: bold;
+}
+
 /* ── Colors ── */
 .product-hero__colors {
   display: flex;

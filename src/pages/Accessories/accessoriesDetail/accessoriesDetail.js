@@ -3,6 +3,7 @@ import "./accessoriesDetail.css";
 import { AccessoriesHero } from "./accessoriesHero/accessoriesHero";
 import { AdditionalInfo } from "./additionalInfo/additionalInfo";
 import { FeaturesSection } from "./featuresSection/featuresSection";
+import { AboutVendor } from "./aboutVendor/aboutVendor";
 import { ReviewSection } from "./reviewSection/reviewSection";
 import { RelatedProducts } from "./accessoriesRelatedProduct/accessoriesRelatedProduct";
 import { useParams } from "react-router-dom";
@@ -38,6 +39,8 @@ export default function AccessoriesDetail() {
           <div className="product-detail-page__divider-v" />
           <FeaturesSection product={product} />
         </div>}
+
+        {product && <AboutVendor product={product} />}
 
         <ReviewSection product={product} />
 

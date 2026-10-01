@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { getOrCreateRecaptchaVerifier, resetRecaptchaVerifier, formatAuthError } from "../../services/authService";
+import { getExistingUsers } from "../../services/userService";
 import "./LoginModal.css";
 
 export default function LoginModal() {
@@ -9,6 +10,30 @@ export default function LoginModal() {
   const [phone, setPhone] = useState("");
   const [testUid, setTestUid] = useState("");
   const [localError, setLocalError] = useState("");
+  const [presentUsers, setPresentUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+
+  // Fetch actual present users from Firestore when entering UID test mode
+  useEffect(() => {
+    if (loginMode === "uid") {
+      let isMounted = true;
+      setLoadingUsers(true);
+      getExistingUsers(10)
+        .then((users) => {
+          if (isMounted) setPresentUsers(users);
+        })
+        .catch((err) => {
+          console.error("Error loading present users:", err);
+        })
+        .finally(() => {
+          if (isMounted) setLoadingUsers(false);
+        });
+
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, [loginMode]);
 
   const handlePhoneSubmit = async (e) => {
     e.preventDefault();
@@ -52,12 +77,23 @@ export default function LoginModal() {
 
     const trimmedUid = testUid.trim();
     if (!trimmedUid) {
-      setLocalError("Please enter a UID to test");
+      setLocalError("Please enter an existing UID, Phone, or Email");
       return;
     }
 
     try {
       await loginWithUid(trimmedUid);
+    } catch (err) {
+      console.error("UID login error:", err);
+    }
+  };
+
+  const handleSelectPresentUser = async (userDoc) => {
+    setLocalError("");
+    setModalError(null);
+    setTestUid(userDoc.id);
+    try {
+      await loginWithUid(userDoc.id);
     } catch (err) {
       console.error("UID login error:", err);
     }
@@ -87,7 +123,7 @@ export default function LoginModal() {
             setModalError(null);
           }}
         >
-          🧪 Test UID Login
+          🧪 Present UID Login
         </button>
       </div>
 
@@ -138,47 +174,82 @@ export default function LoginModal() {
       ) : (
         <>
           <div className="login-prompt-header">
-            <h3 className="login-prompt-title">Test Login with UID</h3>
+            <h3 className="login-prompt-title">Login with Present UID</h3>
             <p className="login-prompt-subtitle">
-              Directly authenticate with any User ID to bypass OTP limit during testing
+              Choose an existing user from the database or enter a UID/Phone to test without creating new documents
             </p>
+          </div>
+
+          {/* Present Users in Firestore List */}
+          <div className="present-users-section">
+            <div className="present-users-header">
+              <span className="present-users-title">👤 Present Accounts in Database</span>
+              {loadingUsers && <span className="present-users-loading">Loading accounts…</span>}
+            </div>
+
+            {presentUsers.length > 0 ? (
+              <div className="present-users-grid">
+                {presentUsers.map((u) => {
+                  const displayName = u.fullName || u.name || u.displayName || "User";
+                  const phoneText = u.phone || u.phoneNumber || "No phone";
+                  return (
+                    <button
+                      key={u.id}
+                      type="button"
+                      className="present-user-card"
+                      disabled={modalLoading}
+                      onClick={() => handleSelectPresentUser(u)}
+                    >
+                      <div className="present-user-avatar">
+                        {u.profilePhoto || u.photoURL ? (
+                          <img src={u.profilePhoto || u.photoURL} alt={displayName} />
+                        ) : (
+                          <span>{displayName[0]?.toUpperCase() || "U"}</span>
+                        )}
+                      </div>
+                      <div className="present-user-details">
+                        <div className="present-user-top">
+                          <span className="present-user-name">{displayName}</span>
+                          <span className="present-user-login-badge">Select ➔</span>
+                        </div>
+                        <div className="present-user-sub">
+                          <span className="present-user-phone">{phoneText}</span>
+                          <span className="present-user-uid" title={u.id}>
+                            UID: {u.id.slice(0, 10)}…{u.id.slice(-4)}
+                          </span>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : !loadingUsers ? (
+              <div className="present-users-empty">No users found in database</div>
+            ) : null}
           </div>
 
           <form className="login-modal-form" onSubmit={handleUidSubmit} noValidate>
             <div className="login-input-wrapper">
+              <label className="manual-uid-label" htmlFor="testUid">
+                Or enter UID, Phone, or Email manually:
+              </label>
               <div className="uid-input-container">
                 <span className="uid-input-icon">🔑</span>
                 <input
                   type="text"
                   id="testUid"
                   name="testUid"
-                  placeholder="Enter User UID (e.g. test_user_001)"
+                  placeholder="e.g. zpUzjlcVLkN4JAbq3OCerqY5SCw2 or 8869959066"
                   value={testUid}
                   onChange={(e) => setTestUid(e.target.value)}
                   disabled={modalLoading}
                   className="uid-field"
-                  autoFocus
                 />
               </div>
               {localError && <span className="field-error">{localError}</span>}
 
-              {/* Quick Fill suggestions */}
-              <div className="uid-demo-chips">
-                <span className="uid-chip-label">Quick fill:</span>
-                <button
-                  type="button"
-                  className="uid-chip-btn"
-                  onClick={() => setTestUid("test_rider_01")}
-                >
-                  test_rider_01
-                </button>
-                <button
-                  type="button"
-                  className="uid-chip-btn"
-                  onClick={() => setTestUid("demo_user_vip")}
-                >
-                  demo_vip
-                </button>
+              <div className="uid-safe-notice">
+                <span>🛡️ Safe for Testing: Only logs in from present users. Never creates new documents.</span>
               </div>
             </div>
 
@@ -189,7 +260,7 @@ export default function LoginModal() {
               className="login-submit-btn uid-submit-btn"
               disabled={modalLoading}
             >
-              {modalLoading ? "Authenticating..." : "Sign In with UID"}
+              {modalLoading ? "Authenticating..." : "Sign In with Present Account"}
             </button>
           </form>
         </>

@@ -1,15 +1,30 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import './shopByCategory.css';
 import { Link } from 'react-router-dom';
 import { useAccessoriesContext } from '../../../context/AccessoriesContext';
 
-
-const CategoryItem = ({ id, image, title }) => {
+const CategoryCard = ({ id, image, title }) => {
     return (
-        <Link className="category-item" to={`/accessories/category/${id}`}>
-            <div className="category-circle">
-                <img src={image} alt={title} className="category-image" />
-                <p className="category-label">{title}</p>
+        <Link className="category-card-item" to={`/accessories/category/${id || encodeURIComponent(title)}`}>
+            <div className="category-card-box">
+                <img
+                    src={image}
+                    alt={title}
+                    className="category-card-img"
+                    onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = '/assets/images/category-helmet.png';
+                    }}
+                />
+                <div className="category-card-overlay">
+                    <span className="category-card-title">{title}</span>
+                    <span className="category-card-arrow">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                            <polyline points="12 5 19 12 12 19" />
+                        </svg>
+                    </span>
+                </div>
             </div>
         </Link>
     );
@@ -17,54 +32,93 @@ const CategoryItem = ({ id, image, title }) => {
 
 const ShopByCategory = () => {
     const { categories: cachedCategories } = useAccessoriesContext();
+    const sliderRef = useRef(null);
+
     const fallbackCategories = [
         {
-            image: '/assets/icons/rider-wear-white.png',
+            id: 'rider-wear',
+            image: '/assets/images/category-helmet.png',
             title: 'Rider Wear'
         },
         {
-            image: '/assets/icons/helmet-white.png',
+            id: 'helmets',
+            image: '/assets/images/category-helmet.png',
             title: 'Helmets'
         },
         {
-            image: '/assets/icons/bike-accessories-white.png',
+            id: 'bike-accessories',
+            image: '/assets/images/category-mount.png',
             title: 'Bike Accessories'
         },
         {
-            image: '/assets/icons/bike-performance-white.png',
-            title: 'Bike Custome & Performance'
+            id: 'bike-performance',
+            image: '/assets/images/category-mount.png',
+            title: 'Bike Performance'
         },
         {
-            image: '/assets/icons/tech-gadget-white.png',
+            id: 'tech-gadgets',
+            image: '/assets/images/category-mount.png',
             title: 'Tech & Gadgets'
         }
     ];
-    const categories = (cachedCategories && cachedCategories.length)
-        ? cachedCategories.slice(0, 8).map((category) => ({ ...category, title: category.title || category.label }))
+
+    const categories = (cachedCategories && cachedCategories.length > 0)
+        ? cachedCategories.map((c) => ({
+            id: c.id,
+            image: c.image || c.imageUrl || '/assets/images/category-helmet.png',
+            title: c.title || c.label || c.name || 'Category'
+        }))
         : fallbackCategories;
-    // const categories = fallbackCategories;
+
+    const scroll = (direction) => {
+        if (sliderRef.current) {
+            const scrollAmount = direction === 'left' ? -320 : 320;
+            sliderRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        }
+    };
 
     return (
         <section className="shop-by-category">
-            <h2 className="category-section-title">
-                <span className="title-transparent">SHOP BY </span>
-                <span className="title-green">CATEGORY</span>
-            </h2>
-
-            <div className="categories-row">
-                {categories.map((category, index) => (
-                    <CategoryItem key={category.id || index} {...category} />
-                ))}
+            <div className="category-section-header">
+                <h2 className="category-section-title">
+                    <span className="title-transparent">SHOP BY </span>
+                    <span className="title-green">CATEGORY</span>
+                </h2>
+                <p className="category-section-sub">
+                    Explore curated gear and accessories handpicked for your riding discipline
+                </p>
             </div>
-            {/* <div className="category-slider-btn">
-                <button className="arrow-btn">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" color="white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-left-icon lucide-chevron-left"><path d="m15 18-6-6 6-6" /></svg>
-                </button>
-                <button className="arrow-btn" >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" color="white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-right-icon lucide-chevron-right"><path d="m9 18 6-6-6-6" /></svg>
-                </button>
-            </div> */}
 
+            <div className="categories-slider-wrapper">
+                <div className="categories-row" ref={sliderRef}>
+                    {categories.map((category, index) => (
+                        <CategoryCard key={category.id || index} {...category} />
+                    ))}
+                </div>
+            </div>
+
+            <div className="category-slider-controls">
+                <button
+                    type="button"
+                    className="category-ctrl-btn"
+                    onClick={() => scroll('left')}
+                    aria-label="Previous categories"
+                >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="15 18 9 12 15 6" />
+                    </svg>
+                </button>
+                <button
+                    type="button"
+                    className="category-ctrl-btn"
+                    onClick={() => scroll('right')}
+                    aria-label="Next categories"
+                >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                </button>
+            </div>
         </section>
     );
 };

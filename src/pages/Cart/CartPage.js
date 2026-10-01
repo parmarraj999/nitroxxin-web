@@ -1,11 +1,13 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FiArrowLeft } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
+import { useAuthModal } from "../../components/AuthModal/useAuthModal";
 import { useCollection } from "../../hooks/useFirestore";
 import { COLLECTIONS } from "../../services/firebase";
 import { normalizeProduct } from "../../services/normalizers";
-import { placeOrder, removeCartItem, updateCartQuantity } from "../../services/commerceService";
+import { removeCartItem, updateCartQuantity } from "../../services/commerceService";
+import { makePayment } from "../../payments/makePayment";
 import "./CartPage.css";
 
 const money = (value) => `Rs. ${Math.round(Number(value || 0)).toLocaleString("en-IN")}`;
@@ -13,18 +15,31 @@ const money = (value) => `Rs. ${Math.round(Number(value || 0)).toLocaleString("e
 export default function CartPage() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
-  const { data: cartItems, loading } = useCollection(COLLECTIONS.cart, {
-    where: [["userId", "==", user?.uid]],
+  const { openLogin } = useAuthModal();
+  const { data: cartItems = [], loading } = useCollection(COLLECTIONS.cart, {
+    where: user?.uid ? [["userId", "==", user.uid]] : [["userId", "==", "NO_USER"]],
     limit: 50,
   });
   const [shipping, setShipping] = useState({
     name: profile?.fullName || profile?.name || profile?.displayName || user?.fullName || user?.displayName || "",
     phone: profile?.phone || profile?.phoneNumber || user?.phone || user?.phoneNumber || "",
-    address: "",
-    city: "",
-    state: "",
-    pincode: "",
+    address: profile?.address || profile?.street || "",
+    city: profile?.city || "",
+    state: profile?.state || "",
+    pincode: profile?.pincode || profile?.postalCode || "",
   });
+
+  // Keep shipping name and phone synced with user account
+  useEffect(() => {
+    if (user || profile) {
+      setShipping((prev) => ({
+        ...prev,
+        name: prev.name || profile?.fullName || profile?.name || user?.fullName || "",
+        phone: prev.phone || profile?.phone || user?.phone || "",
+      }));
+    }
+  }, [user, profile]);
+
   const [deliveryMethod, setDeliveryMethod] = useState("standard");
   const [coupon, setCoupon] = useState("");
   const [error, setError] = useState("");
@@ -43,18 +58,40 @@ export default function CartPage() {
   }, [cartItems, coupon, deliveryMethod]);
 
   const submitOrder = async () => {
-    const missing = Object.entries(shipping).find(([, value]) => !String(value || "").trim());
-    if (missing) {
-      setError("Complete delivery address before checkout.");
+    if (!user) {
+      openLogin();
       return;
     }
+
+    const missing = Object.entries(shipping).find(([, value]) => !String(value || "").trim());
+    if (missing) {
+      setError("Please complete all delivery address fields before checkout.");
+      return;
+    }
+
     try {
       setPlacing(true);
       setError("");
-      await placeOrder({ user, profile, cartItems, shipping: { ...shipping, deliveryMethod, coupon, totals: summary } });
-      navigate("/profile/accessories");
+
+      await makePayment({
+        amount: summary.total,
+        cartItems,
+        user,
+        profile,
+        shipping: { ...shipping, deliveryMethod, coupon, totals: summary },
+        navigate,
+        setLoading: setPlacing,
+        onError: (err) => {
+          setError(err.message || "Payment process could not be completed.");
+          setPlacing(false);
+        },
+        onSuccess: (orderResult) => {
+          setPlacing(false);
+          console.log("Payment successful, order recorded:", orderResult);
+        },
+      });
     } catch (orderError) {
-      setError(orderError.message);
+      setError(orderError.message || "Failed to initiate payment.");
       setPlacing(false);
     }
   };
@@ -154,9 +191,19 @@ export default function CartPage() {
               <div className="cart-summary__total"><dt>Grand Total</dt><dd>{money(summary.total)}</dd></div>
             </dl>
             {error && <p className="cart-error">{error}</p>}
-            <button onClick={submitOrder} disabled={placing}>
-              {placing ? "Creating order..." : "Place Order"}
+            <button className="cart-pay-btn" onClick={submitOrder} disabled={placing}>
+              {placing ? (
+                <span className="cart-pay-loading">
+                  <span className="cart-spinner" /> Initiating Razorpay…
+                </span>
+              ) : (
+                <span>Pay {money(summary.total)} with Razorpay ➔</span>
+              )}
             </button>
+            <div className="cart-security-badge">
+              <span>🔒 100% Secure Checkout via Razorpay</span>
+              <span className="cart-security-methods">UPI • Cards • NetBanking • EMI</span>
+            </div>
           </aside>
         </div>
       )}
