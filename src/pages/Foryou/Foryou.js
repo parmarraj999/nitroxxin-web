@@ -23,6 +23,9 @@ function Foryou() {
             <FeaturedEvents />
             <CuratedShowcase />
             <ShopByCategory />
+            <div style={{ margin: '30px', display: 'flex', justifyContent: 'center', padding: '50px 0px' }}>
+                <img src={'./assets/images/for-you-bottom.png'} style={{ width: '94%', height: '85vh', borderRadius: '40px' }} />
+            </div>
             <ShopByBrands />
             <FAQ />
         </section>

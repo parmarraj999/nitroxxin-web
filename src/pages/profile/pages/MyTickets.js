@@ -1,35 +1,8 @@
 import React, { useMemo } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import { useCollection } from "../../../hooks/useFirestore";
 import { COLLECTIONS } from "../../../services/firebase";
-
-// Sample initial tickets matching Screenshot 5 if user has no booked events yet
-const SAMPLE_TICKETS = [
-  {
-    id: "sample-ticket-1",
-    brand: "NitroXx",
-    subBrand: "Tickets",
-    title: "IT COMES WITH IT MIC MCCLURE",
-    venue: "Gateway of India, Colaba",
-    date: "08/12",
-    time: "02:00 PM",
-    tickets: "x2",
-    type: "qr",
-    theme: "holographic",
-  },
-  {
-    id: "sample-ticket-2",
-    brand: "DICE & KODAK",
-    subBrand: "THE POWER OF THE MOMENT",
-    title: "DICE & KODAK",
-    venue: "O2 ACADEMY, BRISTOL",
-    date: "03.07.24",
-    time: "19.00 GMT",
-    tickets: "ADMISSION X1",
-    type: "barcode",
-    theme: "amber",
-  },
-];
 
 export default function MyTickets() {
   const { user } = useAuth();
@@ -44,21 +17,14 @@ export default function MyTickets() {
     { orderBy: [["createdAt", "desc"]] }
   );
 
+  const { data: myEventsData } = useCollection(
+    user?.uid ? `users/${user.uid}/my-events` : null
+  );
+
   const tickets = useMemo(() => {
     const map = new Map();
 
-    (joinedEventsData || []).forEach((item, idx) => {
-      const id = item.bookingId || item.eventId || item.id;
-      if (id) {
-        map.set(id, {
-          ...item,
-          theme: idx % 2 === 0 ? "holographic" : "amber",
-          type: idx % 2 === 0 ? "qr" : "barcode",
-        });
-      }
-    });
-
-    (bookingsData || []).forEach((item, idx) => {
+    const addTicket = (item, idx) => {
       const id = item.bookingId || item.eventId || item.id;
       if (id && !map.has(id)) {
         map.set(id, {
@@ -67,12 +33,14 @@ export default function MyTickets() {
           type: idx % 2 === 0 ? "qr" : "barcode",
         });
       }
-    });
+    };
 
-    const list = Array.from(map.values());
-    if (list.length > 0) return list;
-    return SAMPLE_TICKETS;
-  }, [joinedEventsData, bookingsData]);
+    (myEventsData || []).forEach(addTicket);
+    (joinedEventsData || []).forEach(addTicket);
+    (bookingsData || []).forEach(addTicket);
+
+    return Array.from(map.values());
+  }, [myEventsData, joinedEventsData, bookingsData]);
 
   const loading = loadingBookings && loadingJoined;
 
@@ -87,6 +55,22 @@ export default function MyTickets() {
         <div className="profile-loading-state">
           <div className="profile-spinner" />
           <p>Loading your tickets...</p>
+        </div>
+      ) : tickets.length === 0 ? (
+        <div className="profile-empty-state">
+          <div className="profile-empty-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <rect x="2" y="6" width="20" height="12" rx="2" />
+              <path d="M12 12h.01" />
+              <path d="M17 6v12" strokeDasharray="2 2" />
+              <path d="M7 6v12" strokeDasharray="2 2" />
+            </svg>
+          </div>
+          <h3>No event passes or tickets yet</h3>
+          <p>Book passes for rallies, track days, and motorcycle expeditions to access digital QR passes here.</p>
+          <Link to="/events" className="profile-btn-primary">
+            Explore Events
+          </Link>
         </div>
       ) : (
         <div className="nx-tickets-container">

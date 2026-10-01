@@ -90,71 +90,71 @@ const AppShell = () => {
       <Routes>
         <Route path="/" element={<Foryou />} />
 
-                  <Route path="/events" element={<Events />} />
-                  <Route path="/events/search" element={<EventSearch />} />
-                  <Route path="/search" element={<EventSearch />} />
-                  <Route path="/events/all" element={<AllEvents />} />
-                  <Route path="/all-events" element={<AllEvents />} />
-                  <Route path="/events/near-you" element={<NearYouEvents />} />
-                  <Route path="/events/near-me" element={<NearYouEvents />} />
-                  <Route path="/events/upcoming" element={<UpcomingEvents />} />
-                  <Route path="/events/:id" element={<EventDetail />} />
-                  <Route path="/events/:id/book" element={<EventBooking />} />
-                  <Route path="/event/:id" element={<EventDetail />} />
-                  <Route path="/event/:id/book" element={<EventBooking />} />
+        <Route path="/events" element={<Events />} />
+        <Route path="/events/search" element={<EventSearch />} />
+        <Route path="/search" element={<EventSearch />} />
+        <Route path="/events/all" element={<AllEvents />} />
+        <Route path="/all-events" element={<AllEvents />} />
+        <Route path="/events/near-you" element={<NearYouEvents />} />
+        <Route path="/events/near-me" element={<NearYouEvents />} />
+        <Route path="/events/upcoming" element={<UpcomingEvents />} />
+        <Route path="/events/:id" element={<EventDetail />} />
+        <Route path="/events/:id/book" element={<EventBooking />} />
+        <Route path="/event/:id" element={<EventDetail />} />
+        <Route path="/event/:id/book" element={<EventBooking />} />
 
-                  <Route element={<AccessoriesLayout />}>
-                    <Route path="/accessories" element={<AccessoriesPage />} />
-                    <Route path="/accessories/search" element={<MarketplaceSearch />} />
-                    <Route path="/accessories/collection" element={<Collection />} />
-                    <Route path="/accessories/collection/:categoryId" element={<Collection />} />
-                    <Route path="/accessories/category/:categoryId" element={<CategoryPage />} />
-                    <Route
-                      path="/accessories/:id"
-                      element={<AccessoriesDetail />}
-                    />
-                    <Route path="/product/:id" element={<AccessoriesDetail />} />
-                    <Route path="/shop" element={<ShopPage />} />
-                    <Route path="/accessories/shop" element={<ShopPage />} />
-                    <Route path="/accessories/products" element={<ShopPage />} />
-                    <Route
-                      path="/accessories/products/:id"
-                      element={<ShopPage filterType="category" />}
-                    />
-                    <Route path="/category/:id" element={<ShopPage filterType="category" />} />
-                    <Route path="/brand/:id" element={<ShopPage filterType="brand" />} />
-                    <Route path="/bike/:id" element={<ShopPage filterType="bike" />} />
-                    <Route path="/accessories/bike/:id" element={<ProductsPage filterType="bike" />} />
-                    <Route path="/vendor/:id" element={<ProductsPage filterType="vendor" />} />
-                    <Route
-                      path="/accessories/brands"
-                      element={<BrandPage />}
-                    />
-                    <Route path="/accessories/brands/:brandId" element={<BikeBrandPage />} />
-                  </Route>
-                  <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
+        <Route element={<AccessoriesLayout />}>
+          <Route path="/accessories" element={<AccessoriesPage />} />
+          <Route path="/accessories/search" element={<MarketplaceSearch />} />
+          <Route path="/accessories/collection" element={<Collection />} />
+          <Route path="/accessories/collection/:categoryId" element={<Collection />} />
+          <Route path="/accessories/category/:categoryId" element={<CategoryPage />} />
+          <Route
+            path="/accessories/:id"
+            element={<AccessoriesDetail />}
+          />
+          <Route path="/product/:id" element={<AccessoriesDetail />} />
+          <Route path="/shop" element={<ShopPage />} />
+          <Route path="/accessories/shop" element={<ShopPage />} />
+          <Route path="/accessories/products" element={<ShopPage />} />
+          <Route
+            path="/accessories/products/:id"
+            element={<ShopPage filterType="category" />}
+          />
+          <Route path="/category/:id" element={<ShopPage filterType="category" />} />
+          <Route path="/brand/:id" element={<ShopPage filterType="brand" />} />
+          <Route path="/bike/:id" element={<ShopPage filterType="bike" />} />
+          <Route path="/accessories/bike/:id" element={<ProductsPage filterType="bike" />} />
+          <Route path="/vendor/:id" element={<ProductsPage filterType="vendor" />} />
+          <Route
+            path="/accessories/brands"
+            element={<BrandPage />}
+          />
+          <Route path="/accessories/brands/:brandId" element={<BikeBrandPage />} />
+        </Route>
+        <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
 
-                  <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>}>
-                    <Route index element={<ProfileOverview />} />
-                    <Route path="edit-details" element={<ProfileOverview />} />
-                    <Route path="my-bikes" element={<MyBikes />} />
-                    <Route path="joined-events" element={<JoinedEvents />} />
-                    <Route path="my-orders" element={<MyOrders />} />
-                    <Route path="my-tickets" element={<MyTickets />} />
-                    <Route path="wishlist" element={<Wishlist />} />
-                    <Route path="saved-addresses" element={<SavedAddresses />} />
-                    <Route path="saved-events" element={<SavedEvents />} />
-                    <Route path="payments" element={<Payments />} />
-                    <Route path="my-wallet" element={<Wallet />} />
-                    <Route path="throttle-list" element={<ThrottleList />} />
-                    <Route path="feedback" element={<ShareFeedback />} />
-                    {/* Backward compatibility aliases */}
-                    <Route path="events" element={<JoinedEvents />} />
-                    <Route path="accessories" element={<MyOrders />} />
-                    <Route path="wallet" element={<Wallet />} />
-                    <Route path="support" element={<ShareFeedback />} />
-                  </Route>
-                </Routes>
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>}>
+          <Route index element={<ProfileOverview />} />
+          <Route path="edit-details" element={<ProfileOverview />} />
+          <Route path="my-bikes" element={<MyBikes />} />
+          <Route path="joined-events" element={<JoinedEvents />} />
+          <Route path="my-orders" element={<MyOrders />} />
+          <Route path="my-tickets" element={<MyTickets />} />
+          <Route path="wishlist" element={<Wishlist />} />
+          <Route path="saved-addresses" element={<SavedAddresses />} />
+          <Route path="saved-events" element={<SavedEvents />} />
+          <Route path="payments" element={<Payments />} />
+          <Route path="my-wallet" element={<Wallet />} />
+          <Route path="throttle-list" element={<ThrottleList />} />
+          <Route path="feedback" element={<ShareFeedback />} />
+          {/* Backward compatibility aliases */}
+          <Route path="events" element={<JoinedEvents />} />
+          <Route path="accessories" element={<MyOrders />} />
+          <Route path="wallet" element={<Wallet />} />
+          <Route path="support" element={<ShareFeedback />} />
+        </Route>
+      </Routes>
       <FooterWrapper />
       <AuthModalContainer />
     </div>

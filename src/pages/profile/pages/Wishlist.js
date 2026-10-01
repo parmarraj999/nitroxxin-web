@@ -3,51 +3,9 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import { useCollection } from "../../../hooks/useFirestore";
 import { COLLECTIONS, db } from "../../../services/firebase";
-import { addToCart } from "../../../services/commerceService";
-
-// Fallback demo items perfectly matching Screenshot 1 if user's wishlist is empty
-const SAMPLE_WISHLIST = [
-  {
-    id: "sample-jacket",
-    brand: "ALPINE STAR",
-    name: "MotoShield Pro Mesh Riding",
-    image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=600&q=80",
-    originalPrice: 6390,
-    price: 5590,
-    discount: "12% OFF",
-  },
-  {
-    id: "sample-helmet",
-    brand: "ALPINE STAR",
-    name: "Supertech R10 Arius Helmet",
-    image: "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=600&q=80",
-    originalPrice: 7200,
-    price: 5520,
-    discount: "23% OFF",
-  },
-  {
-    id: "sample-gloves",
-    brand: "ILM RACING",
-    name: "ILM Leather Racing Gloves",
-    image: "https://images.unsplash.com/photo-1609630875171-b1321377ee65?auto=format&fit=crop&w=600&q=80",
-    originalPrice: 1499,
-    price: 999,
-    discount: "33% OFF",
-  },
-  {
-    id: "sample-boots",
-    brand: "BMW MOTORRAD",
-    name: "BMW Biker Riding Boot",
-    image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=600&q=80",
-    originalPrice: 4500,
-    price: 3800,
-    discount: "15% OFF",
-  },
-];
 
 export default function Wishlist() {
   const { user } = useAuth();
-  const [addingId, setAddingId] = useState(null);
   const [feedbackMsg, setFeedbackMsg] = useState("");
 
   const { data: wishlistData, loading } = useCollection(COLLECTIONS.wishlist, {
@@ -58,9 +16,14 @@ export default function Wishlist() {
   const [removedIds, setRemovedIds] = useState([]);
 
   const handleRemove = async (docId, e) => {
-    e.preventDefault();
-    e.stopPropagation();
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setRemovedIds((prev) => [...prev, docId]);
+    setFeedbackMsg("Item removed from wishlist");
+    setTimeout(() => setFeedbackMsg(""), 2500);
+
     if (user?.uid) {
       try {
         await db().collection(COLLECTIONS.wishlist).doc(docId).delete();
@@ -70,63 +33,32 @@ export default function Wishlist() {
     }
   };
 
-  const handleAddToCart = async (item, e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setAddingId(item.id);
-    try {
-      if (user?.uid) {
-        await addToCart({
-          userId: user.uid,
-          product: {
-            id: item.id,
-            name: item.name || item.title,
-            price: item.price,
-            image: item.image || item.imageUrl,
-            brand: item.brand,
-          },
-          quantity: 1,
-        });
-      }
-      setFeedbackMsg(`"${item.name || item.title}" added to cart!`);
-      setTimeout(() => setFeedbackMsg(""), 3000);
-    } catch (err) {
-      console.error("Failed to add to cart:", err);
-      setFeedbackMsg("Item added to your shopping bag.");
-      setTimeout(() => setFeedbackMsg(""), 3000);
-    } finally {
-      setAddingId(null);
-    }
-  };
-
-  // Combine items
+  // Map real Firestore wishlist items
   const actualItems = (wishlistData || []).map((item) => {
     const product = item.productSnapshot || item;
-    const price = Number(product.price || 0);
-    const originalPrice = Number(product.originalPrice || (price > 0 ? Math.round(price * 1.25) : 0));
-    const discountPct =
-      originalPrice > price
-        ? `${Math.round(((originalPrice - price) / originalPrice) * 100)}% OFF`
-        : "15% OFF";
+    const category = product.category || "";
+    const name = product.name || product.title || "Gear";
+    const image = product.image || product.imageUrl || product.banner;
+    const price = Number(product.offerPrice || product.price || 0);
 
     return {
       id: item.id,
-      brand: product.brand || "NITROXX RACING",
-      name: product.name || product.title || "Performance Gear",
-      image: product.image || product.imageUrl || product.banner,
+      productId: item.productId || product.id,
+      category,
+      name,
+      image,
       price,
-      originalPrice,
-      discount: discountPct,
+      brand: product.brand,
     };
   });
 
-  const displayItems = (actualItems.length > 0 ? actualItems : SAMPLE_WISHLIST).filter(
+  const displayItems = actualItems.filter(
     (item) => !removedIds.includes(item.id)
   );
 
   return (
     <div className="nx-wishlist-page-wrap">
-      {/* Top Header matching Screenshot 1 */}
+      {/* Top Header */}
       <div className="nx-wishlist-header">
         <div className="nx-wishlist-header-left">
           <Link to="/profile" className="nx-wishlist-back-btn" title="Back to Profile">
@@ -177,74 +109,57 @@ export default function Wishlist() {
           </Link>
         </div>
       ) : (
-        /* Responsive Desktop Grid (3 to 4 columns) matching Screenshot 1 */
+        /* 3-Column Responsive Grid matching user's reference image */
         <div className="nx-wishlist-grid">
-          {displayItems.map((item) => (
-            <div className="nx-wishlist-card" key={item.id}>
-              {/* Product Media Area */}
-              <div className="nx-wishlist-media">
-                <img
-                  src={item.image || "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=600&q=80"}
-                  alt={item.name}
-                  className="nx-wishlist-img"
-                  loading="lazy"
-                />
+          {displayItems.map((item) => {
+            const title = item.category || item.name || "Gear";
+            const targetUrl = item.productId ? `/product/${item.productId}` : `/accessories`;
 
-                {/* Cream / Yellow Discount Pill Badge matching Screenshot 1 */}
-                {item.discount && (
-                  <span className="nx-wishlist-discount-pill">{item.discount}</span>
-                )}
+            return (
+              <div className="nx-wishlist-card" key={item.id}>
+                {/* Product Media Area with Dislike Button on Image */}
+                <div className="nx-wishlist-media">
+                  <Link to={targetUrl} className="nx-wishlist-img-link" title={title}>
+                    <img
+                      src={item.image || "/assets/images/wishlist-helmet.jpg"}
+                      alt={title}
+                      className="nx-wishlist-img"
+                      loading="lazy"
+                    />
+                  </Link>
 
-                {/* White Round Heart Button matching Screenshot 1 */}
-                <button
-                  type="button"
-                  className="nx-wishlist-heart-btn"
-                  onClick={(e) => handleRemove(item.id, e)}
-                  title="Remove from wishlist"
-                  aria-label="Remove from wishlist"
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="#ef4444" stroke="#ef4444" strokeWidth="1.5">
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Product Info & Action matching Screenshot 1 */}
-              <div className="nx-wishlist-body">
-                <div className="nx-wishlist-brand">{item.brand}</div>
-                <h3 className="nx-wishlist-product-name" title={item.name}>
-                  {item.name}
-                </h3>
-
-                <div className="nx-wishlist-price-row">
-                  {item.originalPrice > item.price && (
-                    <span className="nx-wishlist-original-price">
-                      ₹{Number(item.originalPrice).toLocaleString("en-IN")}
-                    </span>
-                  )}
-                  <span className="nx-wishlist-current-price">
-                    ₹{Number(item.price).toLocaleString("en-IN")}
-                  </span>
+                  {/* Dislike button on top of the image */}
+                  <button
+                    type="button"
+                    className="nx-wishlist-dislike-btn"
+                    onClick={(e) => handleRemove(item.id, e)}
+                    title="Dislike / Remove from wishlist"
+                    aria-label={`Dislike ${title}`}
+                  >
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17" />
+                    </svg>
+                  </button>
                 </div>
 
-                {/* Golden Yellow + Add to Cart Button matching Screenshot 1 */}
-                <button
-                  type="button"
-                  className="nx-wishlist-add-cart-btn"
-                  onClick={(e) => handleAddToCart(item, e)}
-                  disabled={addingId === item.id}
-                >
-                  {addingId === item.id ? (
-                    "Adding..."
-                  ) : (
-                    <>
-                      <span>+</span> Add to Cart
-                    </>
-                  )}
-                </button>
+                {/* Category or Title on bottom after image */}
+                <div className="nx-wishlist-caption">
+                  <Link to={targetUrl} className="nx-wishlist-caption-title">
+                    {title}
+                  </Link>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

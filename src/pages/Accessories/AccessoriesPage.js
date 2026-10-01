@@ -535,7 +535,7 @@ export default function AccessoriesPage() {
             <button className="ap-category-slider__btn" aria-label="Previous" onClick={() => scrollLeft(brandTrackRef)}><ChevronLeftIcon /></button>
             <div className="ap-category-track" ref={brandTrackRef}>
               {displayBrands.map((brand) => (
-                <Link to={`/accessories?brand=${encodeURIComponent(brand.label)}`} key={brand.id} className="ap-brand-card">
+                <Link to={`/shop?brand=${encodeURIComponent(brand.label || brand.name || brand.title || "")}`} key={brand.id} className="ap-brand-card">
                   <div className="ap-brand-card__box">
                     {brand.image ? <img src={brand.image} alt={brand.label} /> : <span>{brand.label}</span>}
                   </div>

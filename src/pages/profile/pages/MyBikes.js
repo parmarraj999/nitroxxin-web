@@ -3,32 +3,6 @@ import { useAuth } from "../../../context/AuthContext";
 import { useCollection } from "../../../hooks/useFirestore";
 import { db, serverTimestamp } from "../../../services/firebase";
 
-const SAMPLE_GARAGE_BIKES = [
-  {
-    id: "sample-himalayan",
-    brand: "ROYAL ENFIELD",
-    model: "Himalayan 650",
-    category: "Adventure Tourer",
-    regNumber: "MH 02 DX 4892",
-    engine: "648 cc",
-    year: "2024",
-    odometer: "14,200 km",
-    imageUrl:
-      "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=1000&q=80",
-  },
-  {
-    id: "sample-duke",
-    brand: "KTM",
-    model: "Duke 390",
-    category: "Naked Streetfighter",
-    regNumber: "MH 12 QP 9912",
-    engine: "399 cc",
-    year: "2023",
-    odometer: "8,450 km",
-    imageUrl:
-      "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?auto=format&fit=crop&w=1000&q=80",
-  },
-];
 
 const POPULAR_BRANDS = [
   "Royal Enfield",
@@ -68,12 +42,7 @@ export default function MyBikes() {
     imageUrl: "",
   });
 
-  const bikes = useMemo(() => {
-    if (firestoreBikes && firestoreBikes.length > 0) {
-      return firestoreBikes;
-    }
-    return SAMPLE_GARAGE_BIKES;
-  }, [firestoreBikes]);
+  const bikes = firestoreBikes || [];
 
   const handleOpenAdd = () => {
     setEditingBike(null);
@@ -136,7 +105,7 @@ export default function MyBikes() {
         updatedAt: serverTimestamp(),
       };
 
-      if (editingBike && !String(editingBike.id).startsWith("sample-")) {
+      if (editingBike) {
         await collectionRef.doc(editingBike.id).update(payload);
       } else {
         payload.createdAt = serverTimestamp();
@@ -155,12 +124,6 @@ export default function MyBikes() {
   const handleDeleteBike = async (bikeId) => {
     if (!user?.uid || !bikeId) return;
     if (!window.confirm("Are you sure you want to remove this machine from your garage?")) return;
-
-    if (String(bikeId).startsWith("sample-")) {
-      // It's a sample item, alert or just ignore
-      alert("Sample machine removed.");
-      return;
-    }
 
     try {
       await db().collection("users").doc(user.uid).collection("bikes").doc(bikeId).delete();
@@ -198,6 +161,22 @@ export default function MyBikes() {
         <div className="profile-loading-state">
           <div className="profile-spinner" />
           <p>Loading your garage machines...</p>
+        </div>
+      ) : bikes.length === 0 ? (
+        <div className="profile-empty-state">
+          <div className="profile-empty-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <circle cx="5.5" cy="17.5" r="3.5" />
+              <circle cx="18.5" cy="17.5" r="3.5" />
+              <path d="M15 6h-3l-3 6.5h7.5" />
+              <path d="M19 17.5l-4-9-4 9" />
+            </svg>
+          </div>
+          <h3>Your garage is empty</h3>
+          <p>Add your motorcycles, riding machines, and odometer logs to track service and rally readiness.</p>
+          <button type="button" className="profile-btn-primary" onClick={handleOpenAdd}>
+            + Add Motorcycle
+          </button>
         </div>
       ) : (
         <div className="nx-garage-cards-stack">

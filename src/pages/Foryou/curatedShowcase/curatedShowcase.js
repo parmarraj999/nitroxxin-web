@@ -336,7 +336,7 @@ export default function CuratedShowcase() {
     <section
       className="curated-showcase-section"
       style={{
-        backgroundImage: `url(${process.env.PUBLIC_URL || ''}/assets/images/fy-gradient-background.jpeg)`
+        // backgroundImage: `url(${process.env.PUBLIC_URL || ''}/assets/images/fy-gradient-background.jpeg)`
       }}
     >
       <div className="cs-container">

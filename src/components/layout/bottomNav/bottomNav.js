@@ -1,4 +1,4 @@
-    
+
 import React, { useEffect, useState } from 'react';
 import './bottomNav.css';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -8,7 +8,7 @@ export default function BottomNav() {
     const [city, setCity] = useState(localStorage.getItem('selectedCity') || "");
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDetecting, setIsDetecting] = useState(false);
-    const {pathname} = useLocation();
+    const { pathname } = useLocation();
 
     useEffect(() => {
         if (!city) {
@@ -73,22 +73,22 @@ export default function BottomNav() {
     };
 
     return (
-        <div className="bottom-nav-wrapper" style={pathname.includes('/profile') || pathname.includes('/book') ? {display:"none"} : {}}>
+        <div className="bottom-nav-wrapper" style={pathname.includes('/profile') || pathname.includes('/book') ? { display: "none" } : {}}>
             <div className="bottom-nav-tabs">
                 <button
                     className={`nav-tab ${pathname === '/' ? 'active-red' : ''}`}
                     onClick={() => {
-                        navigate('/');  
+                        navigate('/');
                     }}
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-flame-icon lucide-flame"><path d="M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-flame-icon lucide-flame"><path d="M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4" /></svg>
                     <span>For You</span>
                 </button>
 
                 <button
                     className={`nav-tab ${pathname.startsWith('/event') ? 'active-red' : ''}`}
                     onClick={() => {
-                        navigate('/events');    
+                        navigate('/events');
                     }}
                 >
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" /><path d="M12 9v6" /><path d="M12 5v2" /><path d="M12 17v2" /></svg>
@@ -101,8 +101,8 @@ export default function BottomNav() {
                         navigate('/accessories');
                     }}
                 >
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="5.5" cy="17.5" r="2.5" /><circle cx="18.5" cy="17.5" r="2.5" /><path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2Zm-3 11.5V14l-3-3 4-3 2 3h2" /></svg>
-                    <span>Accessories</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-store preview-icon"><path d="M15 21v-5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5" /><path d="M17.774 10.31a1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.451 0 1.12 1.12 0 0 0-1.548 0 2.5 2.5 0 0 1-3.452 0 1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.77-3.248l2.889-4.184A2 2 0 0 1 7 2h10a2 2 0 0 1 1.653.873l2.895 4.192a2.5 2.5 0 0 1-3.774 3.244" /><path d="M4 10.95V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8.05" /></svg>
+                    <span>Marketplace</span>
                 </button>
             </div>
 
@@ -114,7 +114,7 @@ export default function BottomNav() {
             </button>
             {/* </div> */}
 
-            <LocationModal 
+            <LocationModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onSelectCity={handleSelectCity}

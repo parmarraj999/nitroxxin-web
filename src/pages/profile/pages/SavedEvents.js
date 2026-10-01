@@ -1,40 +1,28 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import { useCollection } from "../../../hooks/useFirestore";
 import { removeFavoriteEvent } from "../../../services/commerceService";
-
-// Fallback demo saved event matching Screenshot 5
-const SAMPLE_SAVED_EVENTS = [
-  {
-    id: "sample-corner-craft",
-    eventId: "corner-craft-clinic",
-    title: "Corner Craft — Advanced Cornering & Throttle Control Clinic",
-    price: 999,
-    dateText: "31 Jul 2026",
-    location: "MIDC Road, Pimpri, Pune – 411018",
-    banner: "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    id: "sample-apex-hunters",
-    eventId: "apex-track-day",
-    title: "Apex Hunters Track Day — Buddh International Circuit",
-    price: 3499,
-    dateText: "15 Aug 2026",
-    location: "Buddh International Circuit, Greater Noida",
-    banner: "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&w=800&q=80",
-  },
-];
 
 export default function SavedEvents() {
   const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [removedIds, setRemovedIds] = useState([]);
 
-  const { data: bookmarks, loading } = useCollection(
-    user?.uid ? `users/${user.uid}/bookmark` : null,
-    { orderBy: [["createdAt", "desc"]] }
+  // Fetch from users/{userId}/saved-events and user/{userId}/saved-events
+  const { data: savedEventsData, loading: loadingSaved } = useCollection(
+    user?.uid ? `users/${user.uid}/saved-events` : null
   );
+
+  const { data: userSingularSavedData } = useCollection(
+    user?.uid ? `user/${user.uid}/saved-events` : null
+  );
+
+  const { data: bookmarks, loading: loadingBookmarks } = useCollection(
+    user?.uid ? `users/${user.uid}/bookmark` : null
+  );
+
+  const loading = loadingSaved && loadingBookmarks;
 
   const handleRemoveBookmark = async (eventId, e) => {
     e.preventDefault();
@@ -54,17 +42,39 @@ export default function SavedEvents() {
           // ignore
         }
       } catch (err) {
-        console.error("Failed to remove bookmark:", err);
+        console.error("Failed to remove saved event:", err);
       }
     }
   };
 
-  const parsedEvents = (bookmarks || []).map((item) => {
+  const combinedRawEvents = useMemo(() => {
+    const map = new Map();
+    const addAll = (list) => {
+      (list || []).forEach((item) => {
+        const key = item.eventId || item.id;
+        if (key && !map.has(key)) {
+          map.set(key, item);
+        }
+      });
+    };
+
+    addAll(savedEventsData);
+    addAll(userSingularSavedData);
+    addAll(bookmarks);
+
+    return Array.from(map.values());
+  }, [savedEventsData, userSingularSavedData, bookmarks]);
+
+  const parsedEvents = combinedRawEvents.map((item) => {
     const eventId = item.eventId || item.id;
     const title = item.title || item.name || "Motorcycle Event";
-    const dateText = item.dates || item.date || item.dateText || "Date TBA";
+    const dateText = item.dates || item.dateText || item.date || item.dateTimeText || "Date TBA";
     const location = item.location || item.venue || "Venue TBA";
-    const banner = item.banner || item.image || item.bannerImage || "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?auto=format&fit=crop&w=800&q=80";
+    const banner =
+      item.banner ||
+      item.image ||
+      item.bannerImage ||
+      "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?auto=format&fit=crop&w=800&q=80";
     const price = item.price !== undefined ? Number(item.price) : 999;
 
     return {
@@ -78,7 +88,7 @@ export default function SavedEvents() {
     };
   });
 
-  const allEvents = parsedEvents.length > 0 ? parsedEvents : SAMPLE_SAVED_EVENTS;
+  const allEvents = parsedEvents;
 
   const filteredEvents = allEvents.filter((item) => {
     if (removedIds.includes(item.eventId || item.id)) return false;

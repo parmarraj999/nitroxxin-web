@@ -136,13 +136,28 @@ export const AddOrderToFirestore = async ({
     const newOrderRef = database.collection(COLLECTIONS.orders || "orders").doc();
     batch.set(newOrderRef, { id: newOrderRef.id, ...orderData });
 
-    // 3. Add to user-specific subcollection users/{userId}/orders
+    // 3. Add to user-specific subcollection users/{userId}/order and user/{userId}/order
     const userOrderRef = database
+      .collection("users")
+      .doc(userId)
+      .collection("order")
+      .doc(newOrderRef.id);
+    batch.set(userOrderRef, { id: newOrderRef.id, ...orderData });
+
+    const userSingularOrderRef = database
+      .collection("user")
+      .doc(userId)
+      .collection("order")
+      .doc(newOrderRef.id);
+    batch.set(userSingularOrderRef, { id: newOrderRef.id, ...orderData });
+
+    // Also plural users/{userId}/orders for backwards compatibility
+    const userPluralOrdersRef = database
       .collection("users")
       .doc(userId)
       .collection("orders")
       .doc(newOrderRef.id);
-    batch.set(userOrderRef, { id: newOrderRef.id, ...orderData });
+    batch.set(userPluralOrdersRef, { id: newOrderRef.id, ...orderData });
 
     // 4. Add to vendor-specific collection: vendor/{vendorId}/order and vendors/{vendorId}/orders
     for (const [vId, vData] of Object.entries(vendorMap)) {
@@ -190,20 +205,72 @@ export const AddOrderToFirestore = async ({
       batch.set(vendorsSingleRef, vendorOrderData);
     }
 
-    // 5. Add to payments collection
-    const paymentRef = database.collection(COLLECTIONS.payments || "payments").doc();
-    batch.set(paymentRef, {
-      id: paymentRef.id,
-      userId: userId,
+    // 5. Advance order payment detail in payment & payments collection for super-admin
+    const advancePaymentData = {
+      id: newOrderRef.id,
       orderDocId: newOrderRef.id,
       orderId: orderNumber,
+      orderNumber: orderNumber,
       paymentId: orderData.paymentId,
-      razorpayOrderId: orderData.razorpayOrderId,
+      razorpayPaymentId: paymentDetails.razorpay_payment_id || orderData.paymentId || "",
+      razorpayOrderId: orderData.razorpayOrderId || "",
+      razorpaySignature: orderData.razorpaySignature || "",
       amount: totalAmount,
-      status: "success",
-      paymentMethod: "Razorpay",
+      currency: "INR",
+      status: "captured",
+      paymentStatus: "paid",
+      paymentMethod: "Razorpay Online",
+      paymentMode: orderData.paymentMode || "Prepaid (Razorpay)",
+      userId: userId,
+      customer: orderData.customer,
+      user: orderData.user,
+      itemCount: orderData.itemCount,
+      items: normalizedItems,
+      primaryVendorId: primaryVendorId,
+      primaryVendorName: primaryVendorName,
+      vendorIds: vendorIds,
+      deliveryAddress: orderData.deliveryAddress,
+      shipping: orderData.shipping,
+      type: "store_order",
+      source: "nitroxxin-web",
       createdAt: serverTimestamp(),
-    });
+      updatedAt: serverTimestamp(),
+    };
+    batch.set(database.collection("payment").doc(newOrderRef.id), advancePaymentData);
+    batch.set(database.collection("payments").doc(newOrderRef.id), advancePaymentData);
+
+    // 6. Basic order payment detail in user/userId/transactions and users/userId/transactions
+    const basicTransactionData = {
+      id: newOrderRef.id,
+      transactionId: paymentDetails.razorpay_payment_id || `TXN-${orderNumber}`,
+      orderId: orderNumber,
+      orderDocId: newOrderRef.id,
+      title: firstItem.name ? `Order Payment - ${firstItem.name}` : `Store Order #${orderNumber}`,
+      category: "order",
+      type: "debit",
+      amount: totalAmount,
+      currency: "INR",
+      status: "success",
+      paymentMethod: "Razorpay Online",
+      paymentId: paymentDetails.razorpay_payment_id || orderData.paymentId || "",
+      dateText: `on ${new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}, at ${new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).toLowerCase()}`,
+      itemCount: orderData.itemCount,
+      description: `Payment for Order #${orderNumber} (${normalizedItems.length} items)`,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+    batch.set(
+      database.collection("users").doc(userId).collection("transactions").doc(newOrderRef.id),
+      basicTransactionData
+    );
+    batch.set(
+      database.collection("user").doc(userId).collection("transactions").doc(newOrderRef.id),
+      basicTransactionData
+    );
+    batch.set(
+      database.collection("users").doc(userId).collection("wallet_transactions").doc(newOrderRef.id),
+      basicTransactionData
+    );
 
     // 6. Clear cart items for this user
     cartItems.forEach((item) => {

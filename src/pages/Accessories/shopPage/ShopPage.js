@@ -529,6 +529,12 @@ export default function ShopPage({ filterType }) {
               <span className="sp-breadcrumb__current">{selectedSubcategory}</span>
             </>
           )}
+          {selectedBrand && (
+            <>
+              <span className="sp-breadcrumb__sep">/</span>
+              <span className="sp-breadcrumb__current">{selectedBrand}</span>
+            </>
+          )}
         </nav>
 
         {/* ── Header Title & Subtitle (matching screenshot) ── */}
@@ -713,6 +719,61 @@ export default function ShopPage({ filterType }) {
               </div>
             ) : filteredProducts.length > 0 ? (
               <>
+                {activeFilterCount > 0 && (
+                  <div className="sp-active-chips">
+                    <span className="sp-active-chips__label">Active Filters:</span>
+                    {selectedBrand && (
+                      <span className="sp-active-chip">
+                        Brand: <strong>{selectedBrand}</strong>
+                        <button
+                          type="button"
+                          className="sp-active-chip__remove"
+                          onClick={() => updateQueryParam('brand', '')}
+                          aria-label="Remove brand filter"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    )}
+                    {selectedCategory && (
+                      <span className="sp-active-chip">
+                        Category: <strong>{selectedCategory}</strong>
+                        <button
+                          type="button"
+                          className="sp-active-chip__remove"
+                          onClick={() => {
+                            updateQueryParam('category', '');
+                            updateQueryParam('subcategory', '');
+                          }}
+                          aria-label="Remove category filter"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    )}
+                    {selectedSubcategory && (
+                      <span className="sp-active-chip">
+                        Subcategory: <strong>{selectedSubcategory}</strong>
+                        <button
+                          type="button"
+                          className="sp-active-chip__remove"
+                          onClick={() => updateQueryParam('subcategory', '')}
+                          aria-label="Remove subcategory filter"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      className="sp-active-chips__clear-all"
+                      onClick={handleClearAll}
+                    >
+                      Clear all
+                    </button>
+                  </div>
+                )}
+
                 <div className="sp-products-grid">
                   {paginatedProducts.map((product) => (
                     <ProductCard key={product.id} product={product} />

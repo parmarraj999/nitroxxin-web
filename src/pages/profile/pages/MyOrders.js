@@ -3,121 +3,6 @@ import { useAuth } from "../../../context/AuthContext";
 import { useCollection } from "../../../hooks/useFirestore";
 import { COLLECTIONS } from "../../../services/firebase";
 
-// Sample initial orders matching the user's reference image and motorcycle gear store
-const SAMPLE_ORDERS = [
-  {
-    id: "sample-order-phone",
-    orderNumber: "OD437266130144705100",
-    itemName: "Apple iPhone 16 (Ultramarine, 128 GB)",
-    specs: "Color: Ultramarine  •  Storage: 128 GB",
-    image: "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?auto=format&fit=crop&w=400&q=80",
-    price: 52148,
-    status: "delivered",
-    dateText: "Sep 24, 2025",
-    statusMessage: "Your item has been delivered",
-    sharedNote: "Chartered Accountant shared this order with you.",
-    itemCount: 1,
-    deliveryAddress: "Flat 402, Highrise Palms, Palm Beach Road, Navi Mumbai - 400705",
-    paymentMode: "Prepaid (UPI / Card)",
-    items: [
-      {
-        name: "Apple iPhone 16 (Ultramarine, 128 GB)",
-        specs: "Color: Ultramarine  •  Storage: 128 GB",
-        price: 52148,
-        image: "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?auto=format&fit=crop&w=400&q=80",
-      },
-    ],
-  },
-  {
-    id: "sample-order-jacket",
-    orderNumber: "OD437266130144705101",
-    itemName: "Alpine Star MotoShield Pro Mesh Riding Jacket",
-    specs: "Color: Stealth Black  •  Size: L  •  Qty: 1",
-    image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=400&q=80",
-    price: 18499,
-    status: "delivered",
-    dateText: "Sep 20, 2025",
-    statusMessage: "Your item has been delivered",
-    itemCount: 1,
-    deliveryAddress: "Flat 402, Highrise Palms, Palm Beach Road, Navi Mumbai - 400705",
-    paymentMode: "Net Banking",
-    items: [
-      {
-        name: "Alpine Star MotoShield Pro Mesh Riding Jacket",
-        specs: "Color: Stealth Black  •  Size: L",
-        price: 18499,
-        image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=400&q=80",
-      },
-    ],
-  },
-  {
-    id: "sample-order-helmet",
-    orderNumber: "OD437266130144705102",
-    itemName: "AGV K6 S Carbon Helmet (Matte Black)",
-    specs: "Color: Matte Carbon  •  Size: M  •  Qty: 1",
-    image: "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=400&q=80",
-    price: 44990,
-    status: "shipping",
-    dateText: "Sep 28, 2025",
-    statusMessage: "Your item is out for delivery with courier partner",
-    itemCount: 1,
-    deliveryAddress: "Flat 402, Highrise Palms, Palm Beach Road, Navi Mumbai - 400705",
-    paymentMode: "Credit Card EMI",
-    items: [
-      {
-        name: "AGV K6 S Carbon Helmet (Matte Black)",
-        specs: "Color: Matte Carbon  •  Size: M",
-        price: 44990,
-        image: "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=400&q=80",
-      },
-    ],
-  },
-  {
-    id: "sample-order-dryer",
-    orderNumber: "OD437266130144705103",
-    itemName: "glamblush Hair dryer with round comb",
-    specs: "Color: Multicolor  •  Size: 7cm  •  Qty: 1",
-    image: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=400&q=80",
-    price: 211,
-    status: "cancelled",
-    dateText: "Apr 10, 2025",
-    statusMessage: "Your order was cancelled as per your request.",
-    itemCount: 1,
-    deliveryAddress: "Flat 402, Highrise Palms, Palm Beach Road, Navi Mumbai - 400705",
-    paymentMode: "Refund Credited to Wallet",
-    items: [
-      {
-        name: "glamblush Hair dryer with round comb",
-        specs: "Color: Multicolor  •  Size: 7cm",
-        price: 211,
-        image: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=400&q=80",
-      },
-    ],
-  },
-  {
-    id: "sample-order-socks",
-    orderNumber: "OD437266130144705104",
-    itemName: "Men Ankle Length Riding Breathable Socks (Pack of 3)",
-    specs: "Color: Multicolor  •  Size: Free  •  Qty: 1",
-    image: "https://images.unsplash.com/photo-1586350977771-b3b0abd50c82?auto=format&fit=crop&w=400&q=80",
-    price: 499,
-    status: "delivered",
-    dateText: "Jun 29, 2025",
-    statusMessage: "Your item has been delivered",
-    itemCount: 1,
-    deliveryAddress: "Flat 402, Highrise Palms, Palm Beach Road, Navi Mumbai - 400705",
-    paymentMode: "Cash on Delivery",
-    items: [
-      {
-        name: "Men Ankle Length Riding Breathable Socks (Pack of 3)",
-        specs: "Color: Multicolor  •  Size: Free",
-        price: 499,
-        image: "https://images.unsplash.com/photo-1586350977771-b3b0abd50c82?auto=format&fit=crop&w=400&q=80",
-      },
-    ],
-  },
-];
-
 export default function MyOrders() {
   const { user } = useAuth();
   const [searchInput, setSearchInput] = useState("");
@@ -132,17 +17,63 @@ export default function MyOrders() {
   const [reviewComment, setReviewComment] = useState("");
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
 
-  const { data: firestoreOrders, loading } = useCollection(COLLECTIONS.orders, {
+  // 1. Fetch from exact requested path: users/{userId}/order
+  const { data: userOrderData, loading: loadingUserOrder } = useCollection(
+    user?.uid ? `users/${user.uid}/order` : null
+  );
+
+  // 2. Also fetch from user/{userId}/order (singular collection "user")
+  const { data: userSingularOrderData } = useCollection(
+    user?.uid ? `user/${user.uid}/order` : null
+  );
+
+  // 3. Also fetch from users/{userId}/orders (plural) and global orders collection
+  const { data: userPluralOrdersData } = useCollection(
+    user?.uid ? `users/${user.uid}/orders` : null
+  );
+
+  const { data: globalOrdersData, loading: loadingGlobal } = useCollection(COLLECTIONS.orders, {
     where: user?.uid ? [["userId", "==", user.uid]] : [["userId", "==", "NO_USER"]],
-    orderBy: [["createdAt", "desc"]],
     limit: 50,
   });
 
+  const loading = loadingUserOrder && loadingGlobal;
+
+  const combinedRawOrders = useMemo(() => {
+    const map = new Map();
+    const addAll = (list) => {
+      (list || []).forEach((ord) => {
+        const key = ord.orderId || ord.orderNumber || ord.id;
+        if (key && !map.has(key)) {
+          map.set(key, ord);
+        }
+      });
+    };
+
+    // Prioritize user/userId/order
+    addAll(userOrderData);
+    addAll(userSingularOrderData);
+    addAll(userPluralOrdersData);
+    addAll(globalOrdersData);
+
+    return Array.from(map.values()).sort((a, b) => {
+      const getMillis = (v) =>
+        v?.toDate
+          ? v.toDate().getTime()
+          : v?.toMillis
+          ? v.toMillis()
+          : v?.seconds
+          ? v.seconds * 1000
+          : Number(v) || 0;
+      return getMillis(b.createdAt) - getMillis(a.createdAt);
+    });
+  }, [userOrderData, userSingularOrderData, userPluralOrdersData, globalOrdersData]);
+
   const parsedFirestoreOrders = useMemo(() => {
-    return (firestoreOrders || []).map((ord) => {
-      const rawStatus = String(ord.status || "confirmed").toLowerCase();
+    return combinedRawOrders.map((ord) => {
+      const rawStatus = String(ord.status || ord.orderStatus || "confirmed").toLowerCase();
       let status = "confirmed";
-      let statusMessage = "Your order has been confirmed.";
+      let statusMessage = ord.statusMessage || "Your order has been confirmed.";
       if (rawStatus.includes("cancel")) {
         status = "cancelled";
         statusMessage = "Your order was cancelled as per your request.";
@@ -157,42 +88,54 @@ export default function MyOrders() {
       const items = (ord.items || []).map((it) => ({
         name: it.productSnapshot?.name || it.name || "Motorcycle Gear",
         specs: it.specs || `Color: ${it.color || "Standard"}  •  Size: ${it.size || "Standard"}`,
-        image: it.productSnapshot?.image || it.image || "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=400&q=80",
+        image:
+          it.productSnapshot?.image ||
+          it.image ||
+          "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=400&q=80",
         price: it.price || 0,
+        quantity: it.quantity || 1,
       }));
 
       const firstItem = items[0] || {
-        name: "Motorcycle Accessory",
+        name: ord.itemName || "Motorcycle Accessory",
         specs: "Color: Default",
-        image: "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=400&q=80",
-        price: ord.total || 999,
+        image: ord.image || "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=400&q=80",
+        price: ord.totalAmount || ord.total || 999,
       };
 
-      const dateText = ord.createdAt?.toDate
+      const dateText = ord.dateText
+        ? ord.dateText
+        : ord.createdAt?.toDate
         ? ord.createdAt.toDate().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-        : "Sep 24, 2025";
+        : "Recent Order";
+
+      const deliveryAddress =
+        ord.deliveryAddress ||
+        (ord.shippingAddress?.street
+          ? `${ord.shippingAddress.street}, ${ord.shippingAddress.city}`
+          : ord.shipping?.address
+          ? `${ord.shipping.address}, ${ord.shipping.city || ""}`
+          : "Delivery address on file");
 
       return {
         id: ord.id,
-        orderNumber: ord.orderId || `OD${(ord.id || "43726610447").slice(-16).toUpperCase()}`,
-        itemName: firstItem.name,
+        orderNumber: ord.orderNumber || ord.orderId || `OD${(ord.id || "43726610447").slice(-16).toUpperCase()}`,
+        itemName: ord.itemName || firstItem.name,
         specs: firstItem.specs,
-        image: firstItem.image,
-        price: ord.total || ord.amount || firstItem.price,
+        image: ord.image || firstItem.image,
+        price: ord.price || ord.totalAmount || ord.total || ord.amount || firstItem.price,
         status,
         dateText,
         statusMessage,
-        itemCount: items.length || 1,
-        deliveryAddress: ord.shippingAddress?.street
-          ? `${ord.shippingAddress.street}, ${ord.shippingAddress.city}`
-          : "Delivery address on file",
-        paymentMode: ord.paymentMethod || "Online Payment",
+        itemCount: ord.itemCount || items.reduce((acc, it) => acc + (it.quantity || 1), 0) || 1,
+        deliveryAddress,
+        paymentMode: ord.paymentMode || ord.paymentMethod || "Prepaid (Razorpay)",
         items: items.length > 0 ? items : [firstItem],
       };
     });
-  }, [firestoreOrders]);
+  }, [combinedRawOrders]);
 
-  const allOrders = parsedFirestoreOrders.length > 0 ? parsedFirestoreOrders : SAMPLE_ORDERS;
+  const allOrders = parsedFirestoreOrders;
 
   // Search trigger
   const handleSearchSubmit = (e) => {

@@ -234,11 +234,25 @@ export const saveFavoriteEvent = async ({ userId, event }) => {
     updatedAt: serverTimestamp(),
   });
 
-  // Save in users > docID > bookmark collection > data
+  // Save in users > docID > bookmark and saved-events collections
   await db()
     .collection(COLLECTIONS.users || "users")
     .doc(userId)
     .collection("bookmark")
+    .doc(eventId)
+    .set(bookmarkData, { merge: true });
+
+  await db()
+    .collection("users")
+    .doc(userId)
+    .collection("saved-events")
+    .doc(eventId)
+    .set(bookmarkData, { merge: true });
+
+  await db()
+    .collection("user")
+    .doc(userId)
+    .collection("saved-events")
     .doc(eventId)
     .set(bookmarkData, { merge: true });
 
@@ -262,11 +276,25 @@ export const saveFavoriteEvent = async ({ userId, event }) => {
 export const removeFavoriteEvent = async ({ userId, eventId }) => {
   if (!userId) throw new Error("Please log in to remove events.");
 
-  // Remove from users > docID > bookmark collection
+  // Remove from users > docID > bookmark and saved-events collections
   await db()
     .collection(COLLECTIONS.users || "users")
     .doc(userId)
     .collection("bookmark")
+    .doc(eventId)
+    .delete();
+
+  await db()
+    .collection("users")
+    .doc(userId)
+    .collection("saved-events")
+    .doc(eventId)
+    .delete();
+
+  await db()
+    .collection("user")
+    .doc(userId)
+    .collection("saved-events")
     .doc(eventId)
     .delete();
 
@@ -425,8 +453,78 @@ export const bookEvent = async ({
       updatedAt: serverTimestamp(),
     });
 
+    // 1. Root booking collections (both singular 'booking' and plural 'bookings')
+    const rootBookingSingularRef = db().collection("booking").doc(bookingRef.id);
     transaction.set(bookingRef, payload);
+    transaction.set(rootBookingSingularRef, payload);
+
+    // 2. User joined-event, my-events, and saved-events subcollections
+    const userMyEventsRef = db().collection("users").doc(user.uid).collection("my-events").doc(eventId || bookingRef.id);
+    const userSingularMyEventsRef = db().collection("user").doc(user.uid).collection("my-events").doc(eventId || bookingRef.id);
+    const userSavedEventsRef = db().collection("users").doc(user.uid).collection("saved-events").doc(eventId || bookingRef.id);
+    const userSingularSavedEventsRef = db().collection("user").doc(user.uid).collection("saved-events").doc(eventId || bookingRef.id);
+
     transaction.set(userJoinedEventRef, joinedEventData, { merge: true });
+    transaction.set(userMyEventsRef, joinedEventData, { merge: true });
+    transaction.set(userSingularMyEventsRef, joinedEventData, { merge: true });
+    transaction.set(userSavedEventsRef, joinedEventData, { merge: true });
+    transaction.set(userSingularSavedEventsRef, joinedEventData, { merge: true });
+
+    // 3. Super-admin advance payment record in 'payment' and 'payments'
+    const advanceEventPayment = compact({
+      id: bookingRef.id,
+      paymentId: payment?.paymentId || payment?.razorpayPaymentId || `pay_evt_${bookingId}`,
+      razorpayPaymentId: payment?.razorpayPaymentId || payment?.paymentId || "",
+      razorpayOrderId: payment?.razorpayOrderId || "",
+      razorpaySignature: payment?.razorpaySignature || "",
+      bookingId,
+      bookingDocId: bookingRef.id,
+      eventId,
+      eventTitle: eventSnapshot.title || eventSnapshot.name || "Motorcycle Event",
+      userId: user.uid,
+      customer: payload.attendee,
+      amount: total,
+      currency: "INR",
+      status: "captured",
+      paymentStatus: "paid",
+      paymentMethod: payment?.method || "Razorpay Online",
+      paymentMode: payment?.method || "Prepaid (Razorpay)",
+      totalTickets,
+      ticketPlan,
+      attendees,
+      bikeDetails,
+      type: "event_booking",
+      source: "nitroxxin-web",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    transaction.set(db().collection("payment").doc(bookingRef.id), advanceEventPayment);
+    transaction.set(db().collection("payments").doc(bookingRef.id), advanceEventPayment);
+
+    // 4. Basic user transaction in 'user/userId/transactions' and 'users/userId/transactions'
+    const basicEventTx = compact({
+      id: bookingRef.id,
+      transactionId: payment?.paymentId || payment?.razorpayPaymentId || `TXN-EVT-${bookingId}`,
+      bookingId,
+      bookingDocId: bookingRef.id,
+      eventId,
+      title: `Event Pass - ${eventSnapshot.title || eventSnapshot.name || "Nitroxx Event"}`,
+      category: "event",
+      type: "debit",
+      amount: total,
+      currency: "INR",
+      status: "success",
+      paymentMethod: payment?.method || "Razorpay Online",
+      paymentId: payment?.paymentId || payment?.razorpayPaymentId || "",
+      dateText: `on ${new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}, at ${new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).toLowerCase()}`,
+      description: `Booking pass for ${eventSnapshot.title} (${totalTickets} tickets)`,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    transaction.set(db().collection("users").doc(user.uid).collection("transactions").doc(bookingRef.id), basicEventTx);
+    transaction.set(db().collection("user").doc(user.uid).collection("transactions").doc(bookingRef.id), basicEventTx);
+    transaction.set(db().collection("users").doc(user.uid).collection("wallet_transactions").doc(bookingRef.id), basicEventTx);
+
     transaction.set(registrationRef, compact({
       registrationId: registrationRef.id,
       bookingId,

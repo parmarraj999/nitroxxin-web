@@ -4,52 +4,6 @@ import { useAuth } from "../../../context/AuthContext";
 import { useCollection } from "../../../hooks/useFirestore";
 import { COLLECTIONS } from "../../../services/firebase";
 
-// Sample initial joined events if Firestore collection is fresh
-const SAMPLE_JOINED_EVENTS = [
-  {
-    id: "sample-dirt-diaries",
-    eventId: "event-dirt-diaries",
-    title: "Dirt Diaries — Bhimashankar Gravel & Offroad Expedition",
-    dateTimeText: "Thu, 30 Jul, 5:00 AM",
-    location: "Manchar Naka, Pune–Nashik Highway",
-    ticketsCount: 1,
-    banner: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=1200&q=80",
-    badge: "Gravel / Offroad Rides",
-    status: "Upcoming",
-    price: "₹1,499",
-    bookingId: "NX-EVT-89210",
-    riderName: "Alex Mercer",
-  },
-  {
-    id: "sample-mumbai-night-ride",
-    eventId: "event-mumbai-night",
-    title: "Mumbai Midnight Coastal Ride & Breakfast",
-    dateTimeText: "Mon, 20 Jul, 11:00 PM",
-    location: "Marine Drive Promenade to Bandra Fort, Mumbai",
-    ticketsCount: 2,
-    banner: "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&w=1200&q=80",
-    badge: "Night Rides",
-    status: "Upcoming",
-    price: "₹800",
-    bookingId: "NX-EVT-77412",
-    riderName: "Alex Mercer",
-  },
-  {
-    id: "sample-monsoon-trail",
-    eventId: "event-monsoon-trail",
-    title: "Lonavala Ghats Monsoon Circuit",
-    dateTimeText: "Sat, 14 Jun, 6:00 AM",
-    location: "Old Mumbai-Pune Highway, Tiger Point",
-    ticketsCount: 1,
-    banner: "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?auto=format&fit=crop&w=1200&q=80",
-    badge: "Mountain Tours",
-    status: "Completed",
-    price: "₹1,200",
-    bookingId: "NX-EVT-65490",
-    riderName: "Alex Mercer",
-  },
-];
-
 export default function JoinedEvents() {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
@@ -58,43 +12,66 @@ export default function JoinedEvents() {
 
   const { data: bookingsData, loading: loadingBookings } = useCollection(COLLECTIONS.bookings, {
     where: user?.uid ? [["userId", "==", user.uid]] : [["userId", "==", "NO_USER"]],
-    orderBy: [["createdAt", "desc"]],
+    limit: 50,
   });
 
+  const { data: singleBookingData } = useCollection("booking", {
+    where: user?.uid ? [["userId", "==", user.uid]] : [["userId", "==", "NO_USER"]],
+    limit: 50,
+  });
+
+  const { data: savedEventsData, loading: loadingSaved } = useCollection(
+    user?.uid ? `users/${user.uid}/saved-events` : null
+  );
+
+  const { data: userSingularSavedData } = useCollection(
+    user?.uid ? `user/${user.uid}/saved-events` : null
+  );
+
+  const { data: myEventsData } = useCollection(
+    user?.uid ? `users/${user.uid}/my-events` : null
+  );
+
   const { data: joinedEventsData, loading: loadingJoined } = useCollection(
-    user?.uid ? `users/${user.uid}/joined-event` : null,
-    { orderBy: [["createdAt", "desc"]] }
+    user?.uid ? `users/${user.uid}/joined-event` : null
   );
 
   const displayEvents = useMemo(() => {
     const map = new Map();
 
-    (joinedEventsData || []).forEach((item) => {
-      const id = item.bookingId || item.eventId || item.id;
-      if (id) {
-        map.set(id, {
-          ...item,
-          eventSnapshot: item.eventSnapshot || item.data || item,
-        });
-      }
+    const addEvents = (list) => {
+      (list || []).forEach((item) => {
+        const id = item.bookingId || item.eventId || item.id;
+        if (id && !map.has(id)) {
+          map.set(id, {
+            ...item,
+            eventSnapshot: item.eventSnapshot || item.data || item,
+          });
+        }
+      });
+    };
+
+    addEvents(savedEventsData);
+    addEvents(userSingularSavedData);
+    addEvents(myEventsData);
+    addEvents(joinedEventsData);
+    addEvents(bookingsData);
+    addEvents(singleBookingData);
+
+    const list = Array.from(map.values()).sort((a, b) => {
+      const getMillis = (v) =>
+        v?.toDate
+          ? v.toDate().getTime()
+          : v?.toMillis
+          ? v.toMillis()
+          : v?.seconds
+          ? v.seconds * 1000
+          : Number(v) || 0;
+      return getMillis(b.createdAt) - getMillis(a.createdAt);
     });
 
-    (bookingsData || []).forEach((item) => {
-      const id = item.bookingId || item.eventId || item.id;
-      if (id && !map.has(id)) {
-        map.set(id, {
-          ...item,
-          eventSnapshot: item.eventSnapshot || item.data || item,
-        });
-      }
-    });
-
-    const list = Array.from(map.values());
-    if (list.length > 0) return list;
-
-    // Fallback to sample events if user has no joined events yet
-    return SAMPLE_JOINED_EVENTS;
-  }, [joinedEventsData, bookingsData]);
+    return list;
+  }, [savedEventsData, userSingularSavedData, myEventsData, joinedEventsData, bookingsData, singleBookingData]);
 
   const filteredEvents = useMemo(() => {
     let result = displayEvents;
@@ -187,8 +164,8 @@ export default function JoinedEvents() {
         </div>
       ) : filteredEvents.length === 0 ? (
         <div className="profile-empty-state">
-          <h3>No events match your search</h3>
-          <p>Try searching for a different city or check out exciting upcoming rides.</p>
+          <h3>{searchQuery ? "No events match your search" : "No joined events yet"}</h3>
+          <p>{searchQuery ? "Try searching for a different city or check out exciting upcoming rides." : "You haven't registered or joined any motorcycle rallies yet."}</p>
           <Link to="/events" className="profile-btn-primary">
             Explore Events
           </Link>

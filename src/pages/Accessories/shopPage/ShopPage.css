@@ -305,6 +305,77 @@
   min-width: 0;
 }
 
+/* Active Filter Chips */
+.sp-active-chips {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding: 10px 14px;
+  background: #f8f9fa;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.sp-active-chips__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-right: 4px;
+}
+
+.sp-active-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 13px;
+  color: #111827;
+}
+
+.sp-active-chip strong {
+  font-weight: 600;
+  color: #000;
+}
+
+.sp-active-chip__remove {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+.sp-active-chip__remove:hover {
+  color: #ef4444;
+}
+
+.sp-active-chips__clear-all {
+  background: none;
+  border: none;
+  color: #ef4444;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 8px;
+  text-decoration: underline;
+  margin-left: auto;
+}
+
+.sp-active-chips__clear-all:hover {
+  color: #dc2626;
+}
+
 .sp-products-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

@@ -4,43 +4,33 @@ import { useAuth } from "../../../context/AuthContext";
 import { useCollection } from "../../../hooks/useFirestore";
 import { db, serverTimestamp } from "../../../services/firebase";
 
-// Fallback demo addresses matching Screenshot 2
-const SAMPLE_ADDRESSES = [
-  {
-    id: "sample-home",
-    name: "Raj Parmar",
-    type: "Home",
-    street: "374/2, Sector C, Shakti Nagar",
-    city: "Bhopal",
-    state: "Madhya Pradesh",
-    pincode: "487001",
-    phone: "+91 8869959066",
-    isDefault: true,
-  },
-  {
-    id: "sample-work",
-    name: "Aman bro",
-    type: "Work",
-    street: "Plot 45, IT Park, MP Nagar Zone 2",
-    city: "Bhopal",
-    state: "Madhya Pradesh",
-    pincode: "487001",
-    phone: "+91 8423482342",
-    isDefault: false,
-  },
-];
-
 export default function SavedAddresses() {
   const { user } = useAuth();
   const { data: firestoreAddresses, loading } = useCollection(
-    user?.uid ? `users/${user.uid}/addresses` : null,
-    { orderBy: [["createdAt", "desc"]] }
+    user?.uid ? `users/${user.uid}/address` : null
   );
 
   const [localAddresses, setLocalAddresses] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Reset local override when new Firestore snapshot arrives
+  React.useEffect(() => {
+    if (firestoreAddresses) {
+      setLocalAddresses(null);
+    }
+  }, [firestoreAddresses]);
+
+  const sortedFirestoreAddresses = React.useMemo(() => {
+    if (!firestoreAddresses) return [];
+    return [...firestoreAddresses].sort((a, b) => {
+      if (a.isDefault && !b.isDefault) return -1;
+      if (!a.isDefault && b.isDefault) return 1;
+      const getMillis = (v) => (v?.toMillis ? v.toMillis() : v?.seconds ? v.seconds * 1000 : (Number(v) || 0));
+      return getMillis(b.createdAt) - getMillis(a.createdAt);
+    });
+  }, [firestoreAddresses]);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -53,9 +43,9 @@ export default function SavedAddresses() {
     isDefault: false,
   });
 
-  const addresses = localAddresses || (firestoreAddresses && firestoreAddresses.length > 0
-    ? firestoreAddresses
-    : SAMPLE_ADDRESSES);
+  const addresses = localAddresses !== null
+    ? localAddresses
+    : sortedFirestoreAddresses;
 
   const handleOpenAdd = () => {
     setEditingId(null);
@@ -68,6 +58,21 @@ export default function SavedAddresses() {
       pincode: "",
       type: "Home",
       isDefault: addresses.length === 0,
+    });
+    setShowModal(true);
+  };
+
+  const handleOpenEdit = (addr) => {
+    setEditingId(addr.id);
+    setFormData({
+      name: addr.name || "",
+      phone: addr.phone || "",
+      street: addr.street || addr.address || "",
+      city: addr.city || "",
+      state: addr.state || "",
+      pincode: addr.pincode || addr.postalCode || "",
+      type: addr.type || "Home",
+      isDefault: Boolean(addr.isDefault),
     });
     setShowModal(true);
   };
@@ -93,20 +98,22 @@ export default function SavedAddresses() {
       name: formData.name.trim(),
       phone: formData.phone.trim(),
       street: formData.street.trim(),
+      address: formData.street.trim(),
       city: formData.city.trim(),
       state: formData.state.trim() || "Madhya Pradesh",
       pincode: formData.pincode.trim() || "487001",
+      postalCode: formData.pincode.trim() || "487001",
       type: formData.type || "Home",
       isDefault: Boolean(formData.isDefault),
     };
 
     if (user?.uid) {
       try {
-        const colRef = db().collection("users").doc(user.uid).collection("addresses");
+        const colRef = db().collection("users").doc(user.uid).collection("address");
         if (newAddr.isDefault) {
           const batch = db().batch();
           addresses.forEach((a) => {
-            if (a.id !== editingId) {
+            if (a.id && a.id !== editingId) {
               batch.update(colRef.doc(a.id), { isDefault: false });
             }
           });
@@ -114,9 +121,18 @@ export default function SavedAddresses() {
         }
 
         if (editingId) {
-          await colRef.doc(editingId).update({ ...newAddr, updatedAt: serverTimestamp() });
+          await colRef.doc(editingId).set({
+            ...newAddr,
+            updatedAt: serverTimestamp(),
+          }, { merge: true });
         } else {
-          await colRef.add({ ...newAddr, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+          const docRef = colRef.doc();
+          newAddr.id = docRef.id;
+          await docRef.set({
+            ...newAddr,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          });
         }
       } catch (err) {
         console.error("Firestore address error:", err);
@@ -145,10 +161,12 @@ export default function SavedAddresses() {
   const handleSetDefault = async (addrId) => {
     if (user?.uid) {
       try {
-        const colRef = db().collection("users").doc(user.uid).collection("addresses");
+        const colRef = db().collection("users").doc(user.uid).collection("address");
         const batch = db().batch();
         addresses.forEach((a) => {
-          batch.update(colRef.doc(a.id), { isDefault: a.id === addrId });
+          if (a.id) {
+            batch.update(colRef.doc(a.id), { isDefault: a.id === addrId });
+          }
         });
         await batch.commit();
       } catch (err) {
@@ -166,7 +184,7 @@ export default function SavedAddresses() {
     if (!window.confirm("Delete this saved address?")) return;
     if (user?.uid) {
       try {
-        await db().collection("users").doc(user.uid).collection("addresses").doc(addrId).delete();
+        await db().collection("users").doc(user.uid).collection("address").doc(addrId).delete();
       } catch (err) {
         console.error("Failed to delete address:", err);
       }
@@ -252,19 +270,35 @@ export default function SavedAddresses() {
                     )}
                   </div>
 
-                  {/* Red Delete Trash Icon matching Screenshot 2 */}
-                  <button
-                    type="button"
-                    className="nx-addr-trash-btn"
-                    onClick={() => handleDelete(addr.id)}
-                    title="Delete Address"
-                    aria-label="Delete Address"
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="3 6 5 6 21 6" />
-                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                    </svg>
-                  </button>
+                  {/* Actions: Edit and Delete */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <button
+                      type="button"
+                      className="nx-addr-trash-btn"
+                      onClick={() => handleOpenEdit(addr)}
+                      title="Edit Address"
+                      aria-label="Edit Address"
+                      style={{ color: '#4b5563' }}
+                    >
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                    </button>
+
+                    <button
+                      type="button"
+                      className="nx-addr-trash-btn"
+                      onClick={() => handleDelete(addr.id)}
+                      title="Delete Address"
+                      aria-label="Delete Address"
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Body: Name, Address, Mobile */}

@@ -38,9 +38,13 @@ export default function ProfileOverview() {
       profile?.username ||
       (user?.phone || user?.phoneNumber
         ? `user_${(user.phone || user.phoneNumber).slice(-4)}`
-        : "user_9066");
+        : user?.uid
+        ? `user_${user.uid.slice(0, 5)}`
+        : user?.email
+        ? user.email.split("@")[0]
+        : "");
 
-    const formattedUsername = rawUsername.startsWith("@") ? rawUsername : `@${rawUsername}`;
+    const formattedUsername = rawUsername ? (rawUsername.startsWith("@") ? rawUsername : `@${rawUsername}`) : "";
 
     setForm({
       username: formattedUsername,
@@ -155,9 +159,9 @@ export default function ProfileOverview() {
   const currentLicenseImage =
     profile?.drivingLicenseImage ||
     profile?.drivingLicensePhoto ||
-    "https://upload.wikimedia.org/wikipedia/en/thumb/8/87/McLovin_Driver%27s_License.jpg/300px-McLovin_Driver%27s_License.jpg"; // Default demo fallback if not yet uploaded
+    null;
 
-  const hasLicenseAttached = Boolean(profile?.drivingLicenseImage || profile?.drivingLicensePhoto || currentLicenseImage);
+  const hasLicenseAttached = Boolean(currentLicenseImage);
 
   return (
     <div className="nx-details-page-wrap">

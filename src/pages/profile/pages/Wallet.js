@@ -4,64 +4,6 @@ import { useAuth } from "../../../context/AuthContext";
 import { useCollection } from "../../../hooks/useFirestore";
 import { db, serverTimestamp } from "../../../services/firebase";
 
-// Sample transactions matching Screenshot 3
-const SAMPLE_TRANSACTIONS = [
-  {
-    id: "tx-1",
-    title: "Events - Debit",
-    category: "event",
-    type: "debit",
-    dateText: "on 07 Jul 2026, at 10:57pm",
-    amount: 730.94,
-    status: "success",
-  },
-  {
-    id: "tx-2",
-    title: "Add Money failed",
-    category: "ticket",
-    type: "debit",
-    dateText: "on 07 Jul 2026, at 2:09pm",
-    amount: 456,
-    status: "failed",
-  },
-  {
-    id: "tx-3",
-    title: "Add Money failed",
-    category: "ticket",
-    type: "debit",
-    dateText: "on 07 Jul 2026, at 2:09pm",
-    amount: 350,
-    status: "failed",
-  },
-  {
-    id: "tx-4",
-    title: "Add Money failed",
-    category: "ticket",
-    type: "debit",
-    dateText: "on 07 Jul 2026, at 2:01pm",
-    amount: 350,
-    status: "failed",
-  },
-  {
-    id: "tx-5",
-    title: "Wallet Recharge UPI",
-    category: "wallet",
-    type: "credit",
-    dateText: "on 01 Jul 2026, at 11:30am",
-    amount: 1500,
-    status: "success",
-  },
-  {
-    id: "tx-6",
-    title: "Ride Cancellation Refund",
-    category: "refund",
-    type: "refund",
-    dateText: "on 28 Jun 2026, at 4:15pm",
-    amount: 450,
-    status: "success",
-  },
-];
-
 export default function Wallet() {
   const { user } = useAuth();
   const [filter, setFilter] = useState("All");
@@ -69,24 +11,51 @@ export default function Wallet() {
   const [customAmount, setCustomAmount] = useState("500");
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const { data: firestoreTx } = useCollection(
+  const { data: walletTx } = useCollection(
     user?.uid ? `users/${user.uid}/wallet_transactions` : null,
     { orderBy: [["createdAt", "desc"]] }
   );
 
-  const [localTxList, setLocalTxList] = useState(null);
-  const transactions = localTxList || (firestoreTx && firestoreTx.length > 0 ? firestoreTx : SAMPLE_TRANSACTIONS);
+  const { data: userTx } = useCollection(
+    user?.uid ? `users/${user.uid}/transactions` : null,
+    { orderBy: [["createdAt", "desc"]] }
+  );
 
-  // Compute live District Money Balance
+  const mergedTx = React.useMemo(() => {
+    const map = new Map();
+    const addAll = (list) => {
+      (list || []).forEach((t) => {
+        const id = t.id || t.transactionId;
+        if (id && !map.has(id)) {
+          map.set(id, {
+            ...t,
+            amount: Number(t.amount || 0),
+            title: t.title || t.description || "Transaction",
+            dateText: t.dateText || (t.createdAt?.toDate ? t.createdAt.toDate().toLocaleDateString("en-IN") : "Recent"),
+            status: t.status || "success",
+            type: t.type || "debit",
+          });
+        }
+      });
+    };
+    addAll(walletTx);
+    addAll(userTx);
+    return Array.from(map.values());
+  }, [walletTx, userTx]);
+
+  const [localTxList, setLocalTxList] = useState(null);
+  const transactions = localTxList || mergedTx;
+
+  // Compute live District Money Balance from real user transactions
   const totalBalance = transactions.reduce((acc, curr) => {
     if (curr.type === "credit" || curr.type === "refund") {
       return acc + Number(curr.amount || 0);
     }
     if (curr.type === "debit" && curr.status !== "failed") {
-      return acc - Number(curr.amount || 0);
+      return Math.max(0, acc - Number(curr.amount || 0));
     }
     return acc;
-  }, 75.06);
+  }, 0);
 
   const filteredTx = transactions.filter((tx) => {
     if (filter === "All") return true;

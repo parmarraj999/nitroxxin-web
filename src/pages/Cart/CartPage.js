@@ -4,7 +4,7 @@ import { FiArrowLeft } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 import { useAuthModal } from "../../components/AuthModal/useAuthModal";
 import { useCollection } from "../../hooks/useFirestore";
-import { COLLECTIONS } from "../../services/firebase";
+import { COLLECTIONS, db, serverTimestamp } from "../../services/firebase";
 import { normalizeProduct } from "../../services/normalizers";
 import { removeCartItem, updateCartQuantity } from "../../services/commerceService";
 import { makePayment } from "../../payments/makePayment";
@@ -20,6 +20,25 @@ export default function CartPage() {
     where: user?.uid ? [["userId", "==", user.uid]] : [["userId", "==", "NO_USER"]],
     limit: 50,
   });
+
+  // Fetch saved delivery addresses from users/{userId}/address
+  const { data: rawSavedAddresses = [] } = useCollection(
+    user?.uid ? `users/${user.uid}/address` : null
+  );
+
+  const savedAddresses = useMemo(() => {
+    return [...rawSavedAddresses].sort((a, b) => {
+      if (a.isDefault && !b.isDefault) return -1;
+      if (!a.isDefault && b.isDefault) return 1;
+      const getMillis = (v) => (v?.toMillis ? v.toMillis() : v?.seconds ? v.seconds * 1000 : (Number(v) || 0));
+      return getMillis(b.createdAt) - getMillis(a.createdAt);
+    });
+  }, [rawSavedAddresses]);
+
+  const [selectedAddressId, setSelectedAddressId] = useState(null);
+  const [isCustomAddress, setIsCustomAddress] = useState(false);
+  const [saveToProfile, setSaveToProfile] = useState(false);
+
   const [shipping, setShipping] = useState({
     name: profile?.fullName || profile?.name || profile?.displayName || user?.fullName || user?.displayName || "",
     phone: profile?.phone || profile?.phoneNumber || user?.phone || user?.phoneNumber || "",
@@ -29,16 +48,60 @@ export default function CartPage() {
     pincode: profile?.pincode || profile?.postalCode || "",
   });
 
-  // Keep shipping name and phone synced with user account
+  // Automatically select default address from savedAddresses when loaded
   useEffect(() => {
-    if (user || profile) {
+    if (savedAddresses && savedAddresses.length > 0 && !selectedAddressId && !isCustomAddress) {
+      const def = savedAddresses.find((a) => a.isDefault) || savedAddresses[0];
+      if (def) {
+        setSelectedAddressId(def.id);
+        setShipping({
+          name: def.name || profile?.fullName || user?.fullName || "",
+          phone: def.phone || profile?.phone || user?.phone || "",
+          address: def.street || def.address || "",
+          city: def.city || "",
+          state: def.state || "",
+          pincode: def.pincode || def.postalCode || "",
+        });
+      }
+    }
+  }, [savedAddresses, selectedAddressId, isCustomAddress, profile, user]);
+
+  // Keep shipping name and phone synced with user account when custom
+  useEffect(() => {
+    if ((user || profile) && isCustomAddress) {
       setShipping((prev) => ({
         ...prev,
         name: prev.name || profile?.fullName || profile?.name || user?.fullName || "",
         phone: prev.phone || profile?.phone || user?.phone || "",
       }));
     }
-  }, [user, profile]);
+  }, [user, profile, isCustomAddress]);
+
+  const handleSelectAddress = (addr) => {
+    setSelectedAddressId(addr.id);
+    setIsCustomAddress(false);
+    setShipping({
+      name: addr.name || "",
+      phone: addr.phone || "",
+      address: addr.street || addr.address || "",
+      city: addr.city || "",
+      state: addr.state || "",
+      pincode: addr.pincode || addr.postalCode || "",
+    });
+  };
+
+  const handleEnterNewAddress = () => {
+    setSelectedAddressId(null);
+    setIsCustomAddress(true);
+    setShipping({
+      name: profile?.fullName || user?.fullName || "",
+      phone: profile?.phone || user?.phone || "",
+      address: "",
+      city: "",
+      state: "",
+      pincode: "",
+    });
+  };
 
   const [deliveryMethod, setDeliveryMethod] = useState("standard");
   const [coupon, setCoupon] = useState("");
@@ -67,6 +130,31 @@ export default function CartPage() {
     if (missing) {
       setError("Please complete all delivery address fields before checkout.");
       return;
+    }
+
+    // Auto-save new address to users/{userId}/address if requested
+    if (saveToProfile && user?.uid && (isCustomAddress || savedAddresses.length === 0)) {
+      try {
+        const colRef = db().collection("users").doc(user.uid).collection("address");
+        const docRef = colRef.doc();
+        await docRef.set({
+          id: docRef.id,
+          name: shipping.name.trim(),
+          phone: shipping.phone.trim(),
+          street: shipping.address.trim(),
+          address: shipping.address.trim(),
+          city: shipping.city.trim(),
+          state: shipping.state.trim() || "Madhya Pradesh",
+          pincode: shipping.pincode.trim(),
+          postalCode: shipping.pincode.trim(),
+          type: "Home",
+          isDefault: savedAddresses.length === 0,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+      } catch (saveErr) {
+        console.warn("Failed to auto-save address to profile:", saveErr);
+      }
     }
 
     try {
@@ -155,15 +243,171 @@ export default function CartPage() {
             })}
 
             <section className="cart-panel">
-              <h2>Delivery Address</h2>
-              <div className="cart-form-grid">
-                {Object.keys(shipping).map((field) => (
-                  <label key={field}>
-                    <span>{field.replace(/\b\w/g, (letter) => letter.toUpperCase())}</span>
-                    <input value={shipping[field]} onChange={(event) => setShipping((prev) => ({ ...prev, [field]: event.target.value }))} />
-                  </label>
-                ))}
+              <div className="cart-panel__header">
+                <h2>Delivery Address</h2>
+                {user && (
+                  <Link to="/profile/saved-addresses" className="cart-manage-addr-link">
+                    Manage Addresses ➔
+                  </Link>
+                )}
               </div>
+
+              {/* Saved Addresses Picker (when user has saved addresses in users/{userId}/address) */}
+              {user && savedAddresses.length > 0 && (
+                <div className="cart-saved-addresses-wrapper">
+                  <div className="cart-saved-addresses-top">
+                    <span className="cart-saved-addresses-title">Select from saved addresses:</span>
+                    <button
+                      type="button"
+                      className={`cart-new-addr-toggle-btn ${isCustomAddress ? 'is-active' : ''}`}
+                      onClick={() => {
+                        if (isCustomAddress) {
+                          const def = savedAddresses.find((a) => a.isDefault) || savedAddresses[0];
+                          if (def) handleSelectAddress(def);
+                        } else {
+                          handleEnterNewAddress();
+                        }
+                      }}
+                    >
+                      {isCustomAddress ? '← Use Saved Address' : '+ Add / Enter Different Address'}
+                    </button>
+                  </div>
+
+                  {!isCustomAddress && (
+                    <div className="cart-saved-addresses-grid">
+                      {savedAddresses.map((addr) => {
+                        const isSelected = selectedAddressId === addr.id;
+                        const isHome = (addr.type || 'Home').toLowerCase() === 'home';
+
+                        return (
+                          <div
+                            key={addr.id}
+                            className={`cart-addr-card ${isSelected ? 'is-selected' : ''}`}
+                            onClick={() => handleSelectAddress(addr)}
+                          >
+                            <div className="cart-addr-card__radio-col">
+                              <span className={`cart-addr-radio-circle ${isSelected ? 'is-checked' : ''}`}>
+                                {isSelected && <span className="cart-addr-radio-dot" />}
+                              </span>
+                            </div>
+                            <div className="cart-addr-card__details">
+                              <div className="cart-addr-card__tags">
+                                <span className={`cart-addr-tag ${isHome ? 'home' : 'work'}`}>
+                                  {addr.type || 'Home'}
+                                </span>
+                                {addr.isDefault && (
+                                  <span className="cart-addr-default-tag">DEFAULT</span>
+                                )}
+                              </div>
+                              <h4 className="cart-addr-name">{addr.name}</h4>
+                              <p className="cart-addr-street">
+                                {addr.street || addr.address}
+                                {addr.city ? `, ${addr.city}` : ''}
+                                {addr.state ? `, ${addr.state}` : ''}
+                                {(addr.pincode || addr.postalCode) ? ` - ${addr.pincode || addr.postalCode}` : ''}
+                              </p>
+                              {addr.phone && (
+                                <p className="cart-addr-phone">Mobile: {addr.phone}</p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Form Grid for custom address entry or when no saved addresses exist */}
+              {(isCustomAddress || savedAddresses.length === 0) ? (
+                <div className="cart-custom-address-form">
+                  {savedAddresses.length > 0 && (
+                    <h3 className="cart-form-section-title">Enter Delivery Details</h3>
+                  )}
+                  <div className="cart-form-grid">
+                    <label>
+                      <span>Full Name *</span>
+                      <input
+                        value={shipping.name}
+                        onChange={(e) => setShipping((prev) => ({ ...prev, name: e.target.value }))}
+                        placeholder="e.g. Raj Parmar"
+                        required
+                      />
+                    </label>
+                    <label>
+                      <span>Mobile Number *</span>
+                      <input
+                        value={shipping.phone}
+                        onChange={(e) => setShipping((prev) => ({ ...prev, phone: e.target.value }))}
+                        placeholder="+91 8869959066"
+                        required
+                      />
+                    </label>
+                    <label className="cart-form-full-width">
+                      <span>Street Address / Flat / Building *</span>
+                      <input
+                        value={shipping.address}
+                        onChange={(e) => setShipping((prev) => ({ ...prev, address: e.target.value }))}
+                        placeholder="374/2, Sector C, Shakti Nagar"
+                        required
+                      />
+                    </label>
+                    <label>
+                      <span>City *</span>
+                      <input
+                        value={shipping.city}
+                        onChange={(e) => setShipping((prev) => ({ ...prev, city: e.target.value }))}
+                        placeholder="Bhopal"
+                        required
+                      />
+                    </label>
+                    <label>
+                      <span>State *</span>
+                      <input
+                        value={shipping.state}
+                        onChange={(e) => setShipping((prev) => ({ ...prev, state: e.target.value }))}
+                        placeholder="Madhya Pradesh"
+                        required
+                      />
+                    </label>
+                    <label>
+                      <span>PIN Code *</span>
+                      <input
+                        value={shipping.pincode}
+                        onChange={(e) => setShipping((prev) => ({ ...prev, pincode: e.target.value }))}
+                        placeholder="487001"
+                        required
+                      />
+                    </label>
+                  </div>
+
+                  {user && (
+                    <label className="cart-save-to-profile-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={saveToProfile}
+                        onChange={(e) => setSaveToProfile(e.target.checked)}
+                      />
+                      <span>Save this address to my profile for future orders</span>
+                    </label>
+                  )}
+                </div>
+              ) : (
+                <div className="cart-selected-address-bar">
+                  <div className="cart-selected-address-info">
+                    <span className="cart-selected-pill">Delivering to</span>
+                    <strong>{shipping.name}</strong> • {shipping.phone}
+                    <p>{shipping.address}, {shipping.city}, {shipping.state} - {shipping.pincode}</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="cart-change-address-btn"
+                    onClick={handleEnterNewAddress}
+                  >
+                    + Enter Different Address
+                  </button>
+                </div>
+              )}
             </section>
           </main>
 

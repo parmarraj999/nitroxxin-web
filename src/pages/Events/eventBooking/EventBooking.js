@@ -704,35 +704,117 @@ export default function EventBooking() {
       openLogin();
       return;
     }
-    setSubmitting(true);
-    try {
-      await bookEvent({
-        user,
-        profile,
-        event,
-        attendeeCounts: {
-          adults: totalTickets,
-          children: 0,
-          pets: 0,
-          bags: 0,
-        },
-        attendees: attendees.slice(0, totalTickets),
-        bikeDetails: [{ ...bike, joinAs }],
-        joinAs,
-        total: summary.total,
-        ticketPlan: { counts, tiers: tiers.map(({ key, name, price, availableSeats }) => ({ key, name, price, availableSeats })) },
-        addOns: availableAddOns.filter((item) => selectedAddOns.includes(item.key)),
-        fees: { convenience: summary.fees, discount: summary.discount },
-        bookingContact: contact,
-        emergencyContact: emergency,
-        preferences,
-        payment,
-        notes: preferences.notes,
+
+    const payablePaise = Math.round(Number(summary.total || 0) * 100);
+
+    const executeBooking = async (paymentDetails = {}) => {
+      setSubmitting(true);
+      try {
+        await bookEvent({
+          user,
+          profile,
+          event,
+          attendeeCounts: {
+            adults: totalTickets,
+            children: 0,
+            pets: 0,
+            bags: 0,
+          },
+          attendees: attendees.slice(0, totalTickets),
+          bikeDetails: [{ ...bike, joinAs }],
+          joinAs,
+          total: summary.total,
+          ticketPlan: {
+            counts,
+            tiers: tiers.map(({ key, name, price, availableSeats }) => ({ key, name, price, availableSeats })),
+          },
+          addOns: availableAddOns.filter((item) => selectedAddOns.includes(item.key)),
+          fees: { convenience: summary.fees, discount: summary.discount },
+          bookingContact: contact,
+          emergencyContact: emergency,
+          preferences,
+          payment: {
+            ...payment,
+            ...paymentDetails,
+            method: paymentDetails.method || "Razorpay Online",
+            paymentStatus: "paid",
+            amount: summary.total,
+          },
+          notes: preferences.notes,
+        });
+        setSubmitting(false);
+        navigate('/profile/joined-events');
+      } catch (err) {
+        setError(err.message || 'Booking failed. Please try again.');
+        setSubmitting(false);
+      }
+    };
+
+    // Free event pass (total is 0)
+    if (summary.total <= 0) {
+      await executeBooking({
+        method: "Free Pass",
+        paymentId: `free_pass_${Date.now()}`,
+        status: "paid",
       });
-      navigate('/profile/events');
-    } catch (err) {
-      setError(err.message || 'Booking failed. Please try again.');
+      return;
+    }
+
+    // Check if Razorpay SDK is available
+    if (typeof window === "undefined" || !window.Razorpay) {
+      setError("Payment gateway is loading. Please check your internet connection.");
+      return;
+    }
+
+    // Launch Razorpay payment gateway on click of booking
+    setSubmitting(true);
+    setError("");
+
+    try {
+      const options = {
+        key: "rzp_test_RvsB2MOcwdhZtz",
+        amount: payablePaise,
+        currency: "INR",
+        name: "Nitroxxin Events",
+        description: `Booking pass for ${event.title || "Motorcycle Event"}`,
+        handler: async (response) => {
+          await executeBooking({
+            method: "Razorpay Online",
+            paymentId: response.razorpay_payment_id,
+            razorpayPaymentId: response.razorpay_payment_id,
+            razorpayOrderId: response.razorpay_order_id,
+            razorpaySignature: response.razorpay_signature,
+            status: "paid",
+          });
+        },
+        prefill: {
+          name: contact.name || profile?.fullName || user.displayName || "Rider",
+          email: contact.email || user.email || "",
+          contact: contact.phone || user.phoneNumber || "",
+        },
+        theme: {
+          color: "#ff2244",
+        },
+        modal: {
+          ondismiss: () => {
+            setSubmitting(false);
+            console.log("Event booking payment modal dismissed");
+          },
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on("payment.failed", (response) => {
+        setSubmitting(false);
+        const errMsg = response.error?.description || "Payment failed. Please try again.";
+        setError(errMsg);
+        alert(`Payment failed: ${errMsg}`);
+      });
+
+      rzp.open();
+    } catch (payInitErr) {
       setSubmitting(false);
+      setError(payInitErr.message || "Could not launch payment gateway.");
     }
   };
 
