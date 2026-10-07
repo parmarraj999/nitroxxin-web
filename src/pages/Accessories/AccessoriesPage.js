@@ -6,6 +6,7 @@ import AccessoriesHeader from "./accessoriesNav/AccessoriesHeader";
 import AccessoriesHeroSlider from "./accessoriesBanner/AccessoriesHeroSlider";
 import { useBikeBrandsContext } from "../../context/BikeBrandsContext";
 import SuggestedForYou from "./suggestedForYou/SuggestedForYou";
+import ComboSection from "../../components/ComboSection/ComboSection";
 
 function ChevronLeftIcon() {
   return (
@@ -145,6 +146,13 @@ export default function AccessoriesPage() {
           </div>
         </div>
       )}
+
+      {/* ═══ COMBO PACKAGES & GEAR BUNDLES ═══ */}
+      <ComboSection
+        theme="light"
+        sectionTitle="COMBO OFFERS & RIDER BUNDLES"
+        sectionSubtitle="Curated protective gear and accessory bundles grouped together for maximum value."
+      />
 
       {/* ═══ SUGGESTED FOR YOU SECTION ═══ */}
       <SuggestedForYou liveProducts={liveProducts} />

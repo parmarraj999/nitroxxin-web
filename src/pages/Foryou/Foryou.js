@@ -5,6 +5,7 @@ import Marquee from './marquee/marquee'
 import CategoriesSection from './category/category'
 import FeaturedEvents from './featureEvent/featureEvent'
 import CuratedShowcase from './curatedShowcase/curatedShowcase'
+import ComboSection from '../../components/ComboSection/ComboSection'
 import ShopByCategory from './shopByCategory/shopByCategory'
 import ShopByBrands from './shopByBrand/shopByBrand'
 import FAQ from './FAQ/faq'
@@ -22,6 +23,11 @@ function Foryou() {
             <CategoriesSection categories={categories} />
             <FeaturedEvents />
             <CuratedShowcase />
+            <ComboSection
+                theme="dark"
+                sectionTitle="COMBO DEALS & GEAR PACKAGES"
+                sectionSubtitle="Handpicked protective bundles curated with exclusive discounts for true riders."
+            />
             <ShopByCategory />
             <div style={{ margin: '30px', display: 'flex', justifyContent: 'center', padding: '50px 0px' }}>
                 <img src={'./assets/images/for-you-bottom.png'} alt="Nitroxx Promotions" style={{ width: '94%', height: '85vh', borderRadius: '40px' }} />
