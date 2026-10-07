@@ -497,7 +497,8 @@ export default function ShopPage({ filterType }) {
           setSearch(val);
         }}
       />
-
+      {/* ═══ HERO SLIDER ═══ */}
+      
       {/* ═══ SHOP SECTION with exact Accessories Page UI ═══ */}
       <div className="ap-section ap-shop-section">
         <h1 className="ap-shop-title">{search}</h1>
