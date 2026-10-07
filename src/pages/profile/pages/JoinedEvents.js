@@ -214,7 +214,7 @@ export default function JoinedEvents() {
     limit: 50,
   });
 
-  const { data: savedEventsData, loading: loadingSaved } = useCollection(
+  const { data: savedEventsData } = useCollection(
     user?.uid ? `users/${user.uid}/saved-events` : null
   );
 
