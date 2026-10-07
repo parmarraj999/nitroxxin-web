@@ -19,15 +19,6 @@ const eventSortTime = (event) => {
   return date ? date.getTime() : Number.MAX_SAFE_INTEGER;
 };
 
-function SearchIcon({ color = "white" }) {
-  return (
-    <svg viewBox="0 0 22 22" fill="none">
-      <circle cx="9" cy="9" r="7" stroke={color} strokeWidth="2" />
-      <path d="M14.5 14.5L20 20" stroke={color} strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 function ChevronRight() {
   return (
     <svg viewBox="0 0 10 17" fill="none">
@@ -394,76 +385,7 @@ export default function Events() {
     });
   };
 
-  const toggleToday = () => {
-    if (filterDate === "Today" || activeFilter === "Today") {
-      setFilterDate("All");
-      setActiveFilter("All");
-    } else {
-      setFilterDate("Today");
-      setActiveFilter("Today");
-    }
-  };
-
-  const toggleTomorrow = () => {
-    setFilterDate((prev) => (prev === "Tomorrow" ? "All" : "Tomorrow"));
-  };
-
-  const toggleWeekend = () => {
-    setFilterDate((prev) => (prev === "Weekend" ? "All" : "Weekend"));
-  };
-
-  const toggleFree = () => {
-    if (filterPrice === "Free" || activeFilter === "Free") {
-      setFilterPrice("All");
-      setActiveFilter("All");
-    } else {
-      setFilterPrice("Free");
-      setActiveFilter("Free");
-    }
-  };
-
-  const togglePaid = () => {
-    if (filterPrice === "Paid" || activeFilter === "Paid") {
-      setFilterPrice("All");
-      setActiveFilter("All");
-    } else {
-      setFilterPrice("Paid");
-      setActiveFilter("Paid");
-    }
-  };
-
   const activeCategory = searchParams.get("category") || "All";
-
-  const toggleCategory = (catId) => {
-    const newParams = new URLSearchParams(searchParams);
-    if (activeCategory === catId) {
-      newParams.delete("category");
-    } else {
-      newParams.set("category", catId);
-    }
-    setSearchParams(newParams);
-  };
-
-  const clearAllFilters = () => {
-    setActiveFilter("All");
-    setFilterDate("All");
-    setFilterPrice("All");
-    setSearchParams({});
-    setQuery("");
-  };
-
-  const isTodayActive = filterDate === "Today" || activeFilter === "Today";
-  const isTomorrowActive = filterDate === "Tomorrow";
-  const isWeekendActive = filterDate === "Weekend";
-  const isFreeActive = filterPrice === "Free" || activeFilter === "Free";
-  const isPaidActive = filterPrice === "Paid" || activeFilter === "Paid";
-
-  const activeFiltersCount =
-    (filterDate !== "All" ? 1 : 0) +
-    (filterPrice !== "All" ? 1 : 0) +
-    (activeCategory !== "All" ? 1 : 0) +
-    (activeFilter !== "All" && activeFilter !== "Today" && activeFilter !== "Free" && activeFilter !== "Paid" ? 1 : 0) +
-    (selectedCity ? 1 : 0);
 
   const liveEvents = useMemo(
     () =>

@@ -5,7 +5,7 @@ import { COLLECTIONS } from "../../../../services/firebase";
 
 export function AboutVendor({ product }) {
   const vendorId = product?.vendorId || "";
-  const { data: vendorDoc, loading } = useDocument(COLLECTIONS.vendors, vendorId);
+  const { data: vendorDoc } = useDocument(COLLECTIONS.vendors, vendorId);
 
   // Derive vendor attributes with graceful fallbacks
   const businessName =

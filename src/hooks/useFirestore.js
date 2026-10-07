@@ -17,7 +17,7 @@ export const useCollection = (collectionName, options = {}) => {
 
     try {
       const parsed = JSON.parse(optionsKey || "{}");
-      let ref = (parsed.isGroup || options.isGroup)
+      let ref = parsed.isGroup
         ? db().collectionGroup(collectionName)
         : db().collection(collectionName);
 
