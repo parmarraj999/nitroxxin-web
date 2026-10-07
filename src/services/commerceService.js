@@ -1,4 +1,4 @@
-import { COLLECTIONS, db, increment, serverTimestamp } from "./firebase";
+import { COLLECTIONS, auth, db, increment, serverTimestamp } from "./firebase";
 import { normalizeEvent, normalizeProduct } from "./normalizers";
 
 const DEFAULT_VENDOR_ID = "nitroxx-default-vendor";
