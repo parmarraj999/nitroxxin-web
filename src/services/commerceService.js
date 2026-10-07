@@ -24,35 +24,89 @@ const compact = (value) => {
 };
 
 export const addToCart = async ({ userId, product, quantity = 1, options = {} }) => {
-  if (!userId) throw new Error("Please log in to add items to cart.");
+  const uid = userId || auth().currentUser?.uid;
+  if (!uid) throw new Error("Please log in to add items to cart.");
   const item = normalizeProduct(product);
-  const id = `${userId}_${item.id}_${options.size || "default"}`;
+  const id = `${item.id}_${options.size || options.color || "default"}`;
 
-  await db().collection(COLLECTIONS.cart).doc(id).set(
-    {
-      userId,
-      productId: item.id,
-      quantity: increment(quantity),
-      options,
-      productSnapshot: item,
-      updatedAt: serverTimestamp(),
-      createdAt: serverTimestamp(),
-    },
-    { merge: true }
-  );
+  const cartPayload = compact({
+    id,
+    userId: uid,
+    productId: item.id,
+    quantity: increment(quantity),
+    options,
+    productSnapshot: item,
+    product: item,
+    updatedAt: serverTimestamp(),
+    createdAt: serverTimestamp(),
+  });
+
+  // Store in user/userId/cart (and users/userId/cart)
+  await db()
+    .collection("user")
+    .doc(uid)
+    .collection("cart")
+    .doc(id)
+    .set(cartPayload, { merge: true });
+
+  await db()
+    .collection("users")
+    .doc(uid)
+    .collection("cart")
+    .doc(id)
+    .set(cartPayload, { merge: true });
 };
 
-export const updateCartQuantity = (cartItemId, quantity) =>
-  db().collection(COLLECTIONS.cart).doc(cartItemId).set(
-    {
-      quantity,
-      updatedAt: serverTimestamp(),
-    },
-    { merge: true }
-  );
+export const updateCartQuantity = async (cartItemId, quantity, userId) => {
+  const uid = userId || auth().currentUser?.uid;
+  if (!uid || !cartItemId) return;
 
-export const removeCartItem = (cartItemId) =>
-  db().collection(COLLECTIONS.cart).doc(cartItemId).delete();
+  const updateData = {
+    quantity,
+    updatedAt: serverTimestamp(),
+  };
+
+  await db()
+    .collection("user")
+    .doc(uid)
+    .collection("cart")
+    .doc(cartItemId)
+    .set(updateData, { merge: true });
+
+  await db()
+    .collection("users")
+    .doc(uid)
+    .collection("cart")
+    .doc(cartItemId)
+    .set(updateData, { merge: true });
+
+  try {
+    await db().collection(COLLECTIONS.cart).doc(cartItemId).delete();
+  } catch (e) {}
+};
+
+export const removeCartItem = async (cartItemId, userId) => {
+  const uid = userId || auth().currentUser?.uid;
+  if (!uid || !cartItemId) return;
+
+  await db()
+    .collection("user")
+    .doc(uid)
+    .collection("cart")
+    .doc(cartItemId)
+    .delete();
+
+  await db()
+    .collection("users")
+    .doc(uid)
+    .collection("cart")
+    .doc(cartItemId)
+    .delete();
+
+  try {
+    await db().collection(COLLECTIONS.cart).doc(cartItemId).delete();
+  } catch (e) {}
+};
 
 export const placeOrder = async ({ user, profile, cartItems, shipping }) => {
   if (!user) throw new Error("Please log in to place an order.");
@@ -175,31 +229,82 @@ export const placeOrder = async ({ user, profile, cartItems, shipping }) => {
   }
 
   const batch = db().batch();
-  cartItems.forEach((item) => batch.delete(db().collection(COLLECTIONS.cart).doc(item.id)));
+  cartItems.forEach((item) => {
+    if (item.id) {
+      batch.delete(db().collection("user").doc(user.uid).collection("cart").doc(item.id));
+      batch.delete(db().collection("users").doc(user.uid).collection("cart").doc(item.id));
+      try {
+        batch.delete(db().collection(COLLECTIONS.cart).doc(item.id));
+      } catch (e) {}
+    }
+  });
   await batch.commit();
 
   return createdOrders[0];
 };
 
 export const saveWishlistItem = async ({ userId, product }) => {
-  if (!userId) throw new Error("Please log in to save items.");
+  const uid = userId || auth().currentUser?.uid;
+  if (!uid) throw new Error("Please log in to save items.");
   const item = normalizeProduct(product);
-  await db().collection(COLLECTIONS.wishlist).doc(`${userId}_${item.id}`).set(
-    {
-      userId,
-      type: "product",
-      productId: item.id,
-      productSnapshot: item,
-      createdAt: serverTimestamp(),
-    },
-    { merge: true }
-  );
+  const docId = String(item.id);
+
+  const wishlistData = compact({
+    id: docId,
+    userId: uid,
+    type: "product",
+    productId: item.id,
+    productSnapshot: item,
+    product: item,
+    updatedAt: serverTimestamp(),
+    createdAt: serverTimestamp(),
+  });
+
+  // Store in user/userId/wishlist (and users/userId/wishlist)
+  await db()
+    .collection("user")
+    .doc(uid)
+    .collection("wishlist")
+    .doc(docId)
+    .set(wishlistData, { merge: true });
+
+  await db()
+    .collection("users")
+    .doc(uid)
+    .collection("wishlist")
+    .doc(docId)
+    .set(wishlistData, { merge: true });
+};
+
+export const removeWishlistItem = async ({ userId, productId, docId }) => {
+  const uid = userId || auth().currentUser?.uid;
+  if (!uid) return;
+  const targetId = String(docId || productId || "");
+  if (!targetId) return;
+
+  await db()
+    .collection("user")
+    .doc(uid)
+    .collection("wishlist")
+    .doc(targetId)
+    .delete();
+
+  await db()
+    .collection("users")
+    .doc(uid)
+    .collection("wishlist")
+    .doc(targetId)
+    .delete();
+
+  try {
+    await db().collection(COLLECTIONS.wishlist).doc(targetId).delete();
+    await db().collection(COLLECTIONS.wishlist).doc(`${uid}_${targetId}`).delete();
+  } catch (e) {}
 };
 
 export const saveFavoriteEvent = async ({ userId, event }) => {
   if (!userId) throw new Error("Please log in to save events.");
   const item = normalizeEvent(event);
-  console.log(event)
 
   const eventId = item.id || event.id;
   const title = item.title || item.name || "";
@@ -234,7 +339,7 @@ export const saveFavoriteEvent = async ({ userId, event }) => {
     updatedAt: serverTimestamp(),
   });
 
-  // Save in users > docID > bookmark and saved-events collections
+  // Save in users > docID > bookmark and saved-events and wishlist
   await db()
     .collection(COLLECTIONS.users || "users")
     .doc(userId)
@@ -256,27 +361,41 @@ export const saveFavoriteEvent = async ({ userId, event }) => {
     .doc(eventId)
     .set(bookmarkData, { merge: true });
 
-  // Also maintain in wishlist collection for backwards compatibility
-  try {
-    await db().collection(COLLECTIONS.wishlist).doc(`${userId}_event_${eventId}`).set(
-      {
-        userId,
-        type: "event",
-        eventId,
-        eventSnapshot: bookmarkData,
-        createdAt: serverTimestamp(),
-      },
-      { merge: true }
-    );
-  } catch (err) {
-    console.warn("Sync to wishlist collection skipped:", err);
-  }
+  await db()
+    .collection("user")
+    .doc(userId)
+    .collection("wishlist")
+    .doc(eventId)
+    .set({
+      id: eventId,
+      userId,
+      type: "event",
+      eventId,
+      eventSnapshot: bookmarkData,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+
+  await db()
+    .collection("users")
+    .doc(userId)
+    .collection("wishlist")
+    .doc(eventId)
+    .set({
+      id: eventId,
+      userId,
+      type: "event",
+      eventId,
+      eventSnapshot: bookmarkData,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
 };
 
 export const removeFavoriteEvent = async ({ userId, eventId }) => {
   if (!userId) throw new Error("Please log in to remove events.");
 
-  // Remove from users > docID > bookmark and saved-events collections
+  // Remove from users > docID > bookmark, saved-events, and wishlist
   await db()
     .collection(COLLECTIONS.users || "users")
     .doc(userId)
@@ -295,6 +414,20 @@ export const removeFavoriteEvent = async ({ userId, eventId }) => {
     .collection("user")
     .doc(userId)
     .collection("saved-events")
+    .doc(eventId)
+    .delete();
+
+  await db()
+    .collection("user")
+    .doc(userId)
+    .collection("wishlist")
+    .doc(eventId)
+    .delete();
+
+  await db()
+    .collection("users")
+    .doc(userId)
+    .collection("wishlist")
     .doc(eventId)
     .delete();
 
@@ -595,9 +728,13 @@ export const submitReview = async ({ productId, productName, vendorId, user, pro
     console.warn("Could not verify purchase history:", err);
   }
 
-  const reviewRef = db().collection(COLLECTIONS.reviews).doc();
+  // Create review doc under user/userid/reviews (and users/userid/reviews)
+  const userReviewDoc = db().collection("user").doc(user.uid).collection("reviews").doc();
+  const reviewId = userReviewDoc.id;
+
   const payload = compact({
-    reviewId: reviewRef.id,
+    id: reviewId,
+    reviewId,
     productId,
     productName: productName || "Product",
     vendorId: vendorId || DEFAULT_VENDOR_ID,
@@ -616,17 +753,52 @@ export const submitReview = async ({ productId, productName, vendorId, user, pro
     updatedAt: serverTimestamp(),
   });
 
-  await reviewRef.set(payload);
+  // Store in user/userId/reviews, users/userId/reviews, and user/userId/review
+  await userReviewDoc.set(payload);
 
-  // Recalculate average rating & review count for the product
+  await db()
+    .collection("users")
+    .doc(user.uid)
+    .collection("reviews")
+    .doc(reviewId)
+    .set(payload, { merge: true });
+
+  await db()
+    .collection("user")
+    .doc(user.uid)
+    .collection("review")
+    .doc(reviewId)
+    .set(payload, { merge: true });
+
+  // Recalculate average rating & review count for the product across collectionGroup("reviews")
   try {
-    const reviewsSnap = await db()
-      .collection(COLLECTIONS.reviews)
-      .where("productId", "==", productId)
-      .get();
+    let allReviews = [];
+    try {
+      const reviewsSnap = await db()
+        .collectionGroup("reviews")
+        .where("productId", "==", productId)
+        .get();
 
-    if (!reviewsSnap.empty) {
-      const allReviews = reviewsSnap.docs.map((d) => d.data());
+      if (!reviewsSnap.empty) {
+        const revMap = new Map();
+        reviewsSnap.docs.forEach((d) => {
+          const data = d.data();
+          const rId = data.reviewId || data.id || d.id;
+          if (rId && !revMap.has(rId)) {
+            revMap.set(rId, data);
+          }
+        });
+        allReviews = Array.from(revMap.values());
+      }
+    } catch (gErr) {
+      console.warn("collectionGroup reviews query error:", gErr);
+    }
+
+    if (!allReviews.some((r) => (r.reviewId || r.id) === reviewId)) {
+      allReviews.push(payload);
+    }
+
+    if (allReviews.length > 0) {
       const totalCount = allReviews.length;
       const sumRating = allReviews.reduce((acc, r) => acc + Number(r.rating || 0), 0);
       const avgRating = Math.round((sumRating / totalCount) * 10) / 10;
@@ -645,17 +817,31 @@ export const submitReview = async ({ productId, productName, vendorId, user, pro
     console.warn("Could not update product average rating:", recalcErr);
   }
 
-  return { id: reviewRef.id, ...payload };
+  return { id: reviewId, ...payload };
 };
 
-export const markReviewHelpful = async (reviewId) => {
+export const markReviewHelpful = async (reviewId, userId) => {
   if (!reviewId) return;
-  await db().collection(COLLECTIONS.reviews).doc(reviewId).set(
-    {
-      helpfulCount: increment(1),
-      updatedAt: serverTimestamp(),
-    },
-    { merge: true }
-  );
+  const uid = userId || auth().currentUser?.uid;
+
+  if (uid) {
+    await db().collection("user").doc(uid).collection("reviews").doc(reviewId).set(
+      { helpfulCount: increment(1), updatedAt: serverTimestamp() },
+      { merge: true }
+    );
+    await db().collection("users").doc(uid).collection("reviews").doc(reviewId).set(
+      { helpfulCount: increment(1), updatedAt: serverTimestamp() },
+      { merge: true }
+    );
+  } else {
+    try {
+      const snap = await db().collectionGroup("reviews").where("reviewId", "==", reviewId).get();
+      snap.forEach((doc) => {
+        doc.ref.set({ helpfulCount: increment(1), updatedAt: serverTimestamp() }, { merge: true });
+      });
+    } catch (e) {
+      console.warn("Could not mark review helpful:", e);
+    }
+  }
 };
 

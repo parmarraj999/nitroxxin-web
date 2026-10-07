@@ -27,7 +27,7 @@ const FeaturedEvents = () => {
   return (
     <section className="featured-events">
       <h2 className="section-title events-title">FEATURED EVENTS</h2>
-      <div className="events-grid ep-events-grid">
+      <div className="events-grid featured-events-grid">
         {events.map((event) => (
           <EventCard key={event.id} event={event} />
         ))}

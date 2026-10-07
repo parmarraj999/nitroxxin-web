@@ -1733,5 +1733,52 @@ BAR (heading + search side by side) ===== */
   .ep-event-card__image img {
     max-height: 200px;
   }
+  .ep-event-card__image{
+    height: 200px;
+  }
 }
+
+@media (max-width: 900px) {
+  .ep-hero {
+    padding-top: 96px;
+    gap: 22px;
+  }
+  .ep-hero__flex {
+    padding-top: 0;
+    padding-bottom: 24px;
+  }
+  .ep-featured-wrap {
+    padding-top: 24px;
+  }
+  .ep-featured__viewport {
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .ep-featured__card {
+    scroll-snap-align: start;
+  }
+  .ep-filter-btn {
+    padding: 10px 16px;
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 600px) {
+  .ep-search__input-wrap {
+    height: 48px;
+  }
+  .ep-search__btn {
+    width: 48px;
+    height: 48px;
+  }
+  .ep-events-grid {
+    gap: 20px;
+  }
+  .ep-event-card__image {
+    height: min(118vw, 200px);
+    max-width: 100%;
+  }
+}
+
 

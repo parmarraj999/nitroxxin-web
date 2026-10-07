@@ -110,13 +110,25 @@
 
 }
 
+@media (max-width: 900px) {
+    .navbar {
+        height: 64px;
+    }
+    .navbar-logo {
+        font-size: 1.25rem;
+    }
+    .navbar-signup {
+        display: none;
+    }
+}
+
 @media (max-width: 640px) {
     .navbar-container {
         padding: 0 16px;
     }
 
     .navbar-search {
-        display: none;
+        /* display: none; */
     }
 
     .navbar-action-btn {
@@ -129,3 +141,24 @@
         font-size: 14px;
     }
 }
+
+@media (max-width: 600px) {
+    .navbar-action-btn {
+        gap: 6px;
+    }
+
+    .navbar-login {
+        padding: 8px 12px;
+    }
+}
+
+@media (max-width: 380px) {
+    .navbar-logo {
+        font-size: 1.05rem;
+    }
+
+    .navbar-login {
+        font-size: 12px;
+    }
+}
+

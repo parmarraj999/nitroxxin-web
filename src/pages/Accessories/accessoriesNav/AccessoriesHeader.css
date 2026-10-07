@@ -337,3 +337,38 @@
     display: none;
   }
 }
+
+@media (max-width: 900px) {
+  .ap-header {
+    height: 64px;
+    gap: 10px;
+  }
+  .ap-header__divider,
+  .ap-header__search {
+    display: none;
+  }
+  .ap-header__right {
+    margin-left: auto;
+  }
+  .ap-header__icon-btn {
+    width: 42px;
+    height: 42px;
+  }
+}
+
+@media (max-width: 600px) {
+  .ap-header__logo {
+    font-size: 22px;
+  }
+  .ap-header__icon-btn:first-of-type {
+    display: none;
+  }
+}
+
+@media (max-width: 380px) {
+  .ap-header__icon-btn {
+    width: 38px;
+    height: 38px;
+  }
+}
+

@@ -52,7 +52,7 @@
 }
 
 .cs-filter-wrapper h1{
-  padding-bottom: 2rem;
+  padding-bottom: 1rem;
   padding-left: 3rem;
   font-size: 42px;
 }
@@ -60,7 +60,7 @@
 .cs-filter-bar {
   display: flex;
   align-items: center;
-  gap: clamp(16px, 2vw, 26px);
+  gap: clamp(16px, 2vw, 15px);
   overflow-x: auto;
   white-space: nowrap;
   padding: 4px clamp(20px, 3.5vw, 48px) clamp(6px, 1.2vh, 12px);
@@ -80,16 +80,18 @@
   outline: none;
   color: #7b8293;
   font-family: inherit;
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.8px;
   text-transform: uppercase;
-  padding: 3px 2px clamp(6px, 1vh, 9px);
+ padding: 10px 20px;
   cursor: pointer;
   position: relative;
   white-space: nowrap;
   transition: color 0.2s ease, transform 0.15s ease;
   user-select: none;
+  border: 1px solid grey;
+  border-radius: 20px;
 }
 
 .cs-filter-tab:hover {
@@ -98,20 +100,9 @@
 
 .cs-filter-tab.active {
   color: #ffffff;
+  border: 1px solid white;
 }
 
-/* White underline indicator matching reference design */
-.cs-filter-tab.active::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 2.5px;
-  background-color: #ffffff;
-  border-radius: 2px;
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
-}
 
 /* ==========================================================
    CAROUSEL ROW & TRACK
@@ -126,7 +117,7 @@
 .cs-carousel-track {
   display: flex;
   align-items: stretch;
-  gap: clamp(14px, 1.5vw, 20px);
+  gap: clamp(14px, 1.5vw, 30px);
   overflow-x: auto;
   padding: 4px clamp(20px, 3.5vw, 48px) clamp(6px, 1.2vh, 14px);
   scrollbar-width: none;
@@ -144,16 +135,16 @@
    ========================================================== */
 .cs-card {
   flex: 0 0 280px;
-  max-width: 280px;
+  max-width: 320px;
   display: flex;
   flex-direction: column;
   text-decoration: none;
   color: inherit;
   box-sizing: border-box;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  /* background: rgba(255, 255, 255, 0.03); */
+  /* border: 1px solid rgba(255, 255, 255, 0.08); */
   border-radius: 20px;
-  padding: 12px;
+  /* padding: 12px; */
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
   user-select: none;
@@ -170,7 +161,7 @@
 .cs-card__image-box {
   position: relative;
   width: 100%;
-  height: 240px;
+  height: 340px;
   background: radial-gradient(circle at center, #1c202c 0%, #10131a 100%);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 14px;
@@ -188,9 +179,9 @@
   height: 100%;
   max-width: 100%;
   max-height: 100%;
-  object-fit: contain;
-  object-position: center;
-  padding: 12px;
+  /* object-fit: contain; */
+  /* object-position: center; */
+  /* padding: 12px; */
   box-sizing: border-box;
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
@@ -433,6 +424,9 @@
 @media (max-width: 600px) {
   .curated-showcase-section {
     min-height: 520px;
+    height: fit-content;
+    padding-top: 5rem;
+    padding-bottom: 6rem;
   }
 
   .cs-filter-bar {

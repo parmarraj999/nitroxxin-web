@@ -272,11 +272,14 @@ export const AddOrderToFirestore = async ({
       basicTransactionData
     );
 
-    // 6. Clear cart items for this user
+    // 6. Clear cart items for this user from user/userId/cart
     cartItems.forEach((item) => {
       if (item.id) {
-        const cartItemRef = database.collection(COLLECTIONS.cart || "cart").doc(item.id);
-        batch.delete(cartItemRef);
+        batch.delete(database.collection("user").doc(userId).collection("cart").doc(item.id));
+        batch.delete(database.collection("users").doc(userId).collection("cart").doc(item.id));
+        try {
+          batch.delete(database.collection(COLLECTIONS.cart || "cart").doc(item.id));
+        } catch (e) {}
       }
     });
 

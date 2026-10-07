@@ -11,8 +11,20 @@ export function ReviewSection({ product }) {
   const { user, profile } = useAuth();
   const { openLogin } = useAuthModal();
 
-  // Fetch live reviews for this product
-  const { data: rawReviews, loading: reviewsLoading } = useCollection(
+  // Fetch live reviews across user subcollections (user/{userId}/reviews)
+  const { data: groupReviews = [], loading: groupReviewsLoading } = useCollection(
+    "reviews",
+    useMemo(
+      () => ({
+        isGroup: true,
+        where: productId ? [["productId", "==", productId]] : [["productId", "==", "NO_PRODUCT"]],
+      }),
+      [productId]
+    )
+  );
+
+  // Fetch legacy root reviews for backwards compatibility
+  const { data: legacyReviews = [], loading: legacyReviewsLoading } = useCollection(
     COLLECTIONS.reviews,
     useMemo(
       () => ({
@@ -44,8 +56,17 @@ export function ReviewSection({ product }) {
   const [lightboxImg, setLightboxImg] = useState(null);
 
   const allReviews = useMemo(() => {
-    return Array.isArray(rawReviews) ? rawReviews : [];
-  }, [rawReviews]);
+    const map = new Map();
+    [...(legacyReviews || []), ...(groupReviews || [])].forEach((r) => {
+      const key = r.id || r.reviewId;
+      if (key && !map.has(key)) {
+        map.set(key, r);
+      }
+    });
+    return Array.from(map.values());
+  }, [groupReviews, legacyReviews]);
+
+  const reviewsLoading = groupReviewsLoading && legacyReviewsLoading && !allReviews.length;
 
   // Compute breakdown metrics
   const totalCount = allReviews.length;
@@ -157,7 +178,7 @@ export function ReviewSection({ product }) {
     if (helpfulClicked[reviewId]) return;
     setHelpfulClicked((prev) => ({ ...prev, [reviewId]: true }));
     try {
-      await markReviewHelpful(reviewId);
+      await markReviewHelpful(reviewId, user?.uid);
     } catch (err) {
       console.warn("Could not mark review as helpful:", err);
     }

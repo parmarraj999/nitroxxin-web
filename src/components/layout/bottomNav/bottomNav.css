@@ -89,7 +89,36 @@
   /* Bright green pin */
 }
 
-@media screen and (max-width:655px) {
+@media (max-width: 900px) {
+  .bottom-nav-wrapper {
+    left: 10px;
+    right: 10px;
+    bottom: max(8px, env(safe-area-inset-bottom));
+    transform: none;
+    gap: 8px;
+    justify-content: center;
+  }
+  .bottom-nav-tabs {
+    flex: 1;
+    justify-content: space-around;
+    min-width: 0;
+  }
+  .nav-tab {
+    flex: 1;
+    justify-content: center;
+    min-width: 0;
+    padding: 10px 8px;
+    gap: 6px;
+    font-size: 12px;
+  }
+  .nav-tab svg {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 auto;
+  }
+}
+
+@media screen and (max-width: 655px) {
   .bottom-nav-tabs {
     /* max-width: 80%; */
     font-size: 12px;
@@ -100,5 +129,22 @@
     font-size: 12px;
     display: none;
   }
+}
 
+@media (max-width: 600px) {
+  .nav-tab {
+    flex-direction: column;
+    gap: 1px;
+    padding: 6px 3px;
+    font-size: 10px;
+  }
+  .bottom-nav-tabs {
+    border-radius: 40px;
+  }
+}
+
+@media (max-width: 380px) {
+  .nav-tab span {
+    font-size: 9px;
+  }
 }

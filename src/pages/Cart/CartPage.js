@@ -16,10 +16,37 @@ export default function CartPage() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const { openLogin } = useAuthModal();
-  const { data: cartItems = [], loading } = useCollection(COLLECTIONS.cart, {
-    where: user?.uid ? [["userId", "==", user.uid]] : [["userId", "==", "NO_USER"]],
-    limit: 50,
-  });
+  // Fetch cart items from user/userId/cart (singular) and users/userId/cart (plural)
+  const { data: userCartItems = [], loading: userCartLoading } = useCollection(
+    user?.uid ? `user/${user.uid}/cart` : null,
+    { limit: 50 }
+  );
+
+  const { data: usersPluralCartItems = [] } = useCollection(
+    user?.uid ? `users/${user.uid}/cart` : null,
+    { limit: 50 }
+  );
+
+  // Fetch legacy cart items for backwards compatibility
+  const { data: legacyCartItems = [] } = useCollection(
+    COLLECTIONS.cart,
+    {
+      where: user?.uid ? [["userId", "==", user.uid]] : [["userId", "==", "NO_USER"]],
+      limit: 50,
+    }
+  );
+
+  const cartItems = useMemo(() => {
+    const map = new Map();
+    [...legacyCartItems, ...usersPluralCartItems, ...userCartItems].forEach((item) => {
+      if (item && item.id) {
+        map.set(item.id, item);
+      }
+    });
+    return Array.from(map.values());
+  }, [userCartItems, usersPluralCartItems, legacyCartItems]);
+
+  const loading = userCartLoading && !cartItems.length;
 
   // Fetch saved delivery addresses from users/{userId}/address
   const { data: rawSavedAddresses = [] } = useCollection(
@@ -232,10 +259,10 @@ export default function CartPage() {
                     <span>Variant: {item.options?.size || item.options?.color || "Standard"}</span>
                     <strong>{product.offerPriceText || product.priceText || money(product.offerPrice || product.price)}</strong>
                     <div className="cart-item__actions">
-                      <button onClick={() => updateCartQuantity(item.id, Math.max(1, quantity - 1))}>-</button>
+                      <button onClick={() => updateCartQuantity(item.id, Math.max(1, quantity - 1), user?.uid)}>-</button>
                       <span>{quantity}</span>
-                      <button onClick={() => updateCartQuantity(item.id, quantity + 1)}>+</button>
-                      <button onClick={() => removeCartItem(item.id)}>Remove</button>
+                      <button onClick={() => updateCartQuantity(item.id, quantity + 1, user?.uid)}>+</button>
+                      <button onClick={() => removeCartItem(item.id, user?.uid)}>Remove</button>
                     </div>
                   </div>
                 </article>

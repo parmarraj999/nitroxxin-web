@@ -8,11 +8,18 @@ export const useCollection = (collectionName, options = {}) => {
   const optionsKey = JSON.stringify(options);
 
   const subscribe = useCallback(() => {
+    if (!collectionName) {
+      setState({ data: [], loading: false, error: null });
+      return undefined;
+    }
+
     setState((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
-      let ref = db().collection(collectionName);
       const parsed = JSON.parse(optionsKey || "{}");
+      let ref = (parsed.isGroup || options.isGroup)
+        ? db().collectionGroup(collectionName)
+        : db().collection(collectionName);
 
       (parsed.where || []).forEach(([field, operator, value]) => {
         if (value !== undefined && value !== null && value !== "") {

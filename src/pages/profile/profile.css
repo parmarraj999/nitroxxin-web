@@ -4410,22 +4410,25 @@
 }
 
 /* ==========================================================================
-   5. SAVED EVENTS (SCREENSHOT 5) - DESKTOP GRID
+   5. SAVED EVENTS - TIMELINE DATE GROUPED LAYOUT WITH TABS & HORIZONTAL CARDS
    ========================================================================== */
 
 .nx-saved-events-page-wrap {
   width: 100%;
-  max-width: 1240px;
+  max-width: 1180px;
   margin: 0 auto;
-  padding: 8px 0 60px;
+  padding: 10px 0 70px;
   box-sizing: border-box;
 }
 
+/* ── Top Header Row ── */
 .nx-saved-events-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
 .nx-saved-events-header-left {
@@ -4446,6 +4449,7 @@
   justify-content: center;
   text-decoration: none;
   transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
 .nx-saved-events-back-btn:hover {
@@ -4454,28 +4458,29 @@
 }
 
 .nx-saved-events-title {
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 700;
   color: #ffffff;
   margin: 0;
-  letter-spacing: -0.3px;
+  letter-spacing: -0.4px;
 }
 
+/* Pill Search Bar */
 .nx-saved-events-search-bar {
   display: flex;
   align-items: center;
   gap: 12px;
   background: #111418;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
-  padding: 13px 18px;
-  margin-bottom: 28px;
-  max-width: 600px;
-  transition: border-color 0.2s ease;
+  border-radius: 9999px;
+  padding: 11px 18px;
+  width: 100%;
+  max-width: 460px;
+  transition: border-color 0.2s ease, background 0.2s ease;
 }
 
 .nx-saved-events-search-bar:focus-within {
-  border-color: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.28);
   background: #14181e;
 }
 
@@ -4485,7 +4490,7 @@
   border: none;
   outline: none;
   color: #ffffff;
-  font-size: 15px;
+  font-size: 14.5px;
   font-family: inherit;
 }
 
@@ -4493,132 +4498,454 @@
   color: #6b7280;
 }
 
-/* 2 to 3 Column Desktop Grid */
-.nx-saved-events-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-  gap: 28px;
+.nx-saved-search-clear-btn {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
+.nx-saved-search-clear-btn:hover {
+  color: #ffffff;
+}
+
+/* ── Preview Mode Banner ── */
+.nx-saved-preview-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(90deg, rgba(37, 99, 235, 0.12), rgba(80, 215, 53, 0.08));
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 12px;
+  padding: 10px 18px;
+  margin-bottom: 22px;
+  font-size: 13.5px;
+  color: #93c5fd;
+  gap: 12px;
+}
+
+.nx-saved-preview-link {
+  color: #ffffff;
+  font-weight: 600;
+  text-decoration: underline;
+  margin-left: 8px;
+}
+
+/* ── Tabs Row (Upcoming / Past) matching reference screenshot ── */
+.nx-saved-tabs-row {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 34px;
+  gap: 8px;
+  position: relative;
+}
+
+.nx-saved-tab-btn {
+  background: none;
+  border: none;
+  padding: 12px 18px 14px;
+  font-size: 17px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  position: relative;
+  transition: color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: inherit;
+}
+
+.nx-saved-tab-btn:hover {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.nx-saved-tab-btn.is-active {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+/* Solid bottom underline indicator matching reference screenshot */
+.nx-saved-tab-btn.is-active::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #ffffff;
+  border-radius: 3px 3px 0 0;
+}
+
+.nx-saved-tab-badge {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  transition: all 0.2s ease;
+}
+
+.nx-saved-tab-btn.is-active .nx-saved-tab-badge {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+/* ── Timeline Date Groups List ── */
+.nx-saved-timeline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+/* ── Single Date Group Row ── */
+.nx-saved-date-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 32px;
+}
+
+/* Left Date Column matching reference screenshot */
+.nx-saved-date-col {
+  width: 140px;
+  min-width: 130px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 24px;
+  padding-top: 6px;
+}
+
+.nx-saved-date-main {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.nx-saved-date-day {
+  font-size: 38px;
+  font-weight: 800;
+  line-height: 1;
+  color: #ffffff;
+  letter-spacing: -0.03em;
+}
+
+.nx-saved-date-month {
+  font-size: 22px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.nx-saved-date-sub {
+  margin-top: 6px;
+  font-size: 14.5px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+/* Green "Today," accent matching reference screenshot */
+.nx-saved-date-today {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.nx-saved-date-tomorrow {
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+.nx-saved-date-weekday {
+  color: #9ca3af;
+}
+
+/* Right Cards Column */
+.nx-saved-cards-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+/* ── Big Horizontal Event Card matching reference screenshot ── */
 .nx-saved-event-card {
   background: #111418;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
-  overflow: hidden;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  padding: 24px 26px;
   display: flex;
-  flex-direction: column;
-  transition: border-color 0.2s ease, transform 0.2s ease;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 26px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
 }
 
 .nx-saved-event-card:hover {
-  border-color: rgba(255, 255, 255, 0.18);
   transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.55);
 }
 
-.nx-saved-event-banner-wrap {
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  position: relative;
-  overflow: hidden;
-  background: #1a1e24;
-}
-
-.nx-saved-event-banner-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.35s ease;
-}
-
-.nx-saved-event-card:hover .nx-saved-event-banner-img {
-  transform: scale(1.04);
-}
-
-/* Price Tag Pill overlaid bottom left */
-.nx-saved-event-price-tag {
-  position: absolute;
-  bottom: 12px;
-  left: 12px;
-  background: rgba(0, 0, 0, 0.78);
-  backdrop-filter: blur(8px);
-  color: #f59e0b;
-  border: 1px solid rgba(245, 158, 11, 0.4);
-  font-size: 13px;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-}
-
-/* White Bookmark Ribbon Badge overlaid top right */
-.nx-saved-event-bookmark-badge {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: transform 0.18s ease;
-  padding: 0;
-}
-
-.nx-saved-event-bookmark-badge:hover {
-  transform: scale(1.12);
-  background: rgba(0, 0, 0, 0.8);
-}
-
-.nx-saved-event-body {
-  padding: 18px 18px 22px;
+/* Left Content Area */
+.nx-saved-card-left {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  flex: 1;
   justify-content: space-between;
+  min-width: 0;
 }
 
-.nx-saved-event-title {
-  font-size: 17px;
+.nx-saved-card-top {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Pill Badges (● NOW / Category / Status) matching reference screenshot */
+.nx-badge-now {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(239, 68, 68, 0.16);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  font-size: 11.5px;
   font-weight: 700;
-  margin: 0 0 12px;
-  line-height: 1.35;
+  letter-spacing: 0.6px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  width: fit-content;
+  margin-bottom: 10px;
+  text-transform: uppercase;
 }
 
-.nx-saved-event-title a {
+.nx-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 6px #ef4444;
+  animation: nx-pulse-dot 1.5s infinite;
+}
+
+@keyframes nx-pulse-dot {
+  0% { transform: scale(0.9); opacity: 0.8; }
+  50% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(0.9); opacity: 0.8; }
+}
+
+.nx-badge-category {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(59, 130, 246, 0.12);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  width: fit-content;
+  margin-bottom: 10px;
+}
+
+.nx-badge-completed {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(156, 163, 175, 0.12);
+  color: #9ca3af;
+  border: 1px solid rgba(156, 163, 175, 0.25);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  width: fit-content;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+/* Event Title */
+.nx-saved-card-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 12px 0;
+  line-height: 1.35;
+  letter-spacing: -0.2px;
+}
+
+.nx-saved-card-title a {
   color: #ffffff;
   text-decoration: none;
   transition: color 0.2s ease;
 }
 
-.nx-saved-event-title a:hover {
+.nx-saved-card-title a:hover {
   color: #60a5fa;
 }
 
-.nx-saved-event-info-row {
+/* Meta Details List (Time, Location, Host) matching reference screenshot */
+.nx-saved-meta-list {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
-  font-size: 13.5px;
-  color: #9ca3af;
-  margin-bottom: 8px;
+  margin-bottom: 18px;
 }
 
-.nx-saved-event-actions-row {
+.nx-saved-meta-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-top: 18px;
+  gap: 10px;
+  font-size: 14px;
+  color: #9ca3af;
 }
 
-/* Blue Book Ticket CTA matching Screenshot 5 */
-.nx-saved-event-book-btn {
-  flex: 1;
+.nx-saved-meta-item svg {
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.nx-saved-host-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #2563eb;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.nx-saved-host-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.nx-saved-host-name {
+  color: #d1d5db;
+  font-weight: 500;
+}
+
+/* ── Bottom Row with Relatable UI & Join/Action Button ── */
+.nx-saved-card-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  flex-wrap: wrap;
+}
+
+/* Relatable UI in place of attendee avatars */
+.nx-saved-relatable-ui {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.nx-relatable-ticket-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #e5e7eb;
+}
+
+.nx-relatable-ticket-tag svg {
+  color: #f59e0b;
+  flex-shrink: 0;
+}
+
+.nx-relatable-price {
+  font-weight: 700;
+  color: #f59e0b;
+}
+
+.nx-relatable-spots {
+  color: #9ca3af;
+  font-size: 12px;
+  margin-left: 2px;
+}
+
+/* Quick Unsave / Saved Button */
+.nx-relatable-saved-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.22);
+  color: #f87171;
+  padding: 5px 11px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.nx-relatable-saved-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.4);
+  transform: translateY(-1px);
+}
+
+.nx-relatable-saved-btn svg {
+  flex-shrink: 0;
+}
+
+/* Quick Add to Calendar Button */
+.nx-relatable-cal-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #9ca3af;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.nx-relatable-cal-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: scale(1.05);
+}
+
+/* ── Join / Register / Action Button matching reference screenshot ── */
+.nx-saved-action-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Vibrant Blue "Join Zoom" Button matching screenshot 1 */
+.nx-saved-join-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -4627,34 +4954,377 @@
   color: #ffffff;
   font-size: 14px;
   font-weight: 600;
-  padding: 12px 18px;
-  border-radius: 12px;
+  padding: 9px 22px;
+  border-radius: 9999px;
   text-decoration: none;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
   transition: all 0.2s ease;
-  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);
+  white-space: nowrap;
 }
 
-.nx-saved-event-book-btn:hover {
+.nx-saved-join-btn:hover {
   background: #1d4ed8;
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5);
+  color: #ffffff;
 }
 
-/* Dark Remove Button matching Screenshot 5 */
-.nx-saved-event-remove-btn {
-  background: #181b22;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #ffffff;
+/* Clean "Register" / "Book Ticket" Button matching screenshot 2 */
+.nx-saved-register-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #e5e7eb;
+  color: #111827;
   font-size: 14px;
   font-weight: 600;
-  padding: 12px 20px;
-  border-radius: 12px;
-  cursor: pointer;
+  padding: 9px 22px;
+  border-radius: 9999px;
+  text-decoration: none;
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
-.nx-saved-event-remove-btn:hover {
-  background: #232832;
-  border-color: rgba(255, 255, 255, 0.25);
+.nx-saved-register-btn:hover {
+  background: #ffffff;
+  transform: translateY(-1px);
+  color: #000000;
 }
+
+/* Muted Past Details Button */
+.nx-saved-past-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 8px 20px;
+  border-radius: 9999px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.nx-saved-past-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+/* ── Card Right Banner Box matching reference screenshot ── */
+.nx-saved-card-banner-box {
+  width: 250px;
+  min-width: 220px;
+  max-width: 270px;
+  border-radius: 14px;
+  overflow: hidden;
+  align-self: flex-start;
+  flex-shrink: 0;
+  aspect-ratio: 16 / 10;
+  background: #1a1e24;
+  position: relative;
+}
+
+.nx-saved-card-banner-box a {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.nx-saved-card-banner-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.35s ease;
+  display: block;
+}
+
+.nx-saved-event-card:hover .nx-saved-card-banner-img {
+  transform: scale(1.05);
+}
+
+/* ── Responsive Media Queries ── */
+@media (max-width: 960px) {
+  .nx-saved-date-group {
+    gap: 20px;
+  }
+  .nx-saved-date-col {
+    width: 120px;
+    min-width: 110px;
+  }
+  .nx-saved-date-day {
+    font-size: 32px;
+  }
+  .nx-saved-date-month {
+    font-size: 19px;
+  }
+  .nx-saved-event-card {
+    padding: 20px;
+    gap: 20px;
+  }
+  .nx-saved-card-banner-box {
+    width: 200px;
+    min-width: 180px;
+  }
+}
+
+@media (max-width: 768px) {
+  .nx-saved-date-group {
+    flex-direction: column;
+    gap: 14px;
+  }
+  .nx-saved-date-col {
+    width: 100%;
+    position: static;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .nx-saved-date-sub {
+    margin-top: 0;
+  }
+  .nx-saved-event-card {
+    flex-direction: column-reverse;
+    gap: 18px;
+  }
+  .nx-saved-card-banner-box {
+    width: 100%;
+    max-width: 100%;
+    height: 180px;
+  }
+}
+
+@media (max-width: 580px) {
+  .nx-saved-card-bottom {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+  .nx-saved-relatable-ui {
+    justify-content: space-between;
+  }
+  .nx-saved-action-area {
+    width: 100%;
+  }
+  .nx-saved-join-btn,
+  .nx-saved-register-btn,
+  .nx-saved-past-btn {
+    width: 100%;
+  }
+  .nx-saved-tabs-row {
+    margin-bottom: 24px;
+  }
+  .nx-saved-tab-btn {
+    font-size: 15px;
+    padding: 10px 14px 12px;
+  }
+}
+
+/* ── Ticket Pass Modal ── */
+.nx-ticket-pass-modal {
+  max-width: 520px;
+  width: 92%;
+  background: #111418;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 0;
+  overflow: hidden;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
+}
+
+.nx-ticket-pass-banner {
+  width: 100%;
+  height: 180px;
+  position: relative;
+  background: #1a1e24;
+}
+
+.nx-ticket-pass-banner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.nx-ticket-pass-badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.nx-ticket-pass-content {
+  padding: 22px 24px 28px;
+}
+
+.nx-ticket-pass-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 18px;
+  line-height: 1.35;
+}
+
+.nx-ticket-pass-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.nx-ticket-pass-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nx-ticket-pass-cell label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #9ca3af;
+  font-weight: 600;
+}
+
+.nx-ticket-pass-cell span {
+  font-size: 13.5px;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.nx-ticket-pass-id {
+  font-family: monospace;
+  color: #f59e0b !important;
+}
+
+.nx-ticket-qr-section {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background: #0b0d10;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  padding: 14px 18px;
+}
+
+.nx-ticket-qr-box {
+  background: #ffffff;
+  padding: 8px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.nx-ticket-qr-meta strong {
+  display: block;
+  font-size: 14px;
+  color: #10b981;
+  margin-bottom: 4px;
+}
+
+.nx-ticket-qr-meta p {
+  margin: 0;
+  font-size: 12.5px;
+  color: #9ca3af;
+  line-height: 1.4;
+}
+
+@media (max-width: 900px) {
+  .profile-layout {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+    padding-bottom: 88px;
+  }
+  .profile-sidebar {
+    padding: 16px;
+    position: relative;
+  }
+  .profile-menu {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    scrollbar-width: none;
+  }
+  .profile-link,
+  .logout-btn {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    padding: 8px 10px;
+  }
+  .profile-content {
+    padding: 28px 16px;
+  }
+  .profile-screen--narrow,
+  .profile-screen--wide {
+    max-width: 100%;
+  }
+  .profile-card,
+  .support-card,
+  .wallet-card,
+  .ride-card,
+  .order-card {
+    width: 100%;
+    max-width: 100%;
+  }
+  .wallet-actions,
+  .profile-form-row {
+    flex-wrap: wrap;
+  }
+  .calendar-card {
+    width: 100%;
+    overflow-x: auto;
+  }
+  .wishlist-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .wishlist-card {
+    width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .wishlist-grid {
+    grid-template-columns: 1fr;
+  }
+  .ride-card,
+  .order-card {
+    display: block;
+  }
+  .ride-card img,
+  .order-card img {
+    width: 100%;
+    max-width: 100%;
+  }
+  .profile-content {
+    min-width: 0;
+  }
+  .profile-card,
+  .support-card,
+  .wallet-card {
+    padding: 20px 16px;
+  }
+}
+
+
+
 

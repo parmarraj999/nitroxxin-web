@@ -1,17 +1,45 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import { useCollection } from "../../../hooks/useFirestore";
-import { COLLECTIONS, db } from "../../../services/firebase";
+import { COLLECTIONS } from "../../../services/firebase";
+import { removeWishlistItem } from "../../../services/commerceService";
 
 export default function Wishlist() {
   const { user } = useAuth();
   const [feedbackMsg, setFeedbackMsg] = useState("");
 
-  const { data: wishlistData, loading } = useCollection(COLLECTIONS.wishlist, {
-    where: user?.uid ? [["userId", "==", user.uid]] : [["userId", "==", "NO_USER"]],
-    limit: 50,
-  });
+  // Fetch wishlist items from user/userId/wishlist (singular) and users/userId/wishlist (plural)
+  const { data: userWishlistItems = [], loading: userWishlistLoading } = useCollection(
+    user?.uid ? `user/${user.uid}/wishlist` : null,
+    { limit: 50 }
+  );
+
+  const { data: usersPluralWishlistItems = [] } = useCollection(
+    user?.uid ? `users/${user.uid}/wishlist` : null,
+    { limit: 50 }
+  );
+
+  // Fetch legacy wishlist items for backwards compatibility
+  const { data: legacyWishlistItems = [] } = useCollection(
+    COLLECTIONS.wishlist,
+    {
+      where: user?.uid ? [["userId", "==", user.uid]] : [["userId", "==", "NO_USER"]],
+      limit: 50,
+    }
+  );
+
+  const wishlistData = useMemo(() => {
+    const map = new Map();
+    [...legacyWishlistItems, ...usersPluralWishlistItems, ...userWishlistItems].forEach((item) => {
+      if (item && item.id) {
+        map.set(item.id, item);
+      }
+    });
+    return Array.from(map.values());
+  }, [userWishlistItems, usersPluralWishlistItems, legacyWishlistItems]);
+
+  const loading = userWishlistLoading && !wishlistData.length;
 
   const [removedIds, setRemovedIds] = useState([]);
 
@@ -26,7 +54,7 @@ export default function Wishlist() {
 
     if (user?.uid) {
       try {
-        await db().collection(COLLECTIONS.wishlist).doc(docId).delete();
+        await removeWishlistItem({ userId: user.uid, docId });
       } catch (err) {
         console.error("Failed to remove item from wishlist:", err);
       }
@@ -35,7 +63,7 @@ export default function Wishlist() {
 
   // Map real Firestore wishlist items
   const actualItems = (wishlistData || []).map((item) => {
-    const product = item.productSnapshot || item;
+    const product = item.productSnapshot || item.product || item.eventSnapshot || item;
     const category = product.category || "";
     const name = product.name || product.title || "Gear";
     const image = product.image || product.imageUrl || product.banner;

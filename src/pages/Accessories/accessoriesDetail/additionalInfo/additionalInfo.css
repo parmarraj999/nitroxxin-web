@@ -133,3 +133,15 @@
     font-size: 11px;
   }
 }
+
+@media (max-width: 600px) {
+  .additional-info__row {
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .additional-info__key,
+  .additional-info__value {
+    font-size: 14px;
+  }
+}
+

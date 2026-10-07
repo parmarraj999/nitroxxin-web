@@ -1,16 +1,17 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Link, useSearchParams, useParams } from 'react-router-dom';
-import { useAccessoriesContext } from '../../../context/AccessoriesContext';
-import { useAuth } from '../../../context/AuthContext';
-import { useAuthModal } from '../../../components/AuthModal/useAuthModal';
-import { addToCart, saveWishlistItem } from '../../../services/commerceService';
-import AccessoriesHeader from '../accessoriesNav/AccessoriesHeader';
-import './ShopPage.css';
+import React, { useState, useMemo, useEffect, useRef } from "react";
+import { Link, useSearchParams, useParams } from "react-router-dom";
+import { useAccessoriesContext } from "../../../context/AccessoriesContext";
+import { useAuth } from "../../../context/AuthContext";
+import { useAuthModal } from "../../../components/AuthModal/useAuthModal";
+import { addToCart, saveWishlistItem } from "../../../services/commerceService";
+import AccessoriesHeader from "../accessoriesNav/AccessoriesHeader";
+import "./ShopPage.css";
 
-// ── Icons ──
-function CartIcon({ color = '#fff' }) {
+const productFilters = ["All", "Best Seller", "New Arrival", "Trending", "Deals"];
+
+function CartIcon({ color = "#fff" }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 24 24" fill="none">
       <path
         d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"
         stroke={color}
@@ -49,14 +50,21 @@ function SlidersIcon() {
       <line x1="4" y1="6" x2="20" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       <line x1="4" y1="12" x2="20" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       <line x1="4" y1="18" x2="20" y2="18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      <circle cx="9" cy="6" r="2" fill="#fff" stroke="currentColor" strokeWidth="2" />
-      <circle cx="15" cy="12" r="2" fill="#fff" stroke="currentColor" strokeWidth="2" />
-      <circle cx="9" cy="18" r="2" fill="#fff" stroke="currentColor" strokeWidth="2" />
+      <circle cx="9" cy="6" r="2" fill="#f6f8fb" stroke="currentColor" strokeWidth="2" />
+      <circle cx="15" cy="12" r="2" fill="#f6f8fb" stroke="currentColor" strokeWidth="2" />
+      <circle cx="9" cy="18" r="2" fill="#f6f8fb" stroke="currentColor" strokeWidth="2" />
     </svg>
   );
 }
 
-// ── EXACT Product Card Component from Accessories Page ──
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
+      <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function ProductCard({ product }) {
   const [liked, setLiked] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -92,7 +100,7 @@ function ProductCard({ product }) {
           <span>No image</span>
         )}
         <button
-          className={`ap-product-card__heart${liked ? ' ap-product-card__heart--liked' : ''}`}
+          className={`ap-product-card__heart${liked ? " ap-product-card__heart--liked" : ""}`}
           onClick={handleWishlist}
           aria-label="Save product"
         >
@@ -102,70 +110,53 @@ function ProductCard({ product }) {
       <div className="ap-product-card__info">
         <div className="ap-product-card__top-row">
           <span className="ap-product-card__category">
-            {product.category || product.brand || 'Accessory'}
+            {product.category || product.brand || "Accessory"}
           </span>
           <span className="ap-product-card__price">
-            {product.offerPriceText || product.priceText || (product.price ? `₹${product.price}` : '—')}
+            {product.offerPriceText || product.priceText || (product.price ? `₹${Number(product.price).toLocaleString("en-IN")}` : "—")}
           </span>
         </div>
         <div className="ap-product-card__name">{product.name}</div>
         <button className="ap-product-card__cart-btn" onClick={handleCart}>
           <CartIcon color="#fff" />
-          {adding ? 'Added!' : 'Add to Cart'}
+          {adding ? "Added!" : "Add to Cart"}
         </button>
       </div>
     </Link>
   );
 }
 
-// ── Fallback Subcategories map for quick pills ──
-const FALLBACK_PILLS_MAP = {
-  'rider wear': ['Riding Jackets', 'Riding Pants', 'Riding Boots', 'Armored Hoodies', 'Safety Vests', 'Rain Suits'],
-  'helmets': ['Full Face Helmets', 'Modular & Flip-Up', 'Open Face Helmets', 'Off-Road Helmets', 'Visors & Pinlocks'],
-  'bike accessories': ['Luggage & Bags', 'Crash Protection', 'Phone Mounts', 'Bike Covers', 'Security Locks', 'Handlebars'],
-  'tech & gadget': ['Bluetooth Intercoms', 'Action Cameras', 'GPS Trackers', 'TPMS Monitors', 'Smart HUD'],
-  'performance': ['Exhaust Systems', 'Air Filters', 'Brake Pads', 'Suspensions', 'Chains & Sprockets', 'Engine Oils'],
-  'footwear': ['Casual Footwear', 'Performance Footwear', 'Indoor Footwear', 'Daily Footwear', 'Sandals', 'Boots'],
-  'apparel': ['Jackets & Hoodies', 'T-Shirts & Tops', 'Pants & Jeans', 'Riding Apparel', 'Shorts', 'Tracksuits'],
-};
+function EmptyState({ title, text, onReset }) {
+  return (
+    <div className="nx-empty-state nx-empty-state--light">
+      <h3>{title}</h3>
+      <p>{text}</p>
+      {onReset && (
+        <button
+          type="button"
+          className="ap-filter-btn"
+          onClick={onReset}
+          style={{ margin: "16px auto 0" }}
+        >
+          Clear all filters
+        </button>
+      )}
+    </div>
+  );
+}
 
 export default function ShopPage({ filterType }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const { id } = useParams();
 
   // Resolve URL parameters
-  const queryCategory = searchParams.get('category') || (filterType === 'category' ? id : '') || '';
-  const querySubcategory = searchParams.get('subcategory') || '';
-  const querySearch = searchParams.get('search') || searchParams.get('q') || '';
-  const queryBrand = searchParams.get('brand') || (filterType === 'brand' ? id : '') || '';
-  const queryBike = searchParams.get('bike') || (filterType === 'bike' ? id : '') || '';
-  const querySort = searchParams.get('sort') || 'newest';
+  const urlSearch = searchParams.get("search") || searchParams.get("q") || "";
+  const urlCategory = searchParams.get("category") || (filterType === "category" ? id : "") || "";
+  const urlSubcategory = searchParams.get("subcategory") || "";
+  const urlBrand = searchParams.get("brand") || (filterType === "brand" ? id : "") || "";
+  const urlBike = searchParams.get("bike") || (filterType === "bike" ? id : "") || "";
+  const urlSort = searchParams.get("sort") || "newest";
 
-  // Internal states synced with URL queries
-  const [search, setSearch] = useState(querySearch);
-  const [selectedSubcategory, setSelectedSubcategory] = useState(querySubcategory);
-  const [selectedCategory, setSelectedCategory] = useState(queryCategory);
-  const [selectedBrand, setSelectedBrand] = useState(queryBrand);
-  const [sortBy, setSortBy] = useState(querySort);
-
-  // Sidebar Filter States
-  const [filterOpen, setFilterOpen] = useState(false);
-  const [availability, setAvailability] = useState({ inStock: false, outOfStock: false });
-  const [priceRange, setPriceRange] = useState([0, 100000]);
-  const [boundsSet, setBoundsSet] = useState(false);
-
-  const pillsTrackRef = useRef(null);
-
-  // Sync state whenever URL query params change
-  useEffect(() => {
-    setSelectedCategory(queryCategory);
-    setSelectedSubcategory(querySubcategory);
-    setSearch(querySearch);
-    setSelectedBrand(queryBrand);
-    setSortBy(querySort);
-  }, [queryCategory, querySubcategory, querySearch, queryBrand, querySort]);
-
-  // Context data
   const {
     products = [],
     productsLoading,
@@ -177,16 +168,75 @@ export default function ShopPage({ filterType }) {
     brands = [],
   } = useAccessoriesContext();
 
+  const [search, setSearch] = useState(urlSearch || urlBike);
+  const [activeFilter, setActiveFilter] = useState("All");
+  const [availability, setAvailability] = useState({ inStock: false, outOfStock: false });
+  const [priceRange, setPriceRange] = useState([0, 100000]);
+  const [selectedCategories, setSelectedCategories] = useState(urlCategory ? [urlCategory] : []);
+  const [selectedSubcategories, setSelectedSubcategories] = useState(urlSubcategory ? [urlSubcategory] : []);
+  const [selectedBrands, setSelectedBrands] = useState(urlBrand ? [urlBrand] : []);
+  const [sortBy, setSortBy] = useState(urlSort);
+  const [boundsSet, setBoundsSet] = useState(false);
+
+  // Sync state whenever URL query params change
+  useEffect(() => {
+    if (urlCategory) {
+      setSelectedCategories([urlCategory]);
+    }
+  }, [urlCategory]);
+
+  useEffect(() => {
+    if (urlSubcategory) {
+      setSelectedSubcategories([urlSubcategory]);
+    }
+  }, [urlSubcategory]);
+
+  useEffect(() => {
+    if (urlBrand) {
+      setSelectedBrands([urlBrand]);
+    }
+  }, [urlBrand]);
+
+  useEffect(() => {
+    if (urlSearch || urlBike) {
+      setSearch(urlSearch || urlBike);
+    }
+  }, [urlSearch, urlBike]);
+
+  useEffect(() => {
+    if (urlSort) {
+      setSortBy(urlSort);
+    }
+  }, [urlSort]);
+
   const PRODUCTS_PER_PAGE = 20;
   const [currentPage, setCurrentPage] = useState(1);
-  const productsAreaRef = useRef(null);
+  const shopMainRef = useRef(null);
 
-  // Filter out unpublished products
-  const liveProducts = useMemo(() => {
-    return products.filter((p) => ['published', 'active', 'approved'].includes(p.status));
-  }, [products]);
+  // Sidebar filter states - default open on desktop
+  const [filterOpen, setFilterOpen] = useState(() => {
+    if (typeof window !== "undefined") {
+      return window.innerWidth > 1024;
+    }
+    return true;
+  });
 
-  // Dynamic price bounds
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 1024) {
+        setFilterOpen(true);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const liveProducts = useMemo(
+    () => products.filter((product) => ["published", "active", "approved"].includes(product.status)),
+    [products]
+  );
+
+  // Price bounds from live products
   const priceBounds = useMemo(() => {
     if (!liveProducts.length) return [0, 100000];
     const prices = liveProducts.map((p) => Number(p.offerPrice || p.price || 0)).filter(Boolean);
@@ -200,12 +250,18 @@ export default function ShopPage({ filterType }) {
     }
   }, [liveProducts, priceBounds, boundsSet]);
 
-  // Dynamic lists of unique categories, subcategories & brands
+  // Unique categories, subcategories & brands from products + context collections
   const categoryOptions = useMemo(() => {
     const fromProducts = liveProducts.map((p) => p.category || p.categoryName).filter(Boolean);
     const fromContext = categories.map((c) => c.label || c.name).filter(Boolean);
     return [...new Set([...fromProducts, ...fromContext])].sort();
   }, [liveProducts, categories]);
+
+  const subcategoryOptions = useMemo(() => {
+    const fromProducts = liveProducts.map((p) => p.subcategory || p.subCategory).filter(Boolean);
+    const fromSubcats = subcategories.map((s) => s.label || s.name).filter(Boolean);
+    return [...new Set([...fromProducts, ...fromSubcats])].sort();
+  }, [liveProducts, subcategories]);
 
   const brandOptions = useMemo(() => {
     const fromProducts = liveProducts.map((p) => p.brand || p.brandName).filter(Boolean);
@@ -213,185 +269,186 @@ export default function ShopPage({ filterType }) {
     return [...new Set([...fromProducts, ...fromContext])].sort();
   }, [liveProducts, brands]);
 
-  // Quick filter pills depending on current active category
-  const quickPills = useMemo(() => {
-    const activeCatLower = (selectedCategory || '').toLowerCase();
-    
-    // 1. If category selected, find subcategories belonging to it
-    if (selectedCategory) {
-      // From subcategories collection
-      const matchedFromContext = subcategories
-        .filter((s) => {
-          const pId = String(s.parentId || s.categoryId || '').toLowerCase();
-          const pName = String(s.category || '').toLowerCase();
-          return pId === activeCatLower || pName === activeCatLower;
-        })
-        .map((s) => s.label || s.name);
+  // Active filter badge count
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (availability.inStock || availability.outOfStock) count++;
+    if (priceRange[0] !== priceBounds[0] || priceRange[1] !== priceBounds[1]) count++;
+    if (selectedCategories.length) count += selectedCategories.length;
+    if (selectedSubcategories.length) count += selectedSubcategories.length;
+    if (selectedBrands.length) count += selectedBrands.length;
+    if (search.trim()) count++;
+    if (activeFilter !== "All") count++;
+    return count;
+  }, [availability, priceRange, priceBounds, selectedCategories, selectedSubcategories, selectedBrands, search, activeFilter]);
 
-      // From products
-      const matchedFromProducts = liveProducts
-        .filter((p) => String(p.category || p.categoryName || '').toLowerCase() === activeCatLower)
-        .map((p) => p.subcategory || p.subCategory)
-        .filter(Boolean);
+  const toggleCategory = (cat) =>
+    setSelectedCategories((prev) =>
+      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
+    );
 
-      // Fallback
-      let fallbackList = [];
-      for (const [key, list] of Object.entries(FALLBACK_PILLS_MAP)) {
-        if (activeCatLower.includes(key) || key.includes(activeCatLower)) {
-          fallbackList = list;
-          break;
-        }
-      }
+  const toggleSubcategory = (subcat) =>
+    setSelectedSubcategories((prev) =>
+      prev.includes(subcat) ? prev.filter((s) => s !== subcat) : [...prev, subcat]
+    );
 
-      const combined = [...new Set([...matchedFromContext, ...matchedFromProducts, ...fallbackList])];
-      if (combined.length > 0) {
-        return combined;
-      }
-    }
+  const toggleBrand = (brand) =>
+    setSelectedBrands((prev) =>
+      prev.includes(brand) ? prev.filter((b) => b !== brand) : [...prev, brand]
+    );
 
-    // 2. If no category selected, show all top categories as quick pills
-    if (categoryOptions.length > 0) {
-      return categoryOptions;
-    }
-    return ['Rider Wear', 'Helmets', 'Bike Accessories', 'Tech & Gadget', 'Performance', 'Footwear', 'Apparel'];
-  }, [selectedCategory, subcategories, liveProducts, categoryOptions]);
+  const resetAll = () => {
+    setAvailability({ inStock: false, outOfStock: false });
+    setPriceRange(priceBounds);
+    setSelectedCategories([]);
+    setSelectedSubcategories([]);
+    setSelectedBrands([]);
+    setActiveFilter("All");
+    setSearch("");
+    setSearchParams({});
+  };
 
-  // Filter products by all active criteria
+  const formatPrice = (val) => `₹${Number(val).toLocaleString("en-IN")}`;
+
+  // Apply all filters
   const filteredProducts = useMemo(() => {
     let result = liveProducts;
 
     // Search query
     const term = search.trim().toLowerCase();
     if (term) {
-      const searchWords = term.split(/\s+/).filter(Boolean);
-      result = result.filter((p) => {
-        const fullSearchableText = [
-          p.name,
-          p.title,
-          p.category,
-          p.categoryName,
-          p.subcategory,
-          p.subCategory,
-          p.brand,
-          p.brandName,
-          p.vendorName,
-          p.manufacturer,
-          p.subtitle,
-          p.shortDescription,
-          p.description,
-          ...(Array.isArray(p.keywords) ? p.keywords : []),
-          ...(Array.isArray(p.tags) ? p.tags : []),
-          ...(Array.isArray(p.seo?.keywords) ? p.seo.keywords : []),
-          ...(Array.isArray(p.seo?.tags) ? p.seo.tags : []),
+      const words = term.split(/\s+/).filter(Boolean);
+      result = result.filter((product) => {
+        const searchable = [
+          product.name,
+          product.title,
+          product.category,
+          product.categoryName,
+          product.subcategory,
+          product.subCategory,
+          product.brand,
+          product.brandName,
+          product.vendorName,
+          product.manufacturer,
+          product.subtitle,
+          product.shortDescription,
+          product.description,
+          product.bikeModel,
+          product.model,
+          product.compatibility,
+          product.bikeBrand,
+          ...(Array.isArray(product.keywords) ? product.keywords : []),
+          ...(Array.isArray(product.tags) ? product.tags : []),
+          ...(Array.isArray(product.seo?.keywords) ? product.seo.keywords : []),
+          ...(Array.isArray(product.seo?.tags) ? product.seo.tags : []),
         ]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase();
+          .map((value) => String(value || "").toLowerCase())
+          .join(" ");
 
-        return searchWords.every((word) => fullSearchableText.includes(word));
-      });
-    }
-
-    // Category
-    if (selectedCategory) {
-      const catNorm = selectedCategory.toLowerCase().replace(/[-_]/g, ' ').trim();
-      result = result.filter((p) => {
-        const pCat = String(p.category || p.categoryName || '').toLowerCase().replace(/[-_]/g, ' ').trim();
-        return (
-          pCat === catNorm ||
-          pCat === `${catNorm}s` ||
-          catNorm === `${pCat}s` ||
-          pCat.includes(catNorm) ||
-          catNorm.includes(pCat)
-        );
-      });
-    }
-
-    // Subcategory
-    if (selectedSubcategory) {
-      const subNorm = selectedSubcategory.toLowerCase().replace(/[-_]/g, ' ').trim();
-      result = result.filter((p) => {
-        const pSub = String(p.subcategory || p.subCategory || '').toLowerCase().replace(/[-_]/g, ' ').trim();
-        return (
-          pSub === subNorm ||
-          pSub === `${subNorm}s` ||
-          subNorm === `${pSub}s` ||
-          pSub.includes(subNorm) ||
-          subNorm.includes(pSub)
-        );
-      });
-    }
-
-    // Brand
-    if (selectedBrand) {
-      const brandNorm = selectedBrand.toLowerCase().replace(/[-_]/g, ' ').trim();
-      result = result.filter((p) => {
-        const pBrand = String(p.brand || p.brandName || '').toLowerCase().replace(/[-_]/g, ' ').trim();
-        return pBrand === brandNorm || pBrand.includes(brandNorm) || brandNorm.includes(pBrand);
+        return words.every((w) => searchable.includes(w));
       });
     }
 
     // Bike model / brand
-    if (queryBike) {
-      const bikeLower = queryBike.toLowerCase();
+    if (urlBike) {
+      const bikeLower = urlBike.toLowerCase();
       result = result.filter((p) => {
-        const text = [p.bikeModel, p.model, p.compatibility, p.bikeBrand, p.name].join(' ').toLowerCase();
+        const text = [p.bikeModel, p.model, p.compatibility, p.bikeBrand, p.name].join(" ").toLowerCase();
         return text.includes(bikeLower);
       });
     }
 
+    // Quick filter tabs
+    if (activeFilter === "Best Seller") result = result.filter((p) => p.bestSeller || p.isBestSeller);
+    if (activeFilter === "New Arrival") result = result.filter((p) => p.newArrival || p.isNewArrival);
+    if (activeFilter === "Trending") result = result.filter((p) => p.trending || p.isTrending);
+    if (activeFilter === "Deals") result = result.filter((p) => p.offerPrice && p.price && p.offerPrice < p.price);
+
     // Availability
-    if (availability.inStock && !availability.outOfStock) {
-      result = result.filter((p) => Number(p.stock || 0) > 0);
-    } else if (availability.outOfStock && !availability.inStock) {
-      result = result.filter((p) => Number(p.stock || 0) <= 0);
+    if (availability.inStock || availability.outOfStock) {
+      result = result.filter((p) => {
+        const inStock = Number(p.stock || 0) > 0;
+        if (availability.inStock && availability.outOfStock) return true;
+        if (availability.inStock) return inStock;
+        if (availability.outOfStock) return !inStock;
+        return true;
+      });
     }
 
-    // Price bounds
+    // Price range
     result = result.filter((p) => {
       const price = Number(p.offerPrice || p.price || 0);
       if (price <= 0) return true;
       return price >= priceRange[0] && price <= priceRange[1];
     });
 
-    // Sorting
+    // Categories
+    if (selectedCategories.length) {
+      result = result.filter((p) => {
+        const pCat = String(p.category || p.categoryName || "").toLowerCase().replace(/[-_]/g, " ").trim();
+        return selectedCategories.some((sel) => {
+          const selNorm = String(sel || "").toLowerCase().replace(/[-_]/g, " ").trim();
+          return pCat === selNorm || pCat.includes(selNorm) || selNorm.includes(pCat);
+        });
+      });
+    }
+
+    // Subcategories
+    if (selectedSubcategories.length) {
+      result = result.filter((p) => {
+        const prodSub = String(p.subcategory || p.subCategory || "").toLowerCase().replace(/[-_]/g, " ").trim();
+        return selectedSubcategories.some((sel) => {
+          const selSub = String(sel || "").toLowerCase().replace(/[-_]/g, " ").trim();
+          return (
+            prodSub === selSub ||
+            prodSub === `${selSub}s` ||
+            selSub === `${prodSub}s` ||
+            prodSub.includes(selSub) ||
+            selSub.includes(prodSub)
+          );
+        });
+      });
+    }
+
+    // Brands
+    if (selectedBrands.length) {
+      result = result.filter((p) => {
+        const prodBrand = String(p.brand || p.brandName || "").toLowerCase().replace(/[-_]/g, " ").trim();
+        return selectedBrands.some((sel) => {
+          const selBrand = String(sel || "").toLowerCase().replace(/[-_]/g, " ").trim();
+          return prodBrand === selBrand || prodBrand.includes(selBrand) || selBrand.includes(prodBrand);
+        });
+      });
+    }
+
+    // Sort
     result = [...result];
-    if (sortBy === 'price-asc') {
+    if (sortBy === "price-asc") {
       result.sort((a, b) => Number(a.offerPrice || a.price || 0) - Number(b.offerPrice || b.price || 0));
-    } else if (sortBy === 'price-desc') {
+    } else if (sortBy === "price-desc") {
       result.sort((a, b) => Number(b.offerPrice || b.price || 0) - Number(a.offerPrice || a.price || 0));
-    } else if (sortBy === 'name-asc') {
-      result.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-    } else if (sortBy === 'rating') {
-      result.sort((a, b) => Number(b.averageRating || 0) - Number(a.averageRating || 0));
+    } else if (sortBy === "name-asc") {
+      result.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
     }
 
     return result;
   }, [
     liveProducts,
     search,
-    selectedCategory,
-    selectedSubcategory,
-    selectedBrand,
-    queryBike,
+    urlBike,
+    activeFilter,
     availability,
     priceRange,
+    selectedCategories,
+    selectedSubcategories,
+    selectedBrands,
     sortBy,
   ]);
 
   // Reset to page 1 when any filter or search changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [
-    search,
-    selectedCategory,
-    selectedSubcategory,
-    selectedBrand,
-    queryBike,
-    availability,
-    priceRange,
-    sortBy,
-  ]);
+  }, [search, activeFilter, availability, priceRange, selectedCategories, selectedSubcategories, selectedBrands, sortBy]);
 
   // Pagination calculations
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE));
@@ -409,8 +466,8 @@ export default function ShopPage({ filterType }) {
       fetchMoreProducts();
     }
 
-    if (productsAreaRef.current) {
-      productsAreaRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (shopMainRef.current) {
+      shopMainRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
 
@@ -421,369 +478,253 @@ export default function ShopPage({ filterType }) {
       for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
       pages.push(1);
-      if (currentPage > 3) pages.push('...');
+      if (currentPage > 3) pages.push("...");
       const start = Math.max(2, currentPage - 1);
       const end = Math.min(totalPages - 1, currentPage + 1);
       for (let i = start; i <= end; i++) pages.push(i);
-      if (currentPage < totalPages - 2) pages.push('...');
+      if (currentPage < totalPages - 2) pages.push("...");
       pages.push(totalPages);
     }
     return pages;
   }, [totalPages, currentPage]);
 
-  // Count active filters for badge
-  const activeFilterCount = useMemo(() => {
-    let count = 0;
-    if (selectedCategory) count++;
-    if (selectedSubcategory) count++;
-    if (selectedBrand) count++;
-    if (availability.inStock || availability.outOfStock) count++;
-    if (priceRange[0] > priceBounds[0] || priceRange[1] < priceBounds[1]) count++;
-    return count;
-  }, [selectedCategory, selectedSubcategory, selectedBrand, availability, priceRange, priceBounds]);
-
-  // Update query params helper
-  const updateQueryParam = (key, value) => {
-    const next = new URLSearchParams(searchParams);
-    if (value) {
-      next.set(key, value);
-    } else {
-      next.delete(key);
-    }
-    setSearchParams(next);
-  };
-
-  // Toggle pill handler
-  const handlePillClick = (pill) => {
-    if (!selectedCategory) {
-      // On Shop All, clicking a pill selects that Category
-      if (selectedCategory === pill) {
-        updateQueryParam('category', '');
-      } else {
-        updateQueryParam('category', pill);
-      }
-    } else {
-      // In category view, clicking a pill selects that Subcategory
-      if (selectedSubcategory === pill) {
-        updateQueryParam('subcategory', '');
-      } else {
-        updateQueryParam('subcategory', pill);
-      }
-    }
-  };
-
-  // Clear all filters handler
-  const handleClearAll = () => {
-    setSelectedCategory('');
-    setSelectedSubcategory('');
-    setSelectedBrand('');
-    setSearch('');
-    setAvailability({ inStock: false, outOfStock: false });
-    setPriceRange(priceBounds);
-    setSearchParams({});
-  };
-
-  // Dynamic Title & Breadcrumbs (matching screenshot)
-  const pageTitle = useMemo(() => {
-    if (search) return `Search: "${search}"`;
-    if (selectedSubcategory) return selectedSubcategory;
-    if (selectedCategory) return selectedCategory;
-    if (selectedBrand) return `${selectedBrand} Collection`;
-    if (queryBike) return `Gear for ${queryBike}`;
-    return 'All Accessories';
-  }, [search, selectedSubcategory, selectedCategory, selectedBrand, queryBike]);
-
   return (
-    <div className="sp-page">
+    <div className="sp-page ap-page">
       <AccessoriesHeader
         showBack
         search={search}
         onSearchChange={(val) => {
           setSearch(val);
-          updateQueryParam('search', val);
         }}
       />
 
-      <div className="sp-container">
-        {/* ── Breadcrumb (matching screenshot: HOME / BUY ... ONLINE) ── */}
-        <nav className="sp-breadcrumb" aria-label="breadcrumb">
-          <Link to="/">Home</Link>
-          <span className="sp-breadcrumb__sep">/</span>
-          <Link to="/accessories">Accessories</Link>
-          {selectedCategory && (
-            <>
-              <span className="sp-breadcrumb__sep">/</span>
-              <span
-                style={{ cursor: 'pointer' }}
-                onClick={() => {
-                  updateQueryParam('subcategory', '');
-                }}
-              >
-                {selectedCategory}
-              </span>
-            </>
-          )}
-          {selectedSubcategory && (
-            <>
-              <span className="sp-breadcrumb__sep">/</span>
-              <span className="sp-breadcrumb__current">{selectedSubcategory}</span>
-            </>
-          )}
-          {selectedBrand && (
-            <>
-              <span className="sp-breadcrumb__sep">/</span>
-              <span className="sp-breadcrumb__current">{selectedBrand}</span>
-            </>
-          )}
-        </nav>
+      {/* ═══ SHOP SECTION with exact Accessories Page UI ═══ */}
+      <div className="ap-section ap-shop-section">
+        <h1 className="ap-shop-title">{search}</h1>
+        <p style={{fontSize:'16',fontWeight:'600',color:"grey",paddingBottom:'25px'}}><span style={{color:"black"}}>{filteredProducts.length}</span> Result Found</p>
 
-        {/* ── Header Title & Subtitle (matching screenshot) ── */}
-        <header className="sp-header">
-          <h1 className="sp-title">{pageTitle}</h1>
-          <p className="sp-subtitle">
-            Showing {filteredProducts.length} {filteredProducts.length === 1 ? 'Result' : 'Results'}
-          </p>
-        </header>
-
-        {/* ── Horizontal Filter Bar: [Filters & Sort] Button + Quick Pills (matching screenshot) ── */}
-        <div className="sp-filter-bar">
-          <button
-            type="button"
-            className={`sp-filter-toggle${filterOpen ? ' is-active' : ''}`}
-            onClick={() => setFilterOpen((prev) => !prev)}
-            aria-label="Toggle Filters & Sort"
-          >
-            <SlidersIcon />
-            <span>Filters & Sort</span>
-            {activeFilterCount > 0 && <span className="sp-filter-badge">{activeFilterCount}</span>}
-          </button>
-
-          {/* Quick Filter Pills Row */}
-          <div className="sp-pills-scroll" ref={pillsTrackRef}>
-            {/* "All" reset pill */}
+        {/* Topbar: filter toggle + quick tabs + sort */}
+        <div className="ap-shop-topbar">
+          <div className="ap-shop-topbar__left">
             <button
-              type="button"
-              className={`sp-pill${(!selectedSubcategory && selectedCategory) || (!selectedCategory && !selectedSubcategory) ? ' is-active' : ''}`}
-              onClick={() => {
-                if (selectedCategory) {
-                  updateQueryParam('subcategory', '');
-                } else {
-                  handleClearAll();
-                }
+              className={`ap-filter-toggle${filterOpen ? " ap-filter-toggle--active" : ""}`}
+              onClick={() => setFilterOpen((p) => !p)}
+            >
+              <SlidersIcon />
+              Filters
+              {activeFilterCount > 0 && <span className="ap-filter-badge">{activeFilterCount}</span>}
+            </button>
+            <div className="ap-quick-filters">
+              {productFilters.map((filter) => (
+                <button
+                  key={filter}
+                  className={`ap-filter-btn${activeFilter === filter ? " ap-filter-btn--active" : ""}`}
+                  onClick={() => setActiveFilter(filter)}
+                >
+                  {filter}
+                </button>
+              ))}
+            </div>
+            <span className="ap-product-count">
+              {filteredProducts.length} product{filteredProducts.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+          <div className="ap-shop-sort">
+            <label htmlFor="ap-sort-select">Sort by</label>
+            <select
+              id="ap-sort-select"
+              value={sortBy}
+              onChange={(e) => {
+                setSortBy(e.target.value);
               }}
             >
-              {selectedCategory ? `All ${selectedCategory}` : 'All Products'}
-            </button>
-
-            {/* Subcategory or Category Pills */}
-            {quickPills.map((pill) => {
-              const isPillActive =
-                selectedSubcategory === pill || (!selectedCategory && selectedCategory === pill);
-
-              return (
-                <button
-                  key={pill}
-                  type="button"
-                  className={`sp-pill${isPillActive ? ' is-active' : ''}`}
-                  onClick={() => handlePillClick(pill)}
-                >
-                  {pill}
-                </button>
-              );
-            })}
+              <option value="newest">Newest</option>
+              <option value="price-asc">Price: Low to High</option>
+              <option value="price-desc">Price: High to Low</option>
+              <option value="name-asc">Name: A–Z</option>
+            </select>
           </div>
         </div>
 
-        {/* ── Layout: Collapsible Sidebar + Products Grid ── */}
-        <div className="sp-layout">
-          {/* ── Collapsible Filters Sidebar ── */}
-          <aside className={`sp-sidebar${filterOpen ? ' is-open' : ''}`}>
-            <div className="sp-sidebar__header">
-              <span className="sp-sidebar__title">Filters & Sort</span>
-              {activeFilterCount > 0 && (
-                <button type="button" className="sp-sidebar__clear-btn" onClick={handleClearAll}>
-                  Clear all
+        {/* Layout: sidebar + 4-column product grid */}
+        <div className="ap-shop-layout">
+          {/* ─── Filter Sidebar ─── */}
+          <aside className={`ap-sidebar${filterOpen ? " ap-sidebar--open" : ""}`}>
+            <div className="ap-sidebar__header">
+              <span className="ap-sidebar__title">Filters</span>
+              <div className="ap-sidebar__actions">
+                {activeFilterCount > 0 && (
+                  <button className="ap-sidebar__reset" onClick={resetAll}>
+                    Clear all
+                  </button>
+                )}
+                <button
+                  className="ap-sidebar__close"
+                  onClick={() => setFilterOpen(false)}
+                  aria-label="Close filters"
+                >
+                  <CloseIcon />
+                </button>
+              </div>
+            </div>
+
+            {/* Availability */}
+            <div className="ap-filter-group">
+              <div className="ap-filter-group__label">Availability</div>
+              <label className="ap-checkbox">
+                <input
+                  type="checkbox"
+                  checked={availability.inStock}
+                  onChange={(e) => setAvailability((a) => ({ ...a, inStock: e.target.checked }))}
+                />
+                <span>In Stock</span>
+              </label>
+              <label className="ap-checkbox">
+                <input
+                  type="checkbox"
+                  checked={availability.outOfStock}
+                  onChange={(e) => setAvailability((a) => ({ ...a, outOfStock: e.target.checked }))}
+                />
+                <span>Out of Stock</span>
+              </label>
+            </div>
+
+            {/* Price Range */}
+            <div className="ap-filter-group">
+              <div className="ap-filter-group__label">Price Range</div>
+              <div className="ap-price-display">
+                <span>{formatPrice(priceRange[0])}</span>
+                <span>—</span>
+                <span>{formatPrice(priceRange[1])}</span>
+              </div>
+              <div className="ap-price-sliders">
+                <input
+                  type="range"
+                  className="ap-slider"
+                  min={priceBounds[0]}
+                  max={priceBounds[1]}
+                  value={priceRange[0]}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    if (val <= priceRange[1]) setPriceRange([val, priceRange[1]]);
+                  }}
+                />
+                <input
+                  type="range"
+                  className="ap-slider"
+                  min={priceBounds[0]}
+                  max={priceBounds[1]}
+                  value={priceRange[1]}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    if (val >= priceRange[0]) setPriceRange([priceRange[0], val]);
+                  }}
+                />
+              </div>
+              {(priceRange[0] !== priceBounds[0] || priceRange[1] !== priceBounds[1]) && (
+                <button className="ap-filter-reset-link" onClick={() => setPriceRange(priceBounds)}>
+                  Reset price
                 </button>
               )}
             </div>
 
-            {/* Sort Dropdown */}
-            <div className="sp-filter-group">
-              <div className="sp-filter-group__title">Sort By</div>
-              <select
-                value={sortBy}
-                onChange={(e) => {
-                  setSortBy(e.target.value);
-                  updateQueryParam('sort', e.target.value);
-                }}
-              >
-                <option value="newest">Newest Arrivals</option>
-                <option value="price-asc">Price: Low to High</option>
-                <option value="price-desc">Price: High to Low</option>
-                <option value="name-asc">Name: A–Z</option>
-                <option value="rating">Highest Rated</option>
-              </select>
-            </div>
-
-            {/* Category Filter */}
+            {/* Categories */}
             {categoryOptions.length > 0 && (
-              <div className="sp-filter-group">
-                <div className="sp-filter-group__title">Category</div>
-                <div className="sp-checkbox-list">
+              <div className="ap-filter-group">
+                <div className="ap-filter-group__label">Category</div>
+                <div className="ap-filter-scroll">
                   {categoryOptions.map((cat) => (
-                    <label key={cat} className="sp-checkbox-item">
+                    <label key={cat} className="ap-checkbox">
                       <input
                         type="checkbox"
-                        checked={selectedCategory === cat}
-                        onChange={() => {
-                          updateQueryParam('category', selectedCategory === cat ? '' : cat);
-                          updateQueryParam('subcategory', '');
-                        }}
+                        checked={selectedCategories.includes(cat)}
+                        onChange={() => toggleCategory(cat)}
                       />
                       <span>{cat}</span>
                     </label>
                   ))}
                 </div>
+                {selectedCategories.length > 0 && (
+                  <button className="ap-filter-reset-link" onClick={() => setSelectedCategories([])}>
+                    Reset
+                  </button>
+                )}
               </div>
             )}
 
-            {/* Brands Filter */}
-            {brandOptions.length > 0 && (
-              <div className="sp-filter-group">
-                <div className="sp-filter-group__title">Brand</div>
-                <div className="sp-checkbox-list">
-                  {brandOptions.map((b) => (
-                    <label key={b} className="sp-checkbox-item">
+            {/* Sub Categories */}
+            {subcategoryOptions.length > 0 && (
+              <div className="ap-filter-group">
+                <div className="ap-filter-group__label">Sub Category</div>
+                <div className="ap-filter-scroll">
+                  {subcategoryOptions.map((subcat) => (
+                    <label key={subcat} className="ap-checkbox">
                       <input
                         type="checkbox"
-                        checked={selectedBrand === b}
-                        onChange={() => {
-                          updateQueryParam('brand', selectedBrand === b ? '' : b);
-                        }}
+                        checked={selectedSubcategories.includes(subcat)}
+                        onChange={() => toggleSubcategory(subcat)}
                       />
-                      <span>{b}</span>
+                      <span>{subcat}</span>
                     </label>
                   ))}
                 </div>
+                {selectedSubcategories.length > 0 && (
+                  <button
+                    className="ap-filter-reset-link"
+                    onClick={() => setSelectedSubcategories([])}
+                  >
+                    Reset
+                  </button>
+                )}
               </div>
             )}
 
-            {/* Availability */}
-            <div className="sp-filter-group">
-              <div className="sp-filter-group__title">Availability</div>
-              <div className="sp-checkbox-list">
-                <label className="sp-checkbox-item">
-                  <input
-                    type="checkbox"
-                    checked={availability.inStock}
-                    onChange={(e) =>
-                      setAvailability((prev) => ({ ...prev, inStock: e.target.checked }))
-                    }
-                  />
-                  <span>In Stock</span>
-                </label>
-                <label className="sp-checkbox-item">
-                  <input
-                    type="checkbox"
-                    checked={availability.outOfStock}
-                    onChange={(e) =>
-                      setAvailability((prev) => ({ ...prev, outOfStock: e.target.checked }))
-                    }
-                  />
-                  <span>Out of Stock</span>
-                </label>
+            {/* Brands */}
+            {brandOptions.length > 0 && (
+              <div className="ap-filter-group">
+                <div className="ap-filter-group__label">Brand</div>
+                <div className="ap-filter-scroll">
+                  {brandOptions.map((brand) => (
+                    <label key={brand} className="ap-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={selectedBrands.includes(brand)}
+                        onChange={() => toggleBrand(brand)}
+                      />
+                      <span>{brand}</span>
+                    </label>
+                  ))}
+                </div>
+                {selectedBrands.length > 0 && (
+                  <button className="ap-filter-reset-link" onClick={() => setSelectedBrands([])}>
+                    Reset
+                  </button>
+                )}
               </div>
-            </div>
-
-            {/* Price Range */}
-            <div className="sp-filter-group">
-              <div className="sp-filter-group__title">Max Price (₹{priceRange[1].toLocaleString()})</div>
-              <input
-                type="range"
-                min={priceBounds[0]}
-                max={priceBounds[1]}
-                step="100"
-                value={priceRange[1]}
-                onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
-                style={{ width: '100%', accentColor: '#000' }}
-              />
-            </div>
+            )}
           </aside>
 
-          {/* ── Products Grid Area ── */}
-          <main className="sp-products-area" ref={productsAreaRef}>
+          {/* ─── 4-Column Product Grid with 20-Product Pagination ─── */}
+          <main className="ap-shop-main" ref={shopMainRef}>
             {productsLoading ? (
-              <div className="sp-empty">
-                <div className="sp-empty__icon">⏳</div>
-                <h3>Loading gear & accessories…</h3>
-              </div>
+              <EmptyState title="Loading products" text="Fetching live accessories from catalog." />
             ) : filteredProducts.length > 0 ? (
               <>
-                {activeFilterCount > 0 && (
-                  <div className="sp-active-chips">
-                    <span className="sp-active-chips__label">Active Filters:</span>
-                    {selectedBrand && (
-                      <span className="sp-active-chip">
-                        Brand: <strong>{selectedBrand}</strong>
-                        <button
-                          type="button"
-                          className="sp-active-chip__remove"
-                          onClick={() => updateQueryParam('brand', '')}
-                          aria-label="Remove brand filter"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    )}
-                    {selectedCategory && (
-                      <span className="sp-active-chip">
-                        Category: <strong>{selectedCategory}</strong>
-                        <button
-                          type="button"
-                          className="sp-active-chip__remove"
-                          onClick={() => {
-                            updateQueryParam('category', '');
-                            updateQueryParam('subcategory', '');
-                          }}
-                          aria-label="Remove category filter"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    )}
-                    {selectedSubcategory && (
-                      <span className="sp-active-chip">
-                        Subcategory: <strong>{selectedSubcategory}</strong>
-                        <button
-                          type="button"
-                          className="sp-active-chip__remove"
-                          onClick={() => updateQueryParam('subcategory', '')}
-                          aria-label="Remove subcategory filter"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    )}
-                    <button
-                      type="button"
-                      className="sp-active-chips__clear-all"
-                      onClick={handleClearAll}
-                    >
-                      Clear all
-                    </button>
-                  </div>
-                )}
-
-                <div className="sp-products-grid">
+                <div
+                  className={`ap-products-grid ap-products-grid--4col${
+                    filterOpen ? " ap-products-grid--with-sidebar" : ""
+                  }`}
+                >
                   {paginatedProducts.map((product) => (
                     <ProductCard key={product.id} product={product} />
                   ))}
                 </div>
 
-                {/* ── Pagination Controls ── */}
+                {/* Pagination Controls */}
                 <div className="sp-pagination">
                   <div className="sp-pagination__info">
-                    Showing <strong>{startIndex + 1}–{endIndex}</strong> of <strong>{filteredProducts.length}</strong> products
+                    Showing <strong>{startIndex + 1}–{endIndex}</strong> of{" "}
+                    <strong>{filteredProducts.length}</strong> products
                   </div>
 
                   <div className="sp-pagination__controls">
@@ -793,19 +734,23 @@ export default function ShopPage({ filterType }) {
                       disabled={currentPage === 1}
                       onClick={() => handlePageChange(currentPage - 1)}
                     >
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m15 18-6-6 6-6"/></svg>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="m15 18-6-6 6-6" />
+                      </svg>
                       <span>Previous</span>
                     </button>
 
                     <div className="sp-pagination__numbers">
                       {pageNumbers.map((p, idx) =>
-                        p === '...' ? (
-                          <span key={`ellipsis-${idx}`} className="sp-page-ellipsis">…</span>
+                        p === "..." ? (
+                          <span key={`ellipsis-${idx}`} className="sp-page-ellipsis">
+                            …
+                          </span>
                         ) : (
                           <button
                             key={p}
                             type="button"
-                            className={`sp-page-num${p === currentPage ? ' is-active' : ''}`}
+                            className={`sp-page-num${p === currentPage ? " is-active" : ""}`}
                             onClick={() => handlePageChange(p)}
                           >
                             {p}
@@ -821,7 +766,9 @@ export default function ShopPage({ filterType }) {
                       onClick={() => handlePageChange(currentPage + 1)}
                     >
                       <span>Next</span>
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m9 18 6-6-6-6"/></svg>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="m9 18 6-6-6-6" />
+                      </svg>
                     </button>
                   </div>
 
@@ -833,14 +780,15 @@ export default function ShopPage({ filterType }) {
                 </div>
               </>
             ) : (
-              <div className="sp-empty">
-                <div className="sp-empty__icon">🔍</div>
-                <h3>No matching products found</h3>
-                <p>Try clearing your active filters or searching for something else.</p>
-                <button type="button" className="sp-empty__reset-btn" onClick={handleClearAll}>
-                  Clear all filters
-                </button>
-              </div>
+              <EmptyState
+                title={liveProducts.length ? "No matching products" : "No live products yet"}
+                text={
+                  liveProducts.length
+                    ? "Try adjusting your filters or search term."
+                    : "Publish products from the Accessories Dashboard and they will appear here automatically."
+                }
+                onReset={activeFilterCount > 0 ? resetAll : undefined}
+              />
             )}
           </main>
         </div>

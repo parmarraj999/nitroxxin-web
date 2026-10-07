@@ -909,3 +909,11 @@
   }
 }
 
+@media (max-width: 600px) {
+  .review-section__stars,
+  .review-section__score-stars {
+    gap: 6px;
+  }
+}
+
+
