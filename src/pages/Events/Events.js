@@ -250,7 +250,7 @@ export default function Events() {
     }));
   }, [rawCategories, categories]);
 
-  const [query, setQuery] = useState("");
+  const [query] = useState("");
   const [activeSlide, setActiveSlide] = useState(0);
   const [activeFilter, setActiveFilter] = useState("All");
 
