@@ -114,15 +114,17 @@
     .navbar {
         height: 64px;
     }
+
     .navbar-logo {
         font-size: 1.25rem;
     }
+
     .navbar-signup {
         display: none;
     }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 600px) {
     .navbar-container {
         padding: 0 16px;
     }
@@ -132,7 +134,7 @@
     }
 
     .navbar-action-btn {
-        gap: 10px;
+        gap: 20px;
     }
 
     .navbar-login,
@@ -140,17 +142,30 @@
         padding: 8px 14px;
         font-size: 14px;
     }
-}
 
-@media (max-width: 600px) {
     .navbar-action-btn {
-        gap: 6px;
+        gap: 10px;
     }
 
     .navbar-login {
         padding: 8px 12px;
     }
+
+    .navbar-logo-img {
+        height: 40px;
+    }
+
+    .navbar {
+        height: 60px;
+    }
+
+    .navbar-search {
+        width: 22px;
+        height: 22px;
+        cursor: pointer;
+    }
 }
+
 
 @media (max-width: 380px) {
     .navbar-logo {
@@ -161,4 +176,3 @@
         font-size: 12px;
     }
 }
-

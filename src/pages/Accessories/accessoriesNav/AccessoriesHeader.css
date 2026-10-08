@@ -1,3 +1,4 @@
+
 /* ===== ACCESSORIES HEADER & CATEGORY SUB-MENU DROPDOWN ===== */
 
 .ap-header {
@@ -331,6 +332,10 @@
   color: #fff !important;
 }
 
+.ap-header-search-icon-mobile{
+  display: none;
+}
+
 /* Responsive adjustments */
 @media (max-width: 992px) {
   .ap-header__nav {
@@ -347,6 +352,27 @@
   .ap-header__search {
     display: none;
   }
+  .ap-header-search-icon-mobile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: rgba(40, 40, 40, 0.08);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background-color 0.2s ease, transform 0.15s ease;
+  }
+  .ap-header-search-icon-mobile:hover {
+    background: rgba(40, 40, 40, 0.16);
+    transform: translateY(-1px);
+  }
+  .ap-header-search-icon-mobile svg {
+    width: 20px;
+    height: 20px;
+    color: #111;
+  }
   .ap-header__right {
     margin-left: auto;
   }
@@ -362,6 +388,17 @@
   }
   .ap-header__icon-btn:first-of-type {
     display: none;
+  }
+  .ap-header__logo-img {
+    height: 40px;
+  }
+  .ap-header {
+    padding: 0 10px 0 0;
+    height: 60px;
+  }
+  .ap-header .bp-trigger-btn {
+    padding: 6px 10px;
+    font-size: 11.5px;
   }
 }
 

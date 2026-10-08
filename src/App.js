@@ -24,6 +24,7 @@ import CategoryPage from './pages/Accessories/categoryPage/categoryPage';
 import ShopPage from './pages/Accessories/shopPage/ShopPage';
 import MarketplaceSearch from './pages/Accessories/search/MarketplaceSearch';
 import CartPage from './pages/Cart/CartPage';
+import ComboDetailPage from './pages/Accessories/combo/ComboDetailPage';
 
 import { AuthProvider } from './components/AuthModal/useAuthModal';
 import { FirebaseAuthProvider } from './context/AuthContext';
@@ -131,6 +132,8 @@ const AppShell = () => {
             element={<BrandPage />}
           />
           <Route path="/accessories/brands/:brandId" element={<BikeBrandPage />} />
+          <Route path="/combo/:comboId" element={<ComboDetailPage />} />
+          <Route path="/accessories/combo/:comboId" element={<ComboDetailPage />} />
         </Route>
         <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
 

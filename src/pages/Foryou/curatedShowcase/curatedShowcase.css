@@ -428,10 +428,22 @@
     padding-top: 5rem;
     padding-bottom: 6rem;
   }
+  .cs-filter-wrapper h1{
+    font-size: 1.2rem;
+    padding-left: 1rem;
+  }
+  .cs-carousel-wrapper {
+    padding-top: 0;
+  }
 
   .cs-filter-bar {
     padding: 4px 16px 8px;
-    gap: 15px;
+    gap: 10px;
+  }
+  .cs-filter-tab{
+    padding: 5px 12px;
+    font-size: 14px;
+    font-weight: 400;
   }
 
   .cs-carousel-track {
@@ -441,7 +453,7 @@
 
   .cs-card {
     flex: 0 0 220px;
-    max-width: 250px;
+    max-width: 200px;
   }
 
   .cs-card__image-box {

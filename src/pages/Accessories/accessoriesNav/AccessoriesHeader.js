@@ -4,6 +4,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { useAuthModal } from '../../../components/AuthModal/useAuthModal';
 import { useAccessoriesContext } from '../../../context/AccessoriesContext';
 import SearchPopup from './SearchPopup';
+import BecomePartner from '../../../components/Partner/BecomePartner';
 import './AccessoriesHeader.css';
 
 // ── Default fallback categories if database is loading or empty ──
@@ -421,9 +422,9 @@ export default function AccessoriesHeader({ showBack = false, search = '', onSea
         })}
       </nav>
 
-      {/* Right side: search + cart + login + profile (Logout button removed) */}
+
       <div className="ap-header__right">
-        {/* Search bar: Click/type opens SearchPopup; clicking search icon redirects to /shop */}
+
         <div
           className="ap-header__search"
           ref={searchContainerRef}
@@ -453,6 +454,33 @@ export default function AccessoriesHeader({ showBack = false, search = '', onSea
           />
         </div>
 
+        <div
+          className="ap-header-search-icon-mobile"
+          ref={searchContainerRef}
+          onClick={() => setIsSearchOpen(true)}
+          role="button"
+          tabIndex="0"
+          aria-label="Search Accessories"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="lucide lucide-search preview-icon"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.34-4.34" />
+          </svg>
+        </div>
+
+        <BecomePartner theme="light" />
+
         <Link to="/cart" className="ap-header__icon-btn" aria-label="Cart">
           <CartIcon />
         </Link>
@@ -476,9 +504,9 @@ export default function AccessoriesHeader({ showBack = false, search = '', onSea
           onClick={
             !isAuthenticated
               ? (e) => {
-                  e.preventDefault();
-                  openLogin();
-                }
+                e.preventDefault();
+                openLogin();
+              }
               : undefined
           }
         >
