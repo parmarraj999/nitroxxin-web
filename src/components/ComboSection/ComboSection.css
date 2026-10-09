@@ -12,29 +12,32 @@
 
 .combo-section {
   width: 100%;
+  height: 90vh;
   position: relative;
   box-sizing: border-box;
-  padding: clamp(32px, 5vw, 64px) clamp(16px, 4vw, 48px);
+  padding: clamp(32px, 5vw, 64px) clamp(16px, 2vw, 20px);
   transition: background 0.3s ease;
   overflow: hidden;
 }
 
 /* Light Theme (Accessories Page) */
 .combo-section--light {
-  background: #f8fafc;
+  /* background: #f8fafc; */
   color: #0f172a;
+  margin-top: 10rem;
+
 }
 
 /* Dark Theme (For You Page) */
 .combo-section--dark {
-  background: linear-gradient(180deg, rgba(14, 18, 24, 0.98) 0%, rgba(9, 11, 15, 1) 100%);
+  /* background: linear-gradient(180deg, rgba(14, 18, 24, 0.98) 0%, rgba(9, 11, 15, 1) 100%); */
   color: #f1f5f9;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .combo-container {
-  max-width: 1360px;
+  max-width: 90%;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -61,7 +64,6 @@
   text-transform: uppercase;
   background: linear-gradient(135deg, #ff6b00 0%, #ff3b30 100%);
   color: #ffffff;
-  box-shadow: 0 4px 14px rgba(255, 107, 0, 0.3);
   margin-bottom: 10px;
 }
 
@@ -132,7 +134,6 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   outline: none;
 }
@@ -149,20 +150,21 @@
   background: #111111;
   border-color: rgba(255, 255, 255, 0.45);
   transform: translateY(-50%) scale(1.1);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
 }
 
 /* ── Cards Scroll Track (With Peek Effect) ── */
 .combo-cards-track {
   display: flex;
   gap: 22px;
-  overflow-x: auto;
+  /* overflow-x: auto; */
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
   padding: 16px clamp(40px, 5vw, 64px) 24px clamp(40px, 5vw, 64px);
   scrollbar-width: none;
   align-items: stretch;
   width: 100%;
+  height: 400px;
+  align-items: center;
   box-sizing: border-box;
 }
 
@@ -173,11 +175,12 @@
 /* ── Individual Combo Deal Card (Matches Reference UI) ── */
 .combo-deal-card {
   scroll-snap-align: center;
-  width: clamp(280px, 27vw, 340px);
-  min-width: clamp(280px, 27vw, 340px);
-  min-height: clamp(470px, 48vw, 530px);
+  width: clamp(280px, 34vw, 500px);
+  min-width: clamp(280px, 34vw, 500px);
+  min-height: 300px;
+  height: 300px;
   border-radius: 34px;
-  padding: 24px 22px 20px 22px;
+  padding: 5rem 22px 20px 22px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -185,23 +188,17 @@
   color: #ffffff;
   cursor: pointer;
   position: relative;
-  overflow: hidden;
-  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.22);
+  /* overflow: hidden; */
+  /* box-shadow: 0 18px 46px rgba(0, 0, 0, 0.22); */
   transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
   outline: none;
 }
 
-.combo-deal-card:hover {
-  transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 28px 60px rgba(0, 0, 0, 0.34);
-}
-
 /* ── Top Area: Mixed Product Image + Starburst Discount + Info Icon ── */
 .combo-card-top-visual {
-  position: relative;
   width: 100%;
-  height: 185px;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -209,12 +206,11 @@
 }
 
 .combo-card-img-box {
-  width: 170px;
-  height: 170px;
+  width: 100%;
+  /* height: 170px; */
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
 }
 
 .combo-card-mixed-img {

@@ -192,7 +192,7 @@
   width: 100vw;
   height: 100vh;
   z-index: 999999;
-  background: rgba(0, 0, 0, 0.96);
+  background: rgba(0, 0, 0, 0.66);
   backdrop-filter: blur(54px);
   -webkit-backdrop-filter: blur(54px);
   display: flex;
@@ -216,7 +216,7 @@
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  background: rgba(18, 18, 22, 0.94);
+  background: rgba(18, 18, 22, 0.64);
   backdrop-filter: blur(54px);
   -webkit-backdrop-filter: blur(54px);
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -253,15 +253,30 @@
   gap: 12px;
 }
 
+.bp-modal-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.bp-modal-title {
+  font-size: 19px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
 .bp-modal-track-badge {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 5px 12px;
+  padding: 4px 11px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 20px;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 600;
   color: #e4e4e7;
   letter-spacing: 0.2px;
@@ -415,6 +430,13 @@
   gap: 16px;
 }
 
+/* 3-Column Row for City, State, Country/County */
+.bp-field-row-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+
 /* Custom Select Dropdown with Chevron */
 .bp-select-wrapper {
   position: relative;
@@ -490,6 +512,193 @@
   color: #71717a;
   pointer-events: none;
   font-variant-numeric: tabular-nums;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   CREATOR AFFILIATE FORM STYLES
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Perks Strip at top of form */
+.bp-creator-perks-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  padding: 10px 14px;
+  background: rgba(255, 31, 31, 0.05);
+  border: 1px solid rgba(255, 31, 31, 0.16);
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.bp-creator-perk-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #e4e4e7;
+}
+
+.bp-creator-perk-item svg {
+  flex-shrink: 0;
+}
+
+/* Required indicator & subtags */
+.bp-required-star {
+  color: #ff3b30;
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+.bp-field-subtag {
+  font-size: 10.5px;
+  color: #ff3b30;
+  font-weight: 600;
+  background: rgba(255, 59, 48, 0.1);
+  border: 1px solid rgba(255, 59, 48, 0.22);
+  padding: 1px 6px;
+  border-radius: 5px;
+  margin-left: 4px;
+  display: inline-block;
+}
+
+.bp-label-with-hint {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.bp-field-hint {
+  font-size: 11px;
+  color: #71717a;
+  font-weight: 400;
+}
+
+/* Prefixed Input (e.g. @ for Instagram) */
+.bp-input-prefix-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.bp-input-prefix {
+  position: absolute;
+  left: 14px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ff3b30;
+  pointer-events: none;
+  user-select: none;
+}
+
+.bp-field-input--prefixed {
+  padding-left: 30px;
+}
+
+/* Input with icon (e.g. Viral video link) */
+.bp-input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.bp-input-icon {
+  position: absolute;
+  left: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ff3b30;
+  pointer-events: none;
+}
+
+.bp-field-input--with-icon {
+  padding-left: 38px;
+}
+
+/* Social Media Profile URLs Dynamic List */
+.bp-social-links-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-bottom: 8px;
+}
+
+.bp-social-link-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.bp-social-link-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.bp-social-platform-icon {
+  position: absolute;
+  left: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.bp-social-input {
+  padding-left: 38px;
+}
+
+.bp-remove-social-btn {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9px;
+  color: #a1a1aa;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.18s ease;
+}
+
+.bp-remove-social-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+}
+
+.bp-add-social-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 8px 14px;
+  color: #d4d4d8;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: all 0.18s ease;
+  margin-top: 2px;
+}
+
+.bp-add-social-btn:hover {
+  background: rgba(255, 31, 31, 0.08);
+  border-color: #ff1f1f;
+  color: #ffffff;
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -663,7 +872,8 @@
     padding-bottom: 20px;
   }
 
-  .bp-field-row-2 {
+  .bp-field-row-2,
+  .bp-field-row-3 {
     grid-template-columns: 1fr;
     gap: 0;
   }
@@ -692,5 +902,23 @@
     flex: 1;
     justify-content: center;
     text-align: center;
+  }
+
+  .bp-creator-perks-strip {
+    gap: 6px 10px;
+    padding: 8px 10px;
+    margin-bottom: 16px;
+  }
+
+  .bp-creator-perk-item {
+    font-size: 11px;
+  }
+
+  .bp-modal-title-group {
+    gap: 8px;
+  }
+
+  .bp-modal-title {
+    font-size: 17px;
   }
 }

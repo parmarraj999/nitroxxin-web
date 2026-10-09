@@ -252,16 +252,12 @@ export default function ComboSection({
             {combos.map((combo, idx) => {
               const cardColor = combo.color || CARD_COLOR_PALETTE[idx % CARD_COLOR_PALETTE.length];
               const mixedImg =
-                combo.mixedImage ||
-                combo.image ||
-                combo.bannerUrl ||
-                "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&w=600&q=80";
-
+                combo.mergedImageUrl
               return (
                 <div
                   key={combo.id || idx}
                   className="combo-deal-card"
-                  style={{ backgroundColor: cardColor }}
+                  // style={{ backgroundColor: cardColor }}
                   onClick={() => handleCardClick(combo.id)}
                   role="button"
                   tabIndex="0"
@@ -277,52 +273,13 @@ export default function ComboSection({
                         loading="lazy"
                       />
                     </div>
-
-                    {/* Starburst/Circle Yellow Discount Badge (Like "20% off" in reference) */}
-                    {combo.discountText && (
-                      <div className="combo-card-burst-badge">
-                        <span>{combo.discountText}</span>
-                      </div>
-                    )}
-
-                    {/* Info Icon top-right */}
-                    <button
-                      type="button"
-                      className="combo-card-info-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCardClick(combo.id);
-                      }}
-                      aria-label="More details"
-                      title="View combo details"
-                    >
-                      i
-                    </button>
                   </div>
 
                   {/* Middle Content Area */}
-                  <div className="combo-card-body">
-                    {/* Brand / Store Pill Badge */}
-                    <div className="combo-card-brand-pill">
-                      <span className="combo-card-brand-icon">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                        </svg>
-                      </span>
-                      <span className="combo-card-brand-name">
-                        {combo.badge || "Nitroxx Bundle"}
-                      </span>
-                    </div>
-
-                    {/* Main Headline */}
-                    <h3 className="combo-card-title">{combo.title}</h3>
-
-                    {/* Subtitle / Description */}
-                    <p className="combo-card-subtitle">{combo.subtitle}</p>
-                  </div>
+                
 
                   {/* Bottom Meta & Progress/Divider Area */}
-                  <div className="combo-card-footer">
+                  {/* <div className="combo-card-footer">
                     <div className="combo-card-progress-bar">
                       <div className="combo-card-progress-fill" />
                     </div>
@@ -335,7 +292,7 @@ export default function ComboSection({
                         {combo.progressLabel || (combo.regularPrice ? `MRP Rs. ${Number(combo.regularPrice).toLocaleString("en-IN")}` : "View Bundle")}
                       </span>
                     </div>
-                  </div>
+                  </div> */}
                 </div>
               );
             })}
