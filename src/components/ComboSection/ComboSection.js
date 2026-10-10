@@ -1,7 +1,8 @@
 import React, { useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "./ComboSection.css";
-import { useDocument } from "../../hooks/useFirestore";
+import { useCollection, useDocument } from "../../hooks/useFirestore";
+import { COLLECTIONS } from "../../services/firebase";
 
 // Color presets for deal cards matching the reference image palette
 const CARD_COLOR_PALETTE = [
@@ -22,37 +23,11 @@ const DEFAULT_FALLBACK_COMBOS = [
     badge: "Nitroxx Mart",
     discountText: "25% off",
     color: "#2da84e",
-    mixedImage: "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&w=600&q=80",
+    mergedImageUrl: "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&w=600&q=80",
     validUntil: "Aug 4 - Aug 31",
     offerPrice: 6897,
     regularPrice: 8397,
     progressLabel: "0 of 8,397 INR",
-    productList: [
-      {
-        id: "combo-prod-1",
-        title: "Axor Apex Venom Aerodynamic Helmet",
-        brand: "Axor",
-        price: 4999,
-        offerPrice: 4299,
-        imageUrl: "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&w=600&q=80",
-      },
-      {
-        id: "combo-prod-2",
-        title: "Kevlar Reinforced Touchscreen Riding Gloves",
-        brand: "Rynox",
-        price: 2499,
-        offerPrice: 1999,
-        imageUrl: "https://images.unsplash.com/photo-1589182373726-e4f658ab50f0?auto=format&fit=crop&w=600&q=80",
-      },
-      {
-        id: "combo-prod-3",
-        title: "Anti-Pollution Thermal Rider Balaclava",
-        brand: "Nitroxx",
-        price: 899,
-        offerPrice: 599,
-        imageUrl: "https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=600&q=80",
-      },
-    ],
   },
   {
     id: "combo-urban-commuter",
@@ -61,37 +36,11 @@ const DEFAULT_FALLBACK_COMBOS = [
     badge: "Urban Rider",
     discountText: "20% off",
     color: "#c0262b",
-    mixedImage: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=600&q=80",
+    mergedImageUrl: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=600&q=80",
     validUntil: "Limited Period Deal",
     offerPrice: 10999,
     regularPrice: 13497,
     progressLabel: "0 of 13,497 INR",
-    productList: [
-      {
-        id: "combo-prod-4",
-        title: "Airframe CE-Level 2 Armored Riding Jacket",
-        brand: "Alpinestars",
-        price: 7999,
-        offerPrice: 6799,
-        imageUrl: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=600&q=80",
-      },
-      {
-        id: "combo-prod-5",
-        title: "BioArmor Ergonomic Dual Bionic Knee Guards",
-        brand: "Scoyco",
-        price: 2899,
-        offerPrice: 2299,
-        imageUrl: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=600&q=80",
-      },
-      {
-        id: "combo-prod-6",
-        title: "Heavy-Duty Magnetic Waterproof Tank Bag",
-        brand: "ViaTerra",
-        price: 2599,
-        offerPrice: 1999,
-        imageUrl: "https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=600&q=80",
-      },
-    ],
   },
   {
     id: "combo-track-racing",
@@ -100,29 +49,11 @@ const DEFAULT_FALLBACK_COMBOS = [
     badge: "Track Pro",
     discountText: "30% off",
     color: "#1e3a8a",
-    mixedImage: "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=600&q=80",
+    mergedImageUrl: "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=600&q=80",
     validUntil: "Weekend Flash Deal",
     offerPrice: 16499,
     regularPrice: 23599,
     progressLabel: "0 of 23,599 INR",
-    productList: [
-      {
-        id: "combo-prod-1",
-        title: "Axor Apex Venom Aerodynamic Helmet",
-        brand: "Axor",
-        price: 4999,
-        offerPrice: 4299,
-        imageUrl: "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&w=600&q=80",
-      },
-      {
-        id: "combo-prod-2",
-        title: "Kevlar Reinforced Touchscreen Riding Gloves",
-        brand: "Rynox",
-        price: 2499,
-        offerPrice: 1999,
-        imageUrl: "https://images.unsplash.com/photo-1589182373726-e4f658ab50f0?auto=format&fit=crop&w=600&q=80",
-      },
-    ],
   },
   {
     id: "combo-monsoon-weather",
@@ -131,21 +62,11 @@ const DEFAULT_FALLBACK_COMBOS = [
     badge: "All-Weather",
     discountText: "15% off",
     color: "#d97706",
-    mixedImage: "https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=600&q=80",
+    mergedImageUrl: "https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=600&q=80",
     validUntil: "Monsoon Special",
     offerPrice: 8299,
     regularPrice: 9799,
     progressLabel: "0 of 9,799 INR",
-    productList: [
-      {
-        id: "combo-prod-6",
-        title: "Heavy-Duty Magnetic Waterproof Tank Bag",
-        brand: "ViaTerra",
-        price: 2599,
-        offerPrice: 1999,
-        imageUrl: "https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=600&q=80",
-      },
-    ],
   },
 ];
 
@@ -156,13 +77,71 @@ export default function ComboSection({
 }) {
   const navigate = useNavigate();
 
-  // Fetch combo configurations from page_layouts / accessories_layout
+  // 1. Live Firestore "combo" collection query (primary source)
+  const { data: liveCombos = [], loading: liveCombosLoading } = useCollection(
+    COLLECTIONS.combo || "combo"
+  );
+  const { data: pluralCombos = [] } = useCollection("combos");
+
+  // 2. Fetch combo configurations from page_layouts / accessories_layout (secondary fallback)
   const { data: primaryLayout } = useDocument("page_layouts", "accessories_layout");
   const { data: fallbackLayout } = useDocument("page_layouts", "accessories");
   const { data: singularLayout } = useDocument("page_layout", "accessories_layout");
 
   // Determine active combos list
   const combos = useMemo(() => {
+    // 1. Use live Firestore combo categories if available
+    const activeFirestoreList = liveCombos.length > 0 ? liveCombos : pluralCombos;
+    if (activeFirestoreList && activeFirestoreList.length > 0) {
+      return activeFirestoreList.map((c, idx) => {
+        const title =
+          c.categoryName ||
+          c.title ||
+          c.name ||
+          c.comboCategory ||
+          c.comboName ||
+          `Combo Pack ${idx + 1}`;
+        const subtitle = c.subtitle || c.description || c.details || "";
+        const image =
+          c.mergedImageUrl ||
+          c.image ||
+          c.imageUrl ||
+          c.bannerUrl ||
+          c.banner ||
+          c.mixedImage ||
+          c.coverImage ||
+          c.thumbnail ||
+          "";
+        const discountText =
+          c.discountText ||
+          (c.discount ? `${c.discount}% off` : "") ||
+          (c.discountPercent ? `${c.discountPercent}% off` : "");
+        const badge =
+          c.badge ||
+          c.tag ||
+          (c.discount ? `${c.discount}% OFF` : "Nitroxx Special");
+        const color =
+          c.color ||
+          c.bgColor ||
+          CARD_COLOR_PALETTE[idx % CARD_COLOR_PALETTE.length];
+
+        return {
+          id: c.id,
+          ...c,
+          title,
+          subtitle,
+          mergedImageUrl: image,
+          discountText,
+          badge,
+          color,
+          validUntil: c.validUntil || c.validity || "Limited Period Deal",
+          offerPrice: c.offerPrice || c.dealPrice || c.price,
+          regularPrice: c.regularPrice || c.mrp || c.originalPrice,
+        };
+      });
+    }
+
+    // 2. Layout documents fallback
     const raw =
       primaryLayout?.combos ||
       fallbackLayout?.combos ||
@@ -170,31 +149,44 @@ export default function ComboSection({
       [];
 
     if (Array.isArray(raw) && raw.length > 0) {
-      const valid = raw.filter((c) => c && (c.title || c.name));
+      const valid = raw.filter((c) => c && (c.title || c.name || c.categoryName));
       if (valid.length > 0) {
         return valid.map((c, idx) => ({
           ...c,
+          title: c.title || c.name || c.categoryName || `Combo Deal ${idx + 1}`,
           color: c.color || c.bgColor || CARD_COLOR_PALETTE[idx % CARD_COLOR_PALETTE.length],
-          mixedImage: c.mixedImage || c.image || c.bannerUrl || c.banner,
+          mergedImageUrl:
+            c.mergedImageUrl ||
+            c.image ||
+            c.bannerUrl ||
+            c.banner ||
+            c.imageUrl ||
+            c.mixedImage,
         }));
       }
     }
+
+    // 3. Static fallback
     return DEFAULT_FALLBACK_COMBOS;
-  }, [primaryLayout, fallbackLayout, singularLayout]);
+  }, [liveCombos, pluralCombos, primaryLayout, fallbackLayout, singularLayout]);
 
   const sliderRef = useRef(null);
 
   // Slider navigation: scroll by 1 card width + gap
   const scrollSlider = (direction) => {
     if (sliderRef.current) {
-      const cardWidth = 320;
-      sliderRef.current.scrollBy({
-        left: direction === "left" ? -cardWidth : cardWidth,
+      const container = sliderRef.current;
+      const firstCard = container.querySelector(".combo-deal-card");
+      const cardWidth = firstCard ? firstCard.getBoundingClientRect().width : 340;
+      const gap = 22;
+      const scrollAmount = cardWidth + gap;
+
+      container.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
         behavior: "smooth",
       });
     }
   };
-
 
   const handleCardClick = (comboId) => {
     navigate(`/combo/${comboId}`);

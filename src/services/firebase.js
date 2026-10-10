@@ -91,6 +91,9 @@ export const COLLECTIONS = {
   coupons: "coupons",
   wallet: "wallet",
   eventLikes: "event_likes",
+  query: "query",
+  combo: "combo",
+  combos: "combos",
 };
 
 export const serverTimestamp = () => getFirebase().firestore.FieldValue.serverTimestamp();

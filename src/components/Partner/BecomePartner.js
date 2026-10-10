@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import './BecomePartner.css';
+import { useAuth } from '../../context/AuthContext';
+import { submitPartnerQuery } from '../../services/queryService';
 
 // ── 3 Partnership Options ──
 export const PARTNER_OPTIONS = [
@@ -147,10 +149,13 @@ function getSocialIcon(url = '') {
 }
 
 export default function BecomePartner({ theme = 'dark', className = '' }) {
+  const { user } = useAuth() || {};
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedOption, setSelectedOption] = useState(PARTNER_OPTIONS[0]);
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
 
   // Form state matching reference image fields (for Brand & Organizer)
   const [formData, setFormData] = useState({
@@ -233,6 +238,7 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
     setSelectedOption(option);
     setIsDropdownOpen(false);
     setSubmitted(false);
+    setSubmitError(null);
     setIsFormOpen(true);
   };
 
@@ -326,27 +332,123 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
     setIsFormOpen(false);
   };
 
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
-    if (selectedOption.id === 'creator') {
-      console.log('Creator Affiliate application submitted:', {
-        type: selectedOption.id,
-        ...creatorData,
-        socialLinks: creatorData.socialLinks.filter((l) => l.trim().length > 0),
-      });
-    } else if (selectedOption.id === 'organizer') {
-      console.log('Event Host application submitted:', {
-        type: selectedOption.id,
-        ...organizerData,
-        socialLinks: organizerData.socialLinks.filter((l) => l.trim().length > 0),
-      });
-    } else {
-      console.log('Partner application submitted:', {
-        type: selectedOption.id,
-        ...formData,
-      });
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      let queryPayload = {};
+
+      if (selectedOption.id === 'creator') {
+        // Affiliate Program (Creator)
+        const activeSocials = (creatorData.socialLinks || [])
+          .map((s) => s.trim())
+          .filter(Boolean);
+
+        queryPayload = {
+          type: 'affiliate',
+          role: 'affiliate',
+          partnerType: 'creator',
+          partnerTitle: selectedOption.title,
+          badge: selectedOption.badge,
+          name: (creatorData.name || '').trim(),
+          instagramUsername: (creatorData.instagramUsername || '').trim(),
+          socialLinks: activeSocials,
+          viralVideoLink: (creatorData.viralVideoLink || '').trim(),
+          shortDescription: (creatorData.shortDescription || '').trim(),
+          userId: user?.uid || null,
+          userEmail: user?.email || null,
+          userName: (creatorData.name || '').trim() || user?.displayName || null,
+          userPhone: user?.phoneNumber || null,
+          details: {
+            name: (creatorData.name || '').trim(),
+            instagramUsername: (creatorData.instagramUsername || '').trim(),
+            socialLinks: activeSocials,
+            viralVideoLink: (creatorData.viralVideoLink || '').trim(),
+            shortDescription: (creatorData.shortDescription || '').trim(),
+          },
+        };
+      } else if (selectedOption.id === 'organizer') {
+        // Event Host / Organizer
+        const activeSocials = (organizerData.socialLinks || [])
+          .map((s) => s.trim())
+          .filter(Boolean);
+
+        queryPayload = {
+          type: 'host',
+          role: 'host',
+          partnerType: 'organizer',
+          partnerTitle: selectedOption.title,
+          badge: selectedOption.badge,
+          companyName: (organizerData.companyName || '').trim(),
+          legalName: (organizerData.legalName || '').trim(),
+          phone: (organizerData.phone || '').trim(),
+          email: (organizerData.email || '').trim(),
+          streetAddress: (organizerData.streetAddress || '').trim(),
+          city: (organizerData.city || '').trim(),
+          state: (organizerData.state || '').trim(),
+          country: organizerData.country || '',
+          eventsPerMonth: organizerData.eventsPerMonth || '',
+          socialLinks: activeSocials,
+          userId: user?.uid || null,
+          userEmail: (organizerData.email || '').trim() || user?.email || null,
+          userName: (organizerData.legalName || '').trim() || (organizerData.companyName || '').trim() || user?.displayName || null,
+          userPhone: (organizerData.phone || '').trim() || user?.phoneNumber || null,
+          details: {
+            companyName: (organizerData.companyName || '').trim(),
+            legalName: (organizerData.legalName || '').trim(),
+            phone: (organizerData.phone || '').trim(),
+            email: (organizerData.email || '').trim(),
+            streetAddress: (organizerData.streetAddress || '').trim(),
+            city: (organizerData.city || '').trim(),
+            state: (organizerData.state || '').trim(),
+            country: organizerData.country || '',
+            eventsPerMonth: organizerData.eventsPerMonth || '',
+            socialLinks: activeSocials,
+          },
+        };
+      } else {
+        // Brand Partner
+        queryPayload = {
+          type: 'brand',
+          role: 'brand',
+          partnerType: 'brand',
+          partnerTitle: selectedOption.title,
+          badge: selectedOption.badge,
+          legalBusinessName: (formData.legalBusinessName || '').trim(),
+          businessWebsite: (formData.businessWebsite || '').trim(),
+          industry: formData.industry || '',
+          employeeCount: formData.employeeCount || '',
+          primaryCountry: formData.primaryCountry || '',
+          companyRegNumber: (formData.companyRegNumber || '').trim(),
+          annualRevenueRange: formData.annualRevenueRange || '',
+          briefDescription: (formData.briefDescription || '').trim(),
+          userId: user?.uid || null,
+          userEmail: user?.email || null,
+          userName: (formData.legalBusinessName || '').trim() || user?.displayName || null,
+          userPhone: user?.phoneNumber || null,
+          details: {
+            legalBusinessName: (formData.legalBusinessName || '').trim(),
+            businessWebsite: (formData.businessWebsite || '').trim(),
+            industry: formData.industry || '',
+            employeeCount: formData.employeeCount || '',
+            primaryCountry: formData.primaryCountry || '',
+            companyRegNumber: (formData.companyRegNumber || '').trim(),
+            annualRevenueRange: formData.annualRevenueRange || '',
+            briefDescription: (formData.briefDescription || '').trim(),
+          },
+        };
+      }
+
+      await submitPartnerQuery(queryPayload);
+      setSubmitted(true);
+    } catch (err) {
+      console.error('Error submitting application into query collection:', err);
+      setSubmitError('Failed to submit application. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
-    setSubmitted(true);
   };
 
   return (
@@ -436,6 +538,9 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
 
               {/* Modal Body */}
               <div className="bp-modal-body">
+                {submitError && (
+                  <div className="bp-form-error-banner">{submitError}</div>
+                )}
                 {!submitted ? (
                   selectedOption.id === 'creator' ? (
                     /* ── CREATOR AFFILIATE PROGRAM FORM ── */
@@ -632,8 +737,12 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
                           >
                             &lsaquo; Back
                           </button>
-                          <button type="submit" className="bp-btn-next">
-                            Submit Application &rsaquo;
+                          <button
+                            type="submit"
+                            className="bp-btn-next"
+                            disabled={isSubmitting}
+                          >
+                            {isSubmitting ? 'Submitting...' : 'Submit Application \u203a'}
                           </button>
                         </div>
                       </div>
@@ -932,8 +1041,12 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
                           >
                             &lsaquo; Back
                           </button>
-                          <button type="submit" className="bp-btn-next">
-                            Submit Application &rsaquo;
+                          <button
+                            type="submit"
+                            className="bp-btn-next"
+                            disabled={isSubmitting}
+                          >
+                            {isSubmitting ? 'Submitting...' : 'Submit Application \u203a'}
                           </button>
                         </div>
                       </div>
@@ -1131,8 +1244,12 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
                           >
                             &lsaquo; Back
                           </button>
-                          <button type="submit" className="bp-btn-next">
-                            Next &rsaquo;
+                          <button
+                            type="submit"
+                            className="bp-btn-next"
+                            disabled={isSubmitting}
+                          >
+                            {isSubmitting ? 'Submitting...' : 'Submit Application \u203a'}
                           </button>
                         </div>
                       </div>

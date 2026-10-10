@@ -777,10 +777,29 @@
   transition: all 0.2s ease;
 }
 
-.bp-btn-next:hover {
+.bp-btn-next:hover:not(:disabled) {
   background: #ff1f1f;
   border-color: #ff1f1f;
   box-shadow: 0 4px 14px rgba(255, 31, 31, 0.4);
+}
+
+.bp-btn-next:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #27272a;
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: none;
+}
+
+.bp-form-error-banner {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 8px;
+  color: #fca5a5;
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-bottom: 16px;
+  text-align: center;
 }
 
 /* ══════════════════════════════════════════════════════════════════════

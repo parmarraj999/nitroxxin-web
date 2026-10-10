@@ -61,7 +61,7 @@
 .category-page__grid {
   margin-top: 70px;
   display: grid;
-  grid-template-columns: repeat(5, 300px);
+  grid-template-columns: repeat(5, 250px);
   justify-content: space-between;
   gap: 70px;
 }

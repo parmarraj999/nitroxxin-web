@@ -3,12 +3,12 @@ import './shopByCategory.css';
 import { Link } from 'react-router-dom';
 import { useAccessoriesContext } from '../../../context/AccessoriesContext';
 
-const CategoryCard = ({ id, image, title }) => {
+const CategoryCard = ({ id, image, title, imageName }) => {
     return (
         <Link className="category-card-item" to={`/accessories/category/${id || encodeURIComponent(title)}`}>
             <div className="category-card-box">
                 <img
-                    src={image}
+                    src={imageName ? `../assets/category-icons/${imageName}` : image}
                     alt={title}
                     className="category-card-img"
                     onError={(e) => {
@@ -16,7 +16,7 @@ const CategoryCard = ({ id, image, title }) => {
                         e.currentTarget.src = '/assets/images/category-helmet.png';
                     }}
                 />
-                <div className="category-card-overlay">
+                {/* <div className="category-card-overlay">
                     <span className="category-card-title">{title}</span>
                     <span className="category-card-arrow">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -24,7 +24,7 @@ const CategoryCard = ({ id, image, title }) => {
                             <polyline points="12 5 19 12 12 19" />
                         </svg>
                     </span>
-                </div>
+                </div> */}
             </div>
         </Link>
     );
@@ -66,9 +66,12 @@ const ShopByCategory = () => {
         ? cachedCategories.map((c) => ({
             id: c.id,
             image: c.image || c.imageUrl || '/assets/images/category-helmet.png',
-            title: c.title || c.label || c.name || 'Category'
+            title: c.title || c.label || c.name || 'Category',
+            imageName: c.imageName
         }))
         : fallbackCategories;
+
+        console.log(categories)
 
     const scroll = (direction) => {
         if (sliderRef.current) {

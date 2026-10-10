@@ -53,8 +53,9 @@ const Navigation = () => {
   const isBookingPage = location.pathname.includes('/book');
   const isProfilePage = location.pathname.includes('/profile');
   const isSearchPage = location.pathname.includes('/search');
+  const isComboPage = location.pathname.includes('/combo');
 
-  if (isBookingPage || isProfilePage || isSearchPage) return null;
+  if (isBookingPage || isProfilePage || isSearchPage || isComboPage) return null;
 
   return (
     <>

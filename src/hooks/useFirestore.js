@@ -3,6 +3,49 @@ import { db } from "../services/firebase";
 
 const initialState = { data: [], loading: true, error: null };
 
+const getCollectionRef = (firestore, collectionPath, isGroup = false) => {
+  if (isGroup) {
+    return firestore.collectionGroup(collectionPath);
+  }
+  const cleanPath = String(collectionPath || "").trim().replace(/^\/+|\/+$/g, "");
+  const segments = cleanPath.split("/").filter(Boolean);
+
+  if (segments.length === 1) {
+    return firestore.collection(segments[0]);
+  } else if (segments.length === 3) {
+    return firestore.collection(segments[0]).doc(segments[1]).collection(segments[2]);
+  } else if (segments.length === 5) {
+    return firestore
+      .collection(segments[0])
+      .doc(segments[1])
+      .collection(segments[2])
+      .doc(segments[3])
+      .collection(segments[4]);
+  }
+  return firestore.collection(cleanPath);
+};
+
+const getDocumentRef = (firestore, collectionPath, docId) => {
+  const cleanPath = String(collectionPath || "").trim().replace(/^\/+|\/+$/g, "");
+  const segments = cleanPath.split("/").filter(Boolean);
+
+  if (docId) {
+    if (segments.length === 1) {
+      return firestore.collection(segments[0]).doc(docId);
+    } else if (segments.length === 3) {
+      return firestore.collection(segments[0]).doc(segments[1]).collection(segments[2]).doc(docId);
+    }
+    return firestore.collection(cleanPath).doc(docId);
+  } else {
+    if (segments.length === 2) {
+      return firestore.collection(segments[0]).doc(segments[1]);
+    } else if (segments.length === 4) {
+      return firestore.collection(segments[0]).doc(segments[1]).collection(segments[2]).doc(segments[3]);
+    }
+    return firestore.doc(cleanPath);
+  }
+};
+
 export const useCollection = (collectionName, options = {}) => {
   const [state, setState] = useState(initialState);
   const optionsKey = JSON.stringify(options);
@@ -17,9 +60,7 @@ export const useCollection = (collectionName, options = {}) => {
 
     try {
       const parsed = JSON.parse(optionsKey || "{}");
-      let ref = parsed.isGroup
-        ? db().collectionGroup(collectionName)
-        : db().collection(collectionName);
+      let ref = getCollectionRef(db(), collectionName, parsed.isGroup);
 
       (parsed.where || []).forEach(([field, operator, value]) => {
         if (value !== undefined && value !== null && value !== "") {
@@ -41,9 +82,13 @@ export const useCollection = (collectionName, options = {}) => {
             error: null,
           });
         },
-        (error) => setState({ data: [], loading: false, error })
+        (error) => {
+          console.error(`Error querying collection ${collectionName}:`, error);
+          setState({ data: [], loading: false, error });
+        }
       );
     } catch (error) {
+      console.error(`Exception subscribing to collection ${collectionName}:`, error);
       setState({ data: [], loading: false, error });
       return undefined;
     }
@@ -63,7 +108,7 @@ export const useDocument = (collectionName, id) => {
   const [state, setState] = useState({ data: null, loading: true, error: null });
 
   const subscribe = useCallback(() => {
-    if (!id) {
+    if (!collectionName || (!id && !collectionName.includes("/"))) {
       setState({ data: null, loading: false, error: null });
       return undefined;
     }
@@ -71,20 +116,22 @@ export const useDocument = (collectionName, id) => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
-      return db()
-        .collection(collectionName)
-        .doc(id)
-        .onSnapshot(
-          (doc) => {
-            setState({
-              data: doc.exists ? { id: doc.id, ...doc.data() } : null,
-              loading: false,
-              error: null,
-            });
-          },
-          (error) => setState({ data: null, loading: false, error })
-        );
+      const docRef = getDocumentRef(db(), collectionName, id);
+      return docRef.onSnapshot(
+        (doc) => {
+          setState({
+            data: doc.exists ? { id: doc.id, ...doc.data() } : null,
+            loading: false,
+            error: null,
+          });
+        },
+        (error) => {
+          console.error(`Error querying document ${collectionName}/${id}:`, error);
+          setState({ data: null, loading: false, error });
+        }
+      );
     } catch (error) {
+      console.error(`Exception subscribing to document ${collectionName}/${id}:`, error);
       setState({ data: null, loading: false, error });
       return undefined;
     }

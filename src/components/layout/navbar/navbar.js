@@ -12,8 +12,20 @@ const Navbar = () => {
     const { openLogin } = useAuthModal();
     const { isAuthenticated, logout } = useAuth();
 
+    const isHidden =
+        pathname.includes('/events/') ||
+        pathname.includes('/event/') ||
+        pathname.includes('/accessories') ||
+        pathname.includes('/shop') ||
+        pathname.includes('/category') ||
+        pathname.includes('/profile') ||
+        pathname.includes('/product') ||
+        pathname.includes('/cart') ||
+        pathname.includes('/combo') ||
+        pathname.startsWith('/combo');
+
     return (
-        <nav className="navbar" style={pathname.includes('/events/') || pathname.includes('/event/') || pathname.includes('/accessories') || pathname.includes('/shop') || pathname.includes('/category') || pathname.includes('/profile') || pathname.includes('/product') || pathname.includes('/cart') ? { display: 'none' } : {}}>
+        <nav className="navbar" style={isHidden ? { display: 'none' } : {}}>
             <div className="navbar-container">
                 <Link to="/" className="navbar-logo-link" aria-label="Nitroxx Home">
                     <img src="/assets/images/logo-white.png" alt="Nitroxx" className="navbar-logo-img" />
