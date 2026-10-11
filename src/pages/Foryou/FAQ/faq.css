@@ -55,6 +55,8 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 25px;
+  cursor: pointer;
+  user-select: none;
 }
 
 .faq-question {
@@ -64,6 +66,11 @@
   color: #50d735;
   margin: 0;
   white-space: pre-line;
+  transition: color 0.25s ease;
+}
+
+.faq-question-row:hover .faq-question {
+  color: #68ea4e;
 }
 
 .faq-toggle {
@@ -76,22 +83,64 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  color: #0c0f16;
+  flex-shrink: 0;
 }
 
-.faq-toggle:hover {
-  transform: scale(1.1);
+.faq-toggle svg {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.faq-question-row:hover .faq-toggle {
+  transform: scale(1.08);
   background: #45c030;
 }
 
-.faq-plus-icon {
-  width: 28px;
-  height: 28px;
+.faq-item.open .faq-toggle {
+  background: #ffffff;
+  color: #0c0f16;
+}
+
+.faq-item.open .faq-toggle svg {
+  transform: rotate(45deg);
+}
+
+/* Accordion expand/collapse transition */
+.faq-answer-wrapper {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+  opacity: 0;
+}
+
+.faq-item.open .faq-answer-wrapper {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.faq-answer-inner {
+  overflow: hidden;
+}
+
+.faq-answer {
+  font-family: 'Inter', sans-serif;
+  font-size: 17.5px;
+  line-height: 1.65;
+  color: #cbd5e1;
+  margin: 0;
+  padding: 0 0 28px 0;
+  max-width: 900px;
 }
 
 .faq-divider {
   width: 100%;
   height: 1px;
+  background: rgba(80, 215, 53, 0.45);
+  transition: background 0.3s ease;
+}
+
+.faq-item.open .faq-divider {
   background: #50d735;
 }
 
@@ -125,6 +174,11 @@
     height: 46px;
     flex: 0 0 46px;
   }
+  .faq-answer {
+    font-size: 15px;
+    line-height: 1.55;
+    padding-bottom: 20px;
+  }
 }
 
 @media (max-width: 600px) {
@@ -143,6 +197,11 @@
   }
   .faq-brand h2 {
     font-size: clamp(22px, 8vw, 18px);
+  }
+  .faq-answer {
+    font-size: 14px;
+    line-height: 1.5;
+    padding-bottom: 16px;
   }
 }
 

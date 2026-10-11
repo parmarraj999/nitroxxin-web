@@ -170,7 +170,22 @@ export default function ComboSection({
     return DEFAULT_FALLBACK_COMBOS;
   }, [liveCombos, pluralCombos, primaryLayout, fallbackLayout, singularLayout]);
 
+  const [activeIndex, setActiveIndex] = React.useState(0);
   const sliderRef = useRef(null);
+
+  // Track scroll position to update active index for dots
+  const handleScroll = () => {
+    if (sliderRef.current) {
+      const container = sliderRef.current;
+      const firstCard = container.querySelector(".combo-deal-card");
+      if (!firstCard) return;
+      const cardWidth = firstCard.getBoundingClientRect().width;
+      const gap = 16;
+      const scrollLeft = container.scrollLeft;
+      const newIndex = Math.round(scrollLeft / (cardWidth + gap));
+      setActiveIndex(Math.max(0, Math.min(newIndex, combos.length - 1)));
+    }
+  };
 
   // Slider navigation: scroll by 1 card width + gap
   const scrollSlider = (direction) => {
@@ -188,8 +203,25 @@ export default function ComboSection({
     }
   };
 
+  const scrollToCard = (index) => {
+    if (sliderRef.current) {
+      const container = sliderRef.current;
+      const cards = container.querySelectorAll(".combo-deal-card");
+      if (cards[index]) {
+        cards[index].scrollIntoView({
+          behavior: "smooth",
+          inline: "center",
+          block: "nearest",
+        });
+        setActiveIndex(index);
+      }
+    }
+  };
+
   const handleCardClick = (comboId) => {
-    navigate(`/combo/${comboId}`);
+    if (comboId) {
+      navigate(`/combo/${comboId}`);
+    }
   };
 
   return (
@@ -212,50 +244,57 @@ export default function ComboSection({
           </div>
         </div>
 
-        {/* ── Card Slider / Carousel (Matches Reference Image UI) ── */}
+        {/* ── Card Slider / Carousel ── */}
         <div className="combo-slider-wrapper">
-          {/* Navigation Controls (Floating circular dark arrow buttons) */}
-          <button
-            type="button"
-            className="combo-arrow-btn combo-arrow-btn--prev"
-            onClick={() => scrollSlider("left")}
-            aria-label="Previous combo deals"
-            title="Previous deal"
-          >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="m15 18-6-6 6-6" />
-            </svg>
-          </button>
+          {/* Navigation Controls: only show if multiple deals exist */}
+          {combos.length > 1 && (
+            <>
+              <button
+                type="button"
+                className="combo-arrow-btn combo-arrow-btn--prev"
+                onClick={() => scrollSlider("left")}
+                aria-label="Previous combo deals"
+                title="Previous deal"
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m15 18-6-6 6-6" />
+                </svg>
+              </button>
 
-          <button
-            type="button"
-            className="combo-arrow-btn combo-arrow-btn--next"
-            onClick={() => scrollSlider("right")}
-            aria-label="Next combo deals"
-            title="Next deal"
-          >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="m9 18 6-6-6-6" />
-            </svg>
-          </button>
+              <button
+                type="button"
+                className="combo-arrow-btn combo-arrow-btn--next"
+                onClick={() => scrollSlider("right")}
+                aria-label="Next combo deals"
+                title="Next deal"
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m9 18 6-6-6-6" />
+                </svg>
+              </button>
+            </>
+          )}
 
           {/* Scrollable Track with Card Peek on both sides */}
-          <div className="combo-cards-track" ref={sliderRef}>
+          <div className="combo-cards-track" ref={sliderRef} onScroll={handleScroll}>
             {combos.map((combo, idx) => {
-              const cardColor = combo.color || CARD_COLOR_PALETTE[idx % CARD_COLOR_PALETTE.length];
-              const mixedImg =
-                combo.mergedImageUrl
+              const mixedImg = combo.mergedImageUrl;
               return (
                 <div
                   key={combo.id || idx}
                   className="combo-deal-card"
-                  // style={{ backgroundColor: cardColor }}
                   onClick={() => handleCardClick(combo.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleCardClick(combo.id);
+                    }
+                  }}
                   role="button"
                   tabIndex="0"
                   aria-label={`View ${combo.title} details`}
                 >
-                  {/* Top Area: Mixed Product Image + Starburst Discount Badge + Info Icon */}
+                  {/* Top Area: Mixed Product Image */}
                   <div className="combo-card-top-visual">
                     <div className="combo-card-img-box">
                       <img
@@ -266,29 +305,25 @@ export default function ComboSection({
                       />
                     </div>
                   </div>
-
-                  {/* Middle Content Area */}
-                
-
-                  {/* Bottom Meta & Progress/Divider Area */}
-                  {/* <div className="combo-card-footer">
-                    <div className="combo-card-progress-bar">
-                      <div className="combo-card-progress-fill" />
-                    </div>
-
-                    <div className="combo-card-meta-row">
-                      <span className="combo-card-date">
-                        {combo.validUntil || (combo.offerPrice ? `Rs. ${Number(combo.offerPrice).toLocaleString("en-IN")}` : "Limited Period Deal")}
-                      </span>
-                      <span className="combo-card-status">
-                        {combo.progressLabel || (combo.regularPrice ? `MRP Rs. ${Number(combo.regularPrice).toLocaleString("en-IN")}` : "View Bundle")}
-                      </span>
-                    </div>
-                  </div> */}
                 </div>
               );
             })}
           </div>
+
+          {/* Pagination dots for multi-combo sliders */}
+          {combos.length > 1 && (
+            <div className="combo-dots-wrapper" aria-label="Combo slide navigation">
+              {combos.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  className={`combo-dot ${activeIndex === i ? "active" : ""}`}
+                  onClick={() => scrollToCard(i)}
+                  aria-label={`Go to deal ${i + 1}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </section>

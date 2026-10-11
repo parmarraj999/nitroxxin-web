@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import './footer.css';
+import BecomePartner from '../../Partner/BecomePartner';
 
 const Footer = () => {
     return (
@@ -50,7 +51,7 @@ const Footer = () => {
                         <h2 className="column-title">Quick Links</h2>
                         <ul className="column-links">
                             <li><Link to="/events">List your events</Link></li>
-                            <li><a href="https://nitroxxin-dashboard.web.app/" target="_blank" rel="noopener noreferrer">List your Store    </a></li>
+                            <li><a href="https://nitroxxin-dashboard.web.app/" target="_blank" rel="noopener noreferrer">List your Store </a></li>
                         </ul>
                     </div>
 

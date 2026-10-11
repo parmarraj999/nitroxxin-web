@@ -57,11 +57,11 @@
   display: flex;
   gap: 24px;
   overflow-x: auto;
-  scroll-behavior: smooth;
   scrollbar-width: none;
   align-items: center;
   -ms-overflow-style: none;
-  justify-content: center;
+  justify-content: flex-start;
+  justify-content: safe center;
   padding: 12px 6px 24px;
   -webkit-overflow-scrolling: touch;
 }
@@ -183,11 +183,21 @@
   outline: none;
 }
 
-.category-ctrl-btn:hover {
+.category-ctrl-btn:hover:not(:disabled) {
   background: rgba(80, 215, 53, 0.18);
   border-color: #50d735;
   color: #50d735;
   transform: scale(1.08);
+}
+
+.category-ctrl-btn:disabled,
+.category-ctrl-btn.disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+  pointer-events: none;
+  border-color: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.3);
+  transform: none !important;
 }
 
 @media (max-width: 900px) {
@@ -195,7 +205,7 @@
     justify-content: flex-start;
     overflow-x: auto;
     overflow-y: hidden;
-    scroll-snap-type: x mandatory;
+    scroll-snap-type: x proximity;
     scrollbar-width: none;
     overscroll-behavior-inline: contain;
     -webkit-overflow-scrolling: touch;
@@ -209,6 +219,9 @@
   .category-card-item {
     scroll-snap-align: start;
   }
+  .category-card-item:last-child {
+    scroll-snap-align: end;
+  }
   .shop-by-category {
     height: auto;
     min-height: 0;
@@ -217,27 +230,21 @@
   }
   .category-section-title {
     font-size: clamp(28px, 8vw, 38px);
-    margin-bottom: 40px;
-  }
-  .category-circle {
-    width: 230px;
-    height: 290px;
-    margin-bottom: 18px;
-  }
-  .category-navigation {
-    display: none;
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 645px) {
   .shop-by-category {
     padding: 3.5rem 0;
   }
   .category-card-item {
-    flex: 0 0 200px;
+    flex: 0 0 220px;
+    max-width: 240px;
   }
   .category-card-box {
-    height: 280px;
+    width: 100%;
+    height: auto;
+    max-height: 280px;
   }
   .category-section-title {
     font-size: 24px;
@@ -245,11 +252,6 @@
 }
 
 @media (max-width: 600px) {
-  .category-circle {
-    width: 200px;
-    height: 250px;
-    max-width: 100%;
-  }
   .category-section-title {
     font-size: clamp(22px, 6vw, 28px);
   }

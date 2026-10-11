@@ -65,6 +65,23 @@ function CloseIcon() {
   );
 }
 
+function ChevronDownIcon({ className = "" }) {
+  return (
+    <svg className={className} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
+}
+
+function SearchIcon({ size = 14 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="11" cy="11" r="8" />
+      <path d="m21 21-4.3-4.3" />
+    </svg>
+  );
+}
+
 function ProductCard({ product }) {
   const [liked, setLiked] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -175,8 +192,30 @@ export default function ShopPage({ filterType }) {
   const [selectedCategories, setSelectedCategories] = useState(urlCategory ? [urlCategory] : []);
   const [selectedSubcategories, setSelectedSubcategories] = useState(urlSubcategory ? [urlSubcategory] : []);
   const [selectedBrands, setSelectedBrands] = useState(urlBrand ? [urlBrand] : []);
+  const [selectedRating, setSelectedRating] = useState(null); // 4, 3, etc.
+  const [selectedDiscount, setSelectedDiscount] = useState(null); // 10, 20, 30, 50
   const [sortBy, setSortBy] = useState(urlSort);
   const [boundsSet, setBoundsSet] = useState(false);
+
+  // Search queries within filter lists
+  const [categorySearch, setCategorySearch] = useState("");
+  const [subcategorySearch, setSubcategorySearch] = useState("");
+  const [brandSearch, setBrandSearch] = useState("");
+
+  // Collapsible accordion sections
+  const [collapsedSections, setCollapsedSections] = useState({
+    price: false,
+    category: false,
+    subcategory: false,
+    brand: false,
+    availability: false,
+    rating: false,
+    discount: false,
+  });
+
+  const toggleSection = (section) => {
+    setCollapsedSections((prev) => ({ ...prev, [section]: !prev[section] }));
+  };
 
   // Sync state whenever URL query params change
   useEffect(() => {
@@ -269,6 +308,53 @@ export default function ShopPage({ filterType }) {
     return [...new Set([...fromProducts, ...fromContext])].sort();
   }, [liveProducts, brands]);
 
+  // Count products matching each category, subcategory, brand
+  const categoryCounts = useMemo(() => {
+    const map = {};
+    liveProducts.forEach((p) => {
+      const c = p.category || p.categoryName;
+      if (c) map[c] = (map[c] || 0) + 1;
+    });
+    return map;
+  }, [liveProducts]);
+
+  const subcategoryCounts = useMemo(() => {
+    const map = {};
+    liveProducts.forEach((p) => {
+      const s = p.subcategory || p.subCategory;
+      if (s) map[s] = (map[s] || 0) + 1;
+    });
+    return map;
+  }, [liveProducts]);
+
+  const brandCounts = useMemo(() => {
+    const map = {};
+    liveProducts.forEach((p) => {
+      const b = p.brand || p.brandName;
+      if (b) map[b] = (map[b] || 0) + 1;
+    });
+    return map;
+  }, [liveProducts]);
+
+  // Search filtered options
+  const filteredCategoryOptions = useMemo(() => {
+    if (!categorySearch.trim()) return categoryOptions;
+    const term = categorySearch.toLowerCase();
+    return categoryOptions.filter((c) => c.toLowerCase().includes(term));
+  }, [categoryOptions, categorySearch]);
+
+  const filteredSubcategoryOptions = useMemo(() => {
+    if (!subcategorySearch.trim()) return subcategoryOptions;
+    const term = subcategorySearch.toLowerCase();
+    return subcategoryOptions.filter((s) => s.toLowerCase().includes(term));
+  }, [subcategoryOptions, subcategorySearch]);
+
+  const filteredBrandOptions = useMemo(() => {
+    if (!brandSearch.trim()) return brandOptions;
+    const term = brandSearch.toLowerCase();
+    return brandOptions.filter((b) => b.toLowerCase().includes(term));
+  }, [brandOptions, brandSearch]);
+
   // Active filter badge count
   const activeFilterCount = useMemo(() => {
     let count = 0;
@@ -277,10 +363,23 @@ export default function ShopPage({ filterType }) {
     if (selectedCategories.length) count += selectedCategories.length;
     if (selectedSubcategories.length) count += selectedSubcategories.length;
     if (selectedBrands.length) count += selectedBrands.length;
+    if (selectedRating) count++;
+    if (selectedDiscount) count++;
     if (search.trim()) count++;
     if (activeFilter !== "All") count++;
     return count;
-  }, [availability, priceRange, priceBounds, selectedCategories, selectedSubcategories, selectedBrands, search, activeFilter]);
+  }, [
+    availability,
+    priceRange,
+    priceBounds,
+    selectedCategories,
+    selectedSubcategories,
+    selectedBrands,
+    selectedRating,
+    selectedDiscount,
+    search,
+    activeFilter,
+  ]);
 
   const toggleCategory = (cat) =>
     setSelectedCategories((prev) =>
@@ -297,12 +396,23 @@ export default function ShopPage({ filterType }) {
       prev.includes(brand) ? prev.filter((b) => b !== brand) : [...prev, brand]
     );
 
+  const handlePricePreset = (min, max) => {
+    const clampedMin = Math.max(priceBounds[0], min);
+    const clampedMax = Math.min(priceBounds[1], max);
+    setPriceRange([clampedMin, clampedMax]);
+  };
+
   const resetAll = () => {
     setAvailability({ inStock: false, outOfStock: false });
     setPriceRange(priceBounds);
     setSelectedCategories([]);
     setSelectedSubcategories([]);
     setSelectedBrands([]);
+    setSelectedRating(null);
+    setSelectedDiscount(null);
+    setCategorySearch("");
+    setSubcategorySearch("");
+    setBrandSearch("");
     setActiveFilter("All");
     setSearch("");
     setSearchParams({});
@@ -421,6 +531,25 @@ export default function ShopPage({ filterType }) {
       });
     }
 
+    // Customer Rating
+    if (selectedRating) {
+      result = result.filter((p) => {
+        const rating = Number(p.averageRating ?? p.rating ?? 0);
+        return rating >= selectedRating;
+      });
+    }
+
+    // Discount percentage
+    if (selectedDiscount) {
+      result = result.filter((p) => {
+        const offer = Number(p.offerPrice || 0);
+        const regular = Number(p.price || p.mrp || 0);
+        if (regular <= offer || regular <= 0) return false;
+        const disc = Math.round(((regular - offer) / regular) * 100);
+        return disc >= selectedDiscount;
+      });
+    }
+
     // Sort
     result = [...result];
     if (sortBy === "price-asc") {
@@ -442,13 +571,26 @@ export default function ShopPage({ filterType }) {
     selectedCategories,
     selectedSubcategories,
     selectedBrands,
+    selectedRating,
+    selectedDiscount,
     sortBy,
   ]);
 
   // Reset to page 1 when any filter or search changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, activeFilter, availability, priceRange, selectedCategories, selectedSubcategories, selectedBrands, sortBy]);
+  }, [
+    search,
+    activeFilter,
+    availability,
+    priceRange,
+    selectedCategories,
+    selectedSubcategories,
+    selectedBrands,
+    selectedRating,
+    selectedDiscount,
+    sortBy,
+  ]);
 
   // Pagination calculations
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE));
@@ -548,13 +690,28 @@ export default function ShopPage({ filterType }) {
 
         {/* Layout: sidebar + 4-column product grid */}
         <div className="ap-shop-layout">
-          {/* ─── Filter Sidebar ─── */}
+          {/* Mobile backdrop drawer overlay */}
+          {filterOpen && (
+            <div
+              className="ap-sidebar-backdrop"
+              onClick={() => setFilterOpen(false)}
+              aria-label="Close filters backdrop"
+            />
+          )}
+
+          {/* ─── Advanced Filter Sidebar ─── */}
           <aside className={`ap-sidebar${filterOpen ? " ap-sidebar--open" : ""}`}>
             <div className="ap-sidebar__header">
-              <span className="ap-sidebar__title">Filters</span>
+              <div className="ap-sidebar__title-wrap">
+                <SlidersIcon />
+                <span className="ap-sidebar__title">Filters</span>
+                {activeFilterCount > 0 && (
+                  <span className="ap-sidebar__count-badge">{activeFilterCount}</span>
+                )}
+              </div>
               <div className="ap-sidebar__actions">
                 {activeFilterCount > 0 && (
-                  <button className="ap-sidebar__reset" onClick={resetAll}>
+                  <button className="ap-sidebar__reset" onClick={resetAll} title="Clear all active filters">
                     Clear all
                   </button>
                 )}
@@ -568,140 +725,524 @@ export default function ShopPage({ filterType }) {
               </div>
             </div>
 
-            {/* Availability */}
-            <div className="ap-filter-group">
-              <div className="ap-filter-group__label">Availability</div>
-              <label className="ap-checkbox">
-                <input
-                  type="checkbox"
-                  checked={availability.inStock}
-                  onChange={(e) => setAvailability((a) => ({ ...a, inStock: e.target.checked }))}
-                />
-                <span>In Stock</span>
-              </label>
-              <label className="ap-checkbox">
-                <input
-                  type="checkbox"
-                  checked={availability.outOfStock}
-                  onChange={(e) => setAvailability((a) => ({ ...a, outOfStock: e.target.checked }))}
-                />
-                <span>Out of Stock</span>
-              </label>
-            </div>
+            {/* Active Filter Chips Strip */}
+            {activeFilterCount > 0 && (
+              <div className="ap-sidebar__active-chips">
+                {selectedCategories.map((cat) => (
+                  <span key={`chip-cat-${cat}`} className="ap-active-chip">
+                    {cat}
+                    <button type="button" onClick={() => toggleCategory(cat)} aria-label={`Remove ${cat}`}>×</button>
+                  </span>
+                ))}
+                {selectedSubcategories.map((subcat) => (
+                  <span key={`chip-sub-${subcat}`} className="ap-active-chip">
+                    {subcat}
+                    <button type="button" onClick={() => toggleSubcategory(subcat)} aria-label={`Remove ${subcat}`}>×</button>
+                  </span>
+                ))}
+                {selectedBrands.map((brand) => (
+                  <span key={`chip-brand-${brand}`} className="ap-active-chip">
+                    {brand}
+                    <button type="button" onClick={() => toggleBrand(brand)} aria-label={`Remove ${brand}`}>×</button>
+                  </span>
+                ))}
+                {(priceRange[0] !== priceBounds[0] || priceRange[1] !== priceBounds[1]) && (
+                  <span className="ap-active-chip">
+                    {formatPrice(priceRange[0])}–{formatPrice(priceRange[1])}
+                    <button type="button" onClick={() => setPriceRange(priceBounds)} aria-label="Reset price">×</button>
+                  </span>
+                )}
+                {selectedRating && (
+                  <span className="ap-active-chip">
+                    {selectedRating}★ & above
+                    <button type="button" onClick={() => setSelectedRating(null)} aria-label="Clear rating filter">×</button>
+                  </span>
+                )}
+                {selectedDiscount && (
+                  <span className="ap-active-chip">
+                    {selectedDiscount}% off or more
+                    <button type="button" onClick={() => setSelectedDiscount(null)} aria-label="Clear discount filter">×</button>
+                  </span>
+                )}
+                {availability.inStock && (
+                  <span className="ap-active-chip">
+                    In Stock
+                    <button type="button" onClick={() => setAvailability((a) => ({ ...a, inStock: false }))}>×</button>
+                  </span>
+                )}
+                {availability.outOfStock && (
+                  <span className="ap-active-chip">
+                    Out of Stock
+                    <button type="button" onClick={() => setAvailability((a) => ({ ...a, outOfStock: false }))}>×</button>
+                  </span>
+                )}
+              </div>
+            )}
 
-            {/* Price Range */}
-            <div className="ap-filter-group">
-              <div className="ap-filter-group__label">Price Range</div>
-              <div className="ap-price-display">
-                <span>{formatPrice(priceRange[0])}</span>
-                <span>—</span>
-                <span>{formatPrice(priceRange[1])}</span>
-              </div>
-              <div className="ap-price-sliders">
-                <input
-                  type="range"
-                  className="ap-slider"
-                  min={priceBounds[0]}
-                  max={priceBounds[1]}
-                  value={priceRange[0]}
-                  onChange={(e) => {
-                    const val = Number(e.target.value);
-                    if (val <= priceRange[1]) setPriceRange([val, priceRange[1]]);
-                  }}
-                />
-                <input
-                  type="range"
-                  className="ap-slider"
-                  min={priceBounds[0]}
-                  max={priceBounds[1]}
-                  value={priceRange[1]}
-                  onChange={(e) => {
-                    const val = Number(e.target.value);
-                    if (val >= priceRange[0]) setPriceRange([priceRange[0], val]);
-                  }}
-                />
-              </div>
-              {(priceRange[0] !== priceBounds[0] || priceRange[1] !== priceBounds[1]) && (
-                <button className="ap-filter-reset-link" onClick={() => setPriceRange(priceBounds)}>
-                  Reset price
+            <div className="ap-sidebar__body">
+              {/* 1. Price Range Accordion */}
+              <div className="ap-filter-group">
+                <button
+                  type="button"
+                  className="ap-filter-group__header"
+                  onClick={() => toggleSection("price")}
+                >
+                  <span className="ap-filter-group__label">Price Range</span>
+                  <div className="ap-filter-group__header-right">
+                    {(priceRange[0] !== priceBounds[0] || priceRange[1] !== priceBounds[1]) && (
+                      <span className="ap-filter-group__active-dot" />
+                    )}
+                    <ChevronDownIcon className={`ap-filter-chevron${collapsedSections.price ? " ap-filter-chevron--collapsed" : ""}`} />
+                  </div>
                 </button>
+
+                {!collapsedSections.price && (
+                  <div className="ap-filter-group__content">
+                    {/* Quick Presets */}
+                    <div className="ap-price-presets">
+                      <button
+                        type="button"
+                        className={`ap-price-preset-pill${priceRange[1] === 1000 && priceRange[0] === priceBounds[0] ? " active" : ""}`}
+                        onClick={() => handlePricePreset(0, 1000)}
+                      >
+                        Under ₹1k
+                      </button>
+                      <button
+                        type="button"
+                        className={`ap-price-preset-pill${priceRange[0] === 1000 && priceRange[1] === 5000 ? " active" : ""}`}
+                        onClick={() => handlePricePreset(1000, 5000)}
+                      >
+                        ₹1k–₹5k
+                      </button>
+                      <button
+                        type="button"
+                        className={`ap-price-preset-pill${priceRange[0] === 5000 && priceRange[1] === 15000 ? " active" : ""}`}
+                        onClick={() => handlePricePreset(5000, 15000)}
+                      >
+                        ₹5k–₹15k
+                      </button>
+                      <button
+                        type="button"
+                        className={`ap-price-preset-pill${priceRange[0] === 15000 ? " active" : ""}`}
+                        onClick={() => handlePricePreset(15000, priceBounds[1])}
+                      >
+                        ₹15k+
+                      </button>
+                    </div>
+
+                    {/* Min / Max Input Fields */}
+                    <div className="ap-price-inputs-row">
+                      <div className="ap-price-input-box">
+                        <span className="ap-price-input-curr">₹</span>
+                        <input
+                          type="number"
+                          className="ap-price-input"
+                          min={priceBounds[0]}
+                          max={priceRange[1]}
+                          value={priceRange[0]}
+                          onChange={(e) => {
+                            const val = Math.max(priceBounds[0], Number(e.target.value) || 0);
+                            if (val <= priceRange[1]) setPriceRange([val, priceRange[1]]);
+                          }}
+                        />
+                      </div>
+                      <span className="ap-price-input-sep">to</span>
+                      <div className="ap-price-input-box">
+                        <span className="ap-price-input-curr">₹</span>
+                        <input
+                          type="number"
+                          className="ap-price-input"
+                          min={priceRange[0]}
+                          max={priceBounds[1]}
+                          value={priceRange[1]}
+                          onChange={(e) => {
+                            const val = Math.min(priceBounds[1], Number(e.target.value) || 0);
+                            if (val >= priceRange[0]) setPriceRange([priceRange[0], val]);
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Dual Slider */}
+                    <div className="ap-price-sliders">
+                      <input
+                        type="range"
+                        className="ap-slider"
+                        min={priceBounds[0]}
+                        max={priceBounds[1]}
+                        value={priceRange[0]}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          if (val <= priceRange[1]) setPriceRange([val, priceRange[1]]);
+                        }}
+                      />
+                      <input
+                        type="range"
+                        className="ap-slider"
+                        min={priceBounds[0]}
+                        max={priceBounds[1]}
+                        value={priceRange[1]}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          if (val >= priceRange[0]) setPriceRange([priceRange[0], val]);
+                        }}
+                      />
+                    </div>
+
+                    {(priceRange[0] !== priceBounds[0] || priceRange[1] !== priceBounds[1]) && (
+                      <button type="button" className="ap-filter-reset-link" onClick={() => setPriceRange(priceBounds)}>
+                        Reset price
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* 2. Categories Accordion */}
+              {categoryOptions.length > 0 && (
+                <div className="ap-filter-group">
+                  <button
+                    type="button"
+                    className="ap-filter-group__header"
+                    onClick={() => toggleSection("category")}
+                  >
+                    <span className="ap-filter-group__label">
+                      Category {selectedCategories.length > 0 && `(${selectedCategories.length})`}
+                    </span>
+                    <div className="ap-filter-group__header-right">
+                      {selectedCategories.length > 0 && <span className="ap-filter-group__active-dot" />}
+                      <ChevronDownIcon className={`ap-filter-chevron${collapsedSections.category ? " ap-filter-chevron--collapsed" : ""}`} />
+                    </div>
+                  </button>
+
+                  {!collapsedSections.category && (
+                    <div className="ap-filter-group__content">
+                      {categoryOptions.length > 6 && (
+                        <div className="ap-filter-search-box">
+                          <SearchIcon />
+                          <input
+                            type="text"
+                            placeholder="Search categories..."
+                            value={categorySearch}
+                            onChange={(e) => setCategorySearch(e.target.value)}
+                            className="ap-filter-search-input"
+                          />
+                          {categorySearch && (
+                            <button
+                              type="button"
+                              className="ap-filter-search-clear"
+                              onClick={() => setCategorySearch("")}
+                            >
+                              ×
+                            </button>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="ap-filter-scroll">
+                        {filteredCategoryOptions.length > 0 ? (
+                          filteredCategoryOptions.map((cat) => (
+                            <label key={cat} className="ap-checkbox">
+                              <input
+                                type="checkbox"
+                                checked={selectedCategories.includes(cat)}
+                                onChange={() => toggleCategory(cat)}
+                              />
+                              <span className="ap-checkbox__label">{cat}</span>
+                              <span className="ap-checkbox__count">{categoryCounts[cat] || 0}</span>
+                            </label>
+                          ))
+                        ) : (
+                          <div className="ap-filter-empty-text">No categories found</div>
+                        )}
+                      </div>
+
+                      {selectedCategories.length > 0 && (
+                        <button type="button" className="ap-filter-reset-link" onClick={() => setSelectedCategories([])}>
+                          Reset categories
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
               )}
+
+              {/* 3. Sub Categories Accordion */}
+              {subcategoryOptions.length > 0 && (
+                <div className="ap-filter-group">
+                  <button
+                    type="button"
+                    className="ap-filter-group__header"
+                    onClick={() => toggleSection("subcategory")}
+                  >
+                    <span className="ap-filter-group__label">
+                      Sub Category {selectedSubcategories.length > 0 && `(${selectedSubcategories.length})`}
+                    </span>
+                    <div className="ap-filter-group__header-right">
+                      {selectedSubcategories.length > 0 && <span className="ap-filter-group__active-dot" />}
+                      <ChevronDownIcon className={`ap-filter-chevron${collapsedSections.subcategory ? " ap-filter-chevron--collapsed" : ""}`} />
+                    </div>
+                  </button>
+
+                  {!collapsedSections.subcategory && (
+                    <div className="ap-filter-group__content">
+                      {subcategoryOptions.length > 6 && (
+                        <div className="ap-filter-search-box">
+                          <SearchIcon />
+                          <input
+                            type="text"
+                            placeholder="Search subcategories..."
+                            value={subcategorySearch}
+                            onChange={(e) => setSubcategorySearch(e.target.value)}
+                            className="ap-filter-search-input"
+                          />
+                          {subcategorySearch && (
+                            <button
+                              type="button"
+                              className="ap-filter-search-clear"
+                              onClick={() => setSubcategorySearch("")}
+                            >
+                              ×
+                            </button>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="ap-filter-scroll">
+                        {filteredSubcategoryOptions.length > 0 ? (
+                          filteredSubcategoryOptions.map((subcat) => (
+                            <label key={subcat} className="ap-checkbox">
+                              <input
+                                type="checkbox"
+                                checked={selectedSubcategories.includes(subcat)}
+                                onChange={() => toggleSubcategory(subcat)}
+                              />
+                              <span className="ap-checkbox__label">{subcat}</span>
+                              <span className="ap-checkbox__count">{subcategoryCounts[subcat] || 0}</span>
+                            </label>
+                          ))
+                        ) : (
+                          <div className="ap-filter-empty-text">No subcategories found</div>
+                        )}
+                      </div>
+
+                      {selectedSubcategories.length > 0 && (
+                        <button
+                          type="button"
+                          className="ap-filter-reset-link"
+                          onClick={() => setSelectedSubcategories([])}
+                        >
+                          Reset subcategories
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 4. Brands Accordion */}
+              {brandOptions.length > 0 && (
+                <div className="ap-filter-group">
+                  <button
+                    type="button"
+                    className="ap-filter-group__header"
+                    onClick={() => toggleSection("brand")}
+                  >
+                    <span className="ap-filter-group__label">
+                      Brand {selectedBrands.length > 0 && `(${selectedBrands.length})`}
+                    </span>
+                    <div className="ap-filter-group__header-right">
+                      {selectedBrands.length > 0 && <span className="ap-filter-group__active-dot" />}
+                      <ChevronDownIcon className={`ap-filter-chevron${collapsedSections.brand ? " ap-filter-chevron--collapsed" : ""}`} />
+                    </div>
+                  </button>
+
+                  {!collapsedSections.brand && (
+                    <div className="ap-filter-group__content">
+                      {brandOptions.length > 6 && (
+                        <div className="ap-filter-search-box">
+                          <SearchIcon />
+                          <input
+                            type="text"
+                            placeholder="Search brands..."
+                            value={brandSearch}
+                            onChange={(e) => setBrandSearch(e.target.value)}
+                            className="ap-filter-search-input"
+                          />
+                          {brandSearch && (
+                            <button
+                              type="button"
+                              className="ap-filter-search-clear"
+                              onClick={() => setBrandSearch("")}
+                            >
+                              ×
+                            </button>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="ap-filter-scroll">
+                        {filteredBrandOptions.length > 0 ? (
+                          filteredBrandOptions.map((brand) => (
+                            <label key={brand} className="ap-checkbox">
+                              <input
+                                type="checkbox"
+                                checked={selectedBrands.includes(brand)}
+                                onChange={() => toggleBrand(brand)}
+                              />
+                              <span className="ap-checkbox__label">{brand}</span>
+                              <span className="ap-checkbox__count">{brandCounts[brand] || 0}</span>
+                            </label>
+                          ))
+                        ) : (
+                          <div className="ap-filter-empty-text">No brands found</div>
+                        )}
+                      </div>
+
+                      {selectedBrands.length > 0 && (
+                        <button type="button" className="ap-filter-reset-link" onClick={() => setSelectedBrands([])}>
+                          Reset brands
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 5. Customer Rating Accordion */}
+              <div className="ap-filter-group">
+                <button
+                  type="button"
+                  className="ap-filter-group__header"
+                  onClick={() => toggleSection("rating")}
+                >
+                  <span className="ap-filter-group__label">Customer Rating</span>
+                  <div className="ap-filter-group__header-right">
+                    {selectedRating && <span className="ap-filter-group__active-dot" />}
+                    <ChevronDownIcon className={`ap-filter-chevron${collapsedSections.rating ? " ap-filter-chevron--collapsed" : ""}`} />
+                  </div>
+                </button>
+
+                {!collapsedSections.rating && (
+                  <div className="ap-filter-group__content">
+                    <div className="ap-rating-options">
+                      {[4, 3].map((stars) => (
+                        <button
+                          key={`rating-${stars}`}
+                          type="button"
+                          className={`ap-rating-btn${selectedRating === stars ? " active" : ""}`}
+                          onClick={() => setSelectedRating(selectedRating === stars ? null : stars)}
+                        >
+                          <span className="ap-rating-stars">
+                            {"★".repeat(stars)}{"☆".repeat(5 - stars)}
+                          </span>
+                          <span className="ap-rating-text">& above</span>
+                        </button>
+                      ))}
+                    </div>
+                    {selectedRating && (
+                      <button type="button" className="ap-filter-reset-link" onClick={() => setSelectedRating(null)}>
+                        Reset rating
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* 6. Discount Accordion */}
+              <div className="ap-filter-group">
+                <button
+                  type="button"
+                  className="ap-filter-group__header"
+                  onClick={() => toggleSection("discount")}
+                >
+                  <span className="ap-filter-group__label">Discount</span>
+                  <div className="ap-filter-group__header-right">
+                    {selectedDiscount && <span className="ap-filter-group__active-dot" />}
+                    <ChevronDownIcon className={`ap-filter-chevron${collapsedSections.discount ? " ap-filter-chevron--collapsed" : ""}`} />
+                  </div>
+                </button>
+
+                {!collapsedSections.discount && (
+                  <div className="ap-filter-group__content">
+                    <div className="ap-discount-grid">
+                      {[50, 30, 20, 10].map((disc) => (
+                        <button
+                          key={`disc-${disc}`}
+                          type="button"
+                          className={`ap-discount-pill${selectedDiscount === disc ? " active" : ""}`}
+                          onClick={() => setSelectedDiscount(selectedDiscount === disc ? null : disc)}
+                        >
+                          {disc}% or more
+                        </button>
+                      ))}
+                    </div>
+                    {selectedDiscount && (
+                      <button type="button" className="ap-filter-reset-link" onClick={() => setSelectedDiscount(null)}>
+                        Reset discount
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* 7. Availability Accordion */}
+              <div className="ap-filter-group">
+                <button
+                  type="button"
+                  className="ap-filter-group__header"
+                  onClick={() => toggleSection("availability")}
+                >
+                  <span className="ap-filter-group__label">Availability</span>
+                  <div className="ap-filter-group__header-right">
+                    {(availability.inStock || availability.outOfStock) && <span className="ap-filter-group__active-dot" />}
+                    <ChevronDownIcon className={`ap-filter-chevron${collapsedSections.availability ? " ap-filter-chevron--collapsed" : ""}`} />
+                  </div>
+                </button>
+
+                {!collapsedSections.availability && (
+                  <div className="ap-filter-group__content">
+                    <label className="ap-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={availability.inStock}
+                        onChange={(e) => setAvailability((a) => ({ ...a, inStock: e.target.checked }))}
+                      />
+                      <span className="ap-stock-dot ap-stock-dot--in" />
+                      <span className="ap-checkbox__label">In Stock</span>
+                    </label>
+                    <label className="ap-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={availability.outOfStock}
+                        onChange={(e) => setAvailability((a) => ({ ...a, outOfStock: e.target.checked }))}
+                      />
+                      <span className="ap-stock-dot ap-stock-dot--out" />
+                      <span className="ap-checkbox__label">Out of Stock</span>
+                    </label>
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Categories */}
-            {categoryOptions.length > 0 && (
-              <div className="ap-filter-group">
-                <div className="ap-filter-group__label">Category</div>
-                <div className="ap-filter-scroll">
-                  {categoryOptions.map((cat) => (
-                    <label key={cat} className="ap-checkbox">
-                      <input
-                        type="checkbox"
-                        checked={selectedCategories.includes(cat)}
-                        onChange={() => toggleCategory(cat)}
-                      />
-                      <span>{cat}</span>
-                    </label>
-                  ))}
-                </div>
-                {selectedCategories.length > 0 && (
-                  <button className="ap-filter-reset-link" onClick={() => setSelectedCategories([])}>
-                    Reset
-                  </button>
-                )}
-              </div>
-            )}
-
-            {/* Sub Categories */}
-            {subcategoryOptions.length > 0 && (
-              <div className="ap-filter-group">
-                <div className="ap-filter-group__label">Sub Category</div>
-                <div className="ap-filter-scroll">
-                  {subcategoryOptions.map((subcat) => (
-                    <label key={subcat} className="ap-checkbox">
-                      <input
-                        type="checkbox"
-                        checked={selectedSubcategories.includes(subcat)}
-                        onChange={() => toggleSubcategory(subcat)}
-                      />
-                      <span>{subcat}</span>
-                    </label>
-                  ))}
-                </div>
-                {selectedSubcategories.length > 0 && (
-                  <button
-                    className="ap-filter-reset-link"
-                    onClick={() => setSelectedSubcategories([])}
-                  >
-                    Reset
-                  </button>
-                )}
-              </div>
-            )}
-
-            {/* Brands */}
-            {brandOptions.length > 0 && (
-              <div className="ap-filter-group">
-                <div className="ap-filter-group__label">Brand</div>
-                <div className="ap-filter-scroll">
-                  {brandOptions.map((brand) => (
-                    <label key={brand} className="ap-checkbox">
-                      <input
-                        type="checkbox"
-                        checked={selectedBrands.includes(brand)}
-                        onChange={() => toggleBrand(brand)}
-                      />
-                      <span>{brand}</span>
-                    </label>
-                  ))}
-                </div>
-                {selectedBrands.length > 0 && (
-                  <button className="ap-filter-reset-link" onClick={() => setSelectedBrands([])}>
-                    Reset
-                  </button>
-                )}
-              </div>
-            )}
+            {/* Mobile Drawer Fixed Bottom Action Bar */}
+            <div className="ap-sidebar__mobile-footer">
+              <button
+                type="button"
+                className="ap-sidebar__mobile-reset"
+                onClick={resetAll}
+                disabled={activeFilterCount === 0}
+              >
+                Reset
+              </button>
+              <button
+                type="button"
+                className="ap-sidebar__mobile-apply"
+                onClick={() => setFilterOpen(false)}
+              >
+                Apply ({filteredProducts.length})
+              </button>
+            </div>
           </aside>
 
           {/* ─── 4-Column Product Grid with 20-Product Pagination ─── */}

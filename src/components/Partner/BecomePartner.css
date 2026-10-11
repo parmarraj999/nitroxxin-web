@@ -940,4 +940,7 @@
   .bp-modal-title {
     font-size: 17px;
   }
+  .bp-trigger-btn {
+    display: none;
+  }
 }

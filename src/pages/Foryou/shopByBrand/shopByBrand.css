@@ -73,9 +73,6 @@
   transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.brand-item:hover {
-  transform: translateY(-8px);
-}
 
 /* Brand Card Container */
 .brand-card-wrapper {
@@ -94,11 +91,6 @@
   box-sizing: border-box;
 }
 
-.brand-item:hover .brand-card-wrapper {
-  border-color: #50d735;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.65), 0 0 24px rgba(80, 215, 53, 0.35);
-}
-
 /* Brand Card Image */
 .brand-card-img {
   width: 100%;
@@ -108,9 +100,6 @@
   -webkit-user-drag: none;
 }
 
-.brand-item:hover .brand-card-img {
-  transform: scale(1.05);
-}
 
 /* Brand Name Text below Card */
 .brand-item-name {
@@ -127,10 +116,6 @@
   max-width: 90%;
   text-align: center;
   transition: color 0.3s ease;
-}
-
-.brand-item:hover .brand-item-name {
-  color: #50d735;
 }
 
 /* Slider Controls */
@@ -174,7 +159,9 @@
     overscroll-behavior-inline: contain;
     -webkit-overflow-scrolling: touch;
     padding: 0 20px 12px;
-    gap: 16px;
+    gap: 10px;
+    margin-top: 2rem;
+    margin-bottom: 1.4rem;
   }
   .brands-row::-webkit-scrollbar {
     display: none;
@@ -190,7 +177,7 @@
   }
   .brands-section-title {
     font-size: clamp(28px, 8vw, 38px);
-    margin-bottom: 40px;
+    /* margin-bottom: 40px; */
   }
   .brand-circle {
     width: 170px;
@@ -213,7 +200,7 @@
   }
 }
 
-@media (max-width: 600px) {
+@media screen and (max-width: 600px) {
   .brand-circle {
     width: 145px;
     height: 145px;
@@ -222,5 +209,8 @@
   .brands-section-title {
     font-size: clamp(22px, 6vw, 28px);
   }
+.brand-card-wrapper{
+  width: 120px;
+}
 }
 

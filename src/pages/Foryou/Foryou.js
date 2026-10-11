@@ -29,7 +29,7 @@ function Foryou() {
                 sectionSubtitle="Handpicked protective bundles curated with exclusive discounts for true riders."
             />
             <ShopByCategory />
-            <div style={{ margin: '30px', display: 'flex', justifyContent: 'center', padding: '50px 0px' }}>
+            <div className='foryou-section-image'>
                 <img src={'./assets/images/for-you-bottom.png'} alt="Nitroxx Promotions" style={{ width: '94%', height: '85vh', borderRadius: '40px' }} />
             </div>
             <ShopByBrands />

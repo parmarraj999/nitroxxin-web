@@ -397,6 +397,52 @@ export default function Events() {
 
   const eventCategories = displayedCategories;
 
+  // Category event counts for drawer filter
+  const eventCategoryCounts = useMemo(() => {
+    const counts = {};
+    liveEvents.forEach((ev) => {
+      const catId = ev.categoryId || ev.category;
+      if (catId) {
+        counts[catId] = (counts[catId] || 0) + 1;
+        counts[String(catId).toLowerCase()] = (counts[String(catId).toLowerCase()] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [liveEvents]);
+
+  // Available / popular cities for drawer filter
+  const drawerPopularCities = useMemo(() => {
+    const set = new Set(["All", "Mumbai", "Bengaluru", "Delhi NCR", "Pune", "Goa", "Hyderabad", "Chennai"]);
+    liveEvents.forEach((ev) => {
+      if (ev.city) set.add(ev.city);
+    });
+    return Array.from(set);
+  }, [liveEvents]);
+
+  // Count of active filters in drawer
+  const drawerActiveFilterCount = useMemo(() => {
+    let count = 0;
+    if (sortBy !== "DateSoonest") count++;
+    if (activeCategory !== "All") count++;
+    if (filterDate !== "All") count++;
+    if (filterPrice !== "All") count++;
+    if (selectedCity) count++;
+    return count;
+  }, [sortBy, activeCategory, filterDate, filterPrice, selectedCity]);
+
+  // Reset all filters in drawer
+  const handleResetAllDrawerFilters = () => {
+    setFilterDate("All");
+    setFilterPrice("All");
+    setSortBy("DateSoonest");
+    setSelectedCity("");
+    localStorage.removeItem("selectedCity");
+    window.dispatchEvent(new Event("locationChanged"));
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete("category");
+    setSearchParams(newParams);
+  };
+
   // Map dynamic hero slides from page_layouts or fallback to upcoming live events
   const heroEvents = useMemo(() => {
     if (rawSlides && Array.isArray(rawSlides) && rawSlides.length > 0) {
@@ -1202,28 +1248,56 @@ export default function Events() {
         <div className="ep-drawer-backdrop" onClick={() => setIsFilterDrawerOpen(false)}>
           <div className="ep-drawer" onClick={(e) => e.stopPropagation()}>
             <div className="ep-drawer__header">
-              <h3>Filters & Sort</h3>
-              <button className="ep-drawer__close-btn" onClick={() => setIsFilterDrawerOpen(false)}>×</button>
+              <div className="ep-drawer__title-wrap">
+                <h3>Filters & Sort</h3>
+                {drawerActiveFilterCount > 0 && (
+                  <span className="ep-drawer__badge">{drawerActiveFilterCount}</span>
+                )}
+              </div>
+              <div className="ep-drawer__header-actions">
+                {drawerActiveFilterCount > 0 && (
+                  <button
+                    type="button"
+                    className="ep-drawer__reset-link"
+                    onClick={handleResetAllDrawerFilters}
+                  >
+                    Reset
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="ep-drawer__close-btn"
+                  onClick={() => setIsFilterDrawerOpen(false)}
+                  aria-label="Close filters"
+                >
+                  ×
+                </button>
+              </div>
             </div>
 
             <div className="ep-drawer__content">
-              {/* Sort Section */}
+              {/* 1. Sort Section */}
               <div className="ep-drawer__section">
-                <h4>Sort By</h4>
+                <div className="ep-drawer__section-header">
+                  <h4>Sort By</h4>
+                </div>
                 <div className="ep-drawer__options-grid">
                   <button
+                    type="button"
                     className={`ep-drawer__option-btn${sortBy === "DateSoonest" ? " active" : ""}`}
                     onClick={() => setSortBy("DateSoonest")}
                   >
                     Soonest Date
                   </button>
                   <button
+                    type="button"
                     className={`ep-drawer__option-btn${sortBy === "PriceLowHigh" ? " active" : ""}`}
                     onClick={() => setSortBy("PriceLowHigh")}
                   >
                     Price: Low to High
                   </button>
                   <button
+                    type="button"
                     className={`ep-drawer__option-btn${sortBy === "PriceHighLow" ? " active" : ""}`}
                     onClick={() => setSortBy("PriceHighLow")}
                   >
@@ -1232,12 +1306,48 @@ export default function Events() {
                 </div>
               </div>
 
-              {/* Category Filter Section */}
+              {/* 2. City / Location Section */}
+              <div className="ep-drawer__section">
+                <div className="ep-drawer__section-header">
+                  <h4>City / Location</h4>
+                  {selectedCity && (
+                    <span style={{ fontSize: "12px", color: "#ff1f1f", fontWeight: 600 }}>{selectedCity}</span>
+                  )}
+                </div>
+                <div className="ep-drawer__options-grid">
+                  <button
+                    type="button"
+                    className={`ep-drawer__option-btn${!selectedCity ? " active" : ""}`}
+                    onClick={() => {
+                      setSelectedCity("");
+                      localStorage.removeItem("selectedCity");
+                      window.dispatchEvent(new Event("locationChanged"));
+                    }}
+                  >
+                    All Cities
+                  </button>
+                  {drawerPopularCities.filter((c) => c !== "All").map((city) => (
+                    <button
+                      key={city}
+                      type="button"
+                      className={`ep-drawer__option-btn${selectedCity.toLowerCase() === city.toLowerCase() ? " active" : ""}`}
+                      onClick={() => handleSelectCity(city)}
+                    >
+                      {city}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 3. Category Filter Section */}
               {displayedCategories && displayedCategories.length > 0 && (
                 <div className="ep-drawer__section">
-                  <h4>Category</h4>
+                  <div className="ep-drawer__section-header">
+                    <h4>Category</h4>
+                  </div>
                   <div className="ep-drawer__options-grid">
                     <button
+                      type="button"
                       className={`ep-drawer__option-btn${activeCategory === "All" ? " active" : ""}`}
                       onClick={() => {
                         const newParams = new URLSearchParams(searchParams);
@@ -1246,51 +1356,75 @@ export default function Events() {
                       }}
                     >
                       All Categories
+                      <span className="ep-drawer__opt-count">{liveEvents.length}</span>
                     </button>
-                    {displayedCategories.map((cat) => (
-                      <button
-                        key={cat.id}
-                        className={`ep-drawer__option-btn${activeCategory === cat.id ? " active" : ""}`}
-                        onClick={() => {
-                          const newParams = new URLSearchParams(searchParams);
-                          newParams.set("category", cat.id);
-                          setSearchParams(newParams);
-                        }}
-                      >
-                        {cat.label}
-                      </button>
-                    ))}
+                    {displayedCategories.map((cat) => {
+                      const count = eventCategoryCounts[cat.id] || eventCategoryCounts[cat.label] || 0;
+                      return (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          className={`ep-drawer__option-btn${activeCategory === cat.id ? " active" : ""}`}
+                          onClick={() => {
+                            const newParams = new URLSearchParams(searchParams);
+                            newParams.set("category", cat.id);
+                            setSearchParams(newParams);
+                          }}
+                        >
+                          {cat.label}
+                          {count > 0 && <span className="ep-drawer__opt-count">{count}</span>}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
 
-              {/* Date Filter Section */}
+              {/* 4. Date Filter Section */}
               <div className="ep-drawer__section">
-                <h4>Date</h4>
+                <div className="ep-drawer__section-header">
+                  <h4>Date</h4>
+                </div>
                 <div className="ep-drawer__options-grid">
-                  {["All", "Today", "Tomorrow", "Weekend", "NextWeek"].map((dateOpt) => (
+                  {[
+                    { id: "All", label: "Any Date" },
+                    { id: "Today", label: "Today" },
+                    { id: "Tomorrow", label: "Tomorrow" },
+                    { id: "Weekend", label: "This Weekend" },
+                    { id: "NextWeek", label: "Next 7 Days" },
+                  ].map((dateOpt) => (
                     <button
-                      key={dateOpt}
-                      className={`ep-drawer__option-btn${filterDate === dateOpt ? " active" : ""}`}
-                      onClick={() => setFilterDate(dateOpt)}
+                      key={dateOpt.id}
+                      type="button"
+                      className={`ep-drawer__option-btn${filterDate === dateOpt.id ? " active" : ""}`}
+                      onClick={() => setFilterDate(dateOpt.id)}
                     >
-                      {dateOpt === "All" ? "Any Date" : dateOpt === "Weekend" ? "This Weekend" : dateOpt === "NextWeek" ? "Next 7 Days" : dateOpt}
+                      {dateOpt.label}
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Price Filter Section */}
+              {/* 5. Price Filter Section */}
               <div className="ep-drawer__section">
-                <h4>Price</h4>
+                <div className="ep-drawer__section-header">
+                  <h4>Price</h4>
+                </div>
                 <div className="ep-drawer__options-grid">
-                  {["All", "Free", "Under500", "Under1000", "Paid"].map((priceOpt) => (
+                  {[
+                    { id: "All", label: "Any Price" },
+                    { id: "Free", label: "Free" },
+                    { id: "Under500", label: "Under ₹500" },
+                    { id: "Under1000", label: "Under ₹1000" },
+                    { id: "Paid", label: "₹1000+" },
+                  ].map((priceOpt) => (
                     <button
-                      key={priceOpt}
-                      className={`ep-drawer__option-btn${filterPrice === priceOpt ? " active" : ""}`}
-                      onClick={() => setFilterPrice(priceOpt)}
+                      key={priceOpt.id}
+                      type="button"
+                      className={`ep-drawer__option-btn${filterPrice === priceOpt.id ? " active" : ""}`}
+                      onClick={() => setFilterPrice(priceOpt.id)}
                     >
-                      {priceOpt === "All" ? "Any Price" : priceOpt === "Under500" ? "Under ₹500" : priceOpt === "Under1000" ? "Under ₹1000" : priceOpt === "Paid" ? "₹1000+" : priceOpt}
+                      {priceOpt.label}
                     </button>
                   ))}
                 </div>
@@ -1298,18 +1432,19 @@ export default function Events() {
             </div>
 
             <div className="ep-drawer__footer">
-              <button className="ep-drawer__reset-btn" onClick={() => {
-                setFilterDate("All");
-                setFilterPrice("All");
-                setSortBy("DateSoonest");
-                const newParams = new URLSearchParams(searchParams);
-                newParams.delete("category");
-                setSearchParams(newParams);
-              }}>
+              <button
+                type="button"
+                className="ep-drawer__reset-btn"
+                onClick={handleResetAllDrawerFilters}
+              >
                 Reset All
               </button>
-              <button className="ep-drawer__apply-btn" onClick={() => setIsFilterDrawerOpen(false)}>
-                Apply
+              <button
+                type="button"
+                className="ep-drawer__apply-btn"
+                onClick={() => setIsFilterDrawerOpen(false)}
+              >
+                Show {filteredEvents.length} Events
               </button>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import './shopByCategory.css';
 import { Link } from 'react-router-dom';
 import { useAccessoriesContext } from '../../../context/AccessoriesContext';
@@ -16,15 +16,6 @@ const CategoryCard = ({ id, image, title, imageName }) => {
                         e.currentTarget.src = '/assets/images/category-helmet.png';
                     }}
                 />
-                {/* <div className="category-card-overlay">
-                    <span className="category-card-title">{title}</span>
-                    <span className="category-card-arrow">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="5" y1="12" x2="19" y2="12" />
-                            <polyline points="12 5 19 12 12 19" />
-                        </svg>
-                    </span>
-                </div> */}
             </div>
         </Link>
     );
@@ -33,6 +24,8 @@ const CategoryCard = ({ id, image, title, imageName }) => {
 const ShopByCategory = () => {
     const { categories: cachedCategories } = useAccessoriesContext();
     const sliderRef = useRef(null);
+    const [canScrollLeft, setCanScrollLeft] = useState(false);
+    const [canScrollRight, setCanScrollRight] = useState(true);
 
     const fallbackCategories = [
         {
@@ -71,12 +64,53 @@ const ShopByCategory = () => {
         }))
         : fallbackCategories;
 
-        console.log(categories)
+    const checkScrollBounds = useCallback(() => {
+        if (!sliderRef.current) return;
+        const { scrollLeft, scrollWidth, clientWidth } = sliderRef.current;
+        const maxScroll = Math.max(0, scrollWidth - clientWidth);
+        setCanScrollLeft(scrollLeft > 6);
+        setCanScrollRight(scrollLeft < maxScroll - 6);
+    }, []);
+
+    useEffect(() => {
+        const slider = sliderRef.current;
+        if (!slider) return;
+
+        checkScrollBounds();
+        slider.addEventListener('scroll', checkScrollBounds, { passive: true });
+        window.addEventListener('resize', checkScrollBounds);
+
+        const timer = setTimeout(checkScrollBounds, 250);
+
+        return () => {
+            slider.removeEventListener('scroll', checkScrollBounds);
+            window.removeEventListener('resize', checkScrollBounds);
+            clearTimeout(timer);
+        };
+    }, [checkScrollBounds, categories]);
 
     const scroll = (direction) => {
-        if (sliderRef.current) {
-            const scrollAmount = direction === 'left' ? -320 : 320;
-            sliderRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        if (!sliderRef.current) return;
+        const slider = sliderRef.current;
+        const { scrollLeft, scrollWidth, clientWidth } = slider;
+        const maxScroll = Math.max(0, scrollWidth - clientWidth);
+
+        if (maxScroll <= 0) return;
+
+        // Dynamic step calculation based on card width + gap
+        const firstCard = slider.querySelector('.category-card-item');
+        const cardWidth = firstCard ? firstCard.getBoundingClientRect().width : 240;
+        const style = window.getComputedStyle(slider);
+        const gap = parseFloat(style.gap) || 24;
+        const step = cardWidth + gap;
+
+        if (direction === 'left') {
+            const target = Math.max(0, scrollLeft - step);
+            slider.scrollTo({ left: target, behavior: 'smooth' });
+        } else {
+            // Carefully clamp target so it NEVER overscrolls past maxScroll
+            const target = Math.min(maxScroll, scrollLeft + step);
+            slider.scrollTo({ left: target, behavior: 'smooth' });
         }
     };
 
@@ -103,8 +137,9 @@ const ShopByCategory = () => {
             <div className="category-slider-controls">
                 <button
                     type="button"
-                    className="category-ctrl-btn"
+                    className={`category-ctrl-btn ${!canScrollLeft ? 'disabled' : ''}`}
                     onClick={() => scroll('left')}
+                    disabled={!canScrollLeft}
                     aria-label="Previous categories"
                 >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -113,8 +148,9 @@ const ShopByCategory = () => {
                 </button>
                 <button
                     type="button"
-                    className="category-ctrl-btn"
+                    className={`category-ctrl-btn ${!canScrollRight ? 'disabled' : ''}`}
                     onClick={() => scroll('right')}
+                    disabled={!canScrollRight}
                     aria-label="Next categories"
                 >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
