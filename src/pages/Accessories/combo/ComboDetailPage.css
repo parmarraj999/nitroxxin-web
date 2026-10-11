@@ -341,10 +341,10 @@
   left: 0;
   right: 0;
   bottom: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   z-index: 99999;
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(15, 23, 42, 0.2);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   display: flex;
@@ -359,6 +359,7 @@
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -387,6 +388,7 @@
     opacity: 0;
     transform: translateY(24px) scale(0.96);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -397,9 +399,11 @@
 .bundle-popup-modal::-webkit-scrollbar {
   width: 6px;
 }
+
 .bundle-popup-modal::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .bundle-popup-modal::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 3px;
@@ -763,6 +767,7 @@
     opacity: 0;
     transform: translateY(16px) scale(0.94);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);

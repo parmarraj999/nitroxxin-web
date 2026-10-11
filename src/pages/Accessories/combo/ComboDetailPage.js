@@ -256,6 +256,7 @@ export default function ComboDetailPage() {
   // 1. Fetch live Combo Category Document from Firestore `combo/comboId`
   const { data: comboDoc, loading: comboDocLoading } = useDocument('combo', comboId);
   const { data: pluralComboDoc } = useDocument('combos', comboId);
+  console.log(comboDoc)
 
   // 2. Fetch live Combo Bundles from Subcollection `combo/comboId/combo-bundle` (with naming variations)
   const { data: subBundleDocs = [], loading: subBundleLoading } = useCollection(
@@ -288,7 +289,7 @@ export default function ComboDetailPage() {
     const fetchDirectData = async () => {
       try {
         const firestore = db();
-        
+
         // Fetch Category doc directly if not loaded
         if (!comboDoc && !pluralComboDoc) {
           const catSnap = await firestore.collection('combo').doc(comboId).get();
@@ -367,20 +368,11 @@ export default function ComboDetailPage() {
         activeDoc.description ||
         'Explore curated rider bundles and gear packages designed with exclusive savings. Choose your setup.';
       const badge =
-        activeDoc.badge ||
-        activeDoc.tag ||
-        (activeDoc.discount ? `${activeDoc.discount}% OFF` : '🔥 Special Deals');
+        activeDoc.badge || activeDoc.tag || (activeDoc.discount ? `${activeDoc.discount}% OFF` : '🔥 Special Deals');
       const discountText =
-        activeDoc.discountText ||
-        (activeDoc.discount ? `Save ${activeDoc.discount}% OFF` : '') ||
-        (activeDoc.discountPercent ? `Save ${activeDoc.discountPercent}% OFF` : '');
-      const color =
-        activeDoc.color ||
-        activeDoc.bgColor ||
-        '#2563eb';
-      const thumbnail =
-        activeDoc.thumbnailUrl ||
-        'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&w=400&q=80';
+        activeDoc.discountText || (activeDoc.discount ? `Save ${activeDoc.discount}% OFF` : '') || (activeDoc.discountPercent ? `Save ${activeDoc.discountPercent}% OFF` : '');
+      const color = activeDoc.color || activeDoc.bgColor || '#2563eb';
+      const thumbnail = activeDoc.thumbnailImage
 
       return {
         id: comboId,
@@ -423,16 +415,16 @@ export default function ComboDetailPage() {
       subBundleDocs.length > 0
         ? subBundleDocs
         : subBundlesPlural.length > 0
-        ? subBundlesPlural
-        : subBundleUnderscore.length > 0
-        ? subBundleUnderscore
-        : subBundleCombobundle.length > 0
-        ? subBundleCombobundle
-        : subBundleBundles.length > 0
-        ? subBundleBundles
-        : pluralPathBundles.length > 0
-        ? pluralPathBundles
-        : directBundles;
+          ? subBundlesPlural
+          : subBundleUnderscore.length > 0
+            ? subBundleUnderscore
+            : subBundleCombobundle.length > 0
+              ? subBundleCombobundle
+              : subBundleBundles.length > 0
+                ? subBundleBundles
+                : pluralPathBundles.length > 0
+                  ? pluralPathBundles
+                  : directBundles;
 
     if (activeSubDocs && activeSubDocs.length > 0) {
       return activeSubDocs.map((doc, idx) => {
@@ -490,13 +482,9 @@ export default function ComboDetailPage() {
 
         const bundleThumbnail =
           doc.thumbnailUrl ||
-          doc.thumbnail ||
-          doc.bundleThumbnail ||
           doc.mergedImageUrl ||
           doc.image ||
           doc.imageUrl ||
-          doc.bundleImage ||
-          doc.bannerUrl ||
           doc.banner ||
           combo.thumbnailUrl ||
           combo.thumbnail;
