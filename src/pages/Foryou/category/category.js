@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useContext } from "react";
 import "./category.css";
+import ForYouContext from "../../../context/ForYouContext";
 
 const fallbackCategories = [
   {
@@ -36,8 +37,10 @@ const fallbackCategories = [
   },
 ];
 
-const CategoriesSection = ({ categories }) => {
+const CategoriesSection = ({ categories: propCategories }) => {
   const sliderRef = React.useRef(null);
+  const forYouContext = useContext(ForYouContext);
+  const categories = propCategories !== undefined ? propCategories : (forYouContext?.categories || []);
 
   const activeCategories = (categories && categories.length > 0) ? categories : fallbackCategories;
 

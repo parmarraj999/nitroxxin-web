@@ -1,191 +1,20 @@
-import React, { useMemo, useRef } from "react";
+import React, { useRef, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import "./ComboSection.css";
-import { useCollection, useDocument } from "../../hooks/useFirestore";
-import { COLLECTIONS } from "../../services/firebase";
-
-// Color presets for deal cards matching the reference image palette
-const CARD_COLOR_PALETTE = [
-  "#2da84e", // Vibrant Emerald Green (like Snoomart in reference)
-  "#c0262b", // Nitroxx Racing Red
-  "#1e3a8a", // Deep Racing Blue
-  "#d97706", // Sunset Amber Orange
-  "#7c3aed", // Royal Violet
-  "#18181b", // Carbon Obsidian
-];
-
-// Fallback high-value combos matching the reference deal card UI
-const DEFAULT_FALLBACK_COMBOS = [
-  {
-    id: "combo-starter-touring",
-    title: "Grab 25% off on Touring Bundle!",
-    subtitle: "Complete protection with Axor Apex helmet, Kevlar gloves & thermal balaclava...",
-    badge: "Nitroxx Mart",
-    discountText: "25% off",
-    color: "#2da84e",
-    mergedImageUrl: "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&w=600&q=80",
-    validUntil: "Aug 4 - Aug 31",
-    offerPrice: 6897,
-    regularPrice: 8397,
-    progressLabel: "0 of 8,397 INR",
-  },
-  {
-    id: "combo-urban-commuter",
-    title: "Grab 20% off on Urban Armor!",
-    subtitle: "CE-Level 2 armored jacket, dual bionic knee guards & magnetic tank bag...",
-    badge: "Urban Rider",
-    discountText: "20% off",
-    color: "#c0262b",
-    mergedImageUrl: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=600&q=80",
-    validUntil: "Limited Period Deal",
-    offerPrice: 10999,
-    regularPrice: 13497,
-    progressLabel: "0 of 13,497 INR",
-  },
-  {
-    id: "combo-track-racing",
-    title: "Flat 30% off on Track Pro Pack!",
-    subtitle: "Carbon helmet, Kevlar racing gloves & knee sliders for motorsport enthusiasts...",
-    badge: "Track Pro",
-    discountText: "30% off",
-    color: "#1e3a8a",
-    mergedImageUrl: "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=600&q=80",
-    validUntil: "Weekend Flash Deal",
-    offerPrice: 16499,
-    regularPrice: 23599,
-    progressLabel: "0 of 23,599 INR",
-  },
-  {
-    id: "combo-monsoon-weather",
-    title: "Save 15% on All-Weather Pack!",
-    subtitle: "Waterproof boots, seam-sealed rain suit & 45L luggage tail bag...",
-    badge: "All-Weather",
-    discountText: "15% off",
-    color: "#d97706",
-    mergedImageUrl: "https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=600&q=80",
-    validUntil: "Monsoon Special",
-    offerPrice: 8299,
-    regularPrice: 9799,
-    progressLabel: "0 of 9,799 INR",
-  },
-];
+import ForYouContext, { DEFAULT_FALLBACK_COMBOS } from "../../context/ForYouContext";
 
 export default function ComboSection({
   theme = "light",
   sectionTitle = "COMBO OFFERS & RIDER PACKS",
   sectionSubtitle = "Curated protection and riding gear packages bundled together with exclusive discounts.",
+  combos: propCombos,
 }) {
   const navigate = useNavigate();
+  const forYouContext = useContext(ForYouContext);
 
-  // 1. Live Firestore "combo" collection query (primary source)
-  const { data: liveCombos = [] } = useCollection(
-    COLLECTIONS.combo || "combo"
-  );
-  const { data: pluralCombos = [] } = useCollection("combos");
+  const combos = propCombos || forYouContext?.combos || DEFAULT_FALLBACK_COMBOS;
 
-  // 2. Fetch combo configurations from page_layouts / accessories_layout (secondary fallback)
-  const { data: primaryLayout } = useDocument("page_layouts", "accessories_layout");
-  const { data: fallbackLayout } = useDocument("page_layouts", "accessories");
-  const { data: singularLayout } = useDocument("page_layout", "accessories_layout");
-
-  // Determine active combos list
-  const combos = useMemo(() => {
-    // 1. Use live Firestore combo categories if available
-    const activeFirestoreList = liveCombos.length > 0 ? liveCombos : pluralCombos;
-    if (activeFirestoreList && activeFirestoreList.length > 0) {
-      return activeFirestoreList.map((c, idx) => {
-        const title =
-          c.categoryName ||
-          c.title ||
-          c.name ||
-          c.comboCategory ||
-          c.comboName ||
-          `Combo Pack ${idx + 1}`;
-        const subtitle = c.subtitle || c.description || c.details || "";
-        const image =
-          c.mergedImageUrl ||
-          c.image ||
-          c.imageUrl ||
-          c.bannerUrl ||
-          c.banner ||
-          c.mixedImage ||
-          c.coverImage ||
-          c.thumbnail ||
-          "";
-        const discountText =
-          c.discountText ||
-          (c.discount ? `${c.discount}% off` : "") ||
-          (c.discountPercent ? `${c.discountPercent}% off` : "");
-        const badge =
-          c.badge ||
-          c.tag ||
-          (c.discount ? `${c.discount}% OFF` : "Nitroxx Special");
-        const color =
-          c.color ||
-          c.bgColor ||
-          CARD_COLOR_PALETTE[idx % CARD_COLOR_PALETTE.length];
-
-        return {
-          id: c.id,
-          ...c,
-          title,
-          subtitle,
-          mergedImageUrl: image,
-          discountText,
-          badge,
-          color,
-          validUntil: c.validUntil || c.validity || "Limited Period Deal",
-          offerPrice: c.offerPrice || c.dealPrice || c.price,
-          regularPrice: c.regularPrice || c.mrp || c.originalPrice,
-        };
-      });
-    }
-
-    // 2. Layout documents fallback
-    const raw =
-      primaryLayout?.combos ||
-      fallbackLayout?.combos ||
-      singularLayout?.combos ||
-      [];
-
-    if (Array.isArray(raw) && raw.length > 0) {
-      const valid = raw.filter((c) => c && (c.title || c.name || c.categoryName));
-      if (valid.length > 0) {
-        return valid.map((c, idx) => ({
-          ...c,
-          title: c.title || c.name || c.categoryName || `Combo Deal ${idx + 1}`,
-          color: c.color || c.bgColor || CARD_COLOR_PALETTE[idx % CARD_COLOR_PALETTE.length],
-          mergedImageUrl:
-            c.mergedImageUrl ||
-            c.image ||
-            c.bannerUrl ||
-            c.banner ||
-            c.imageUrl ||
-            c.mixedImage,
-        }));
-      }
-    }
-
-    // 3. Static fallback
-    return DEFAULT_FALLBACK_COMBOS;
-  }, [liveCombos, pluralCombos, primaryLayout, fallbackLayout, singularLayout]);
-
-  const [activeIndex, setActiveIndex] = React.useState(0);
   const sliderRef = useRef(null);
-
-  // Track scroll position to update active index for dots
-  const handleScroll = () => {
-    if (sliderRef.current) {
-      const container = sliderRef.current;
-      const firstCard = container.querySelector(".combo-deal-card");
-      if (!firstCard) return;
-      const cardWidth = firstCard.getBoundingClientRect().width;
-      const gap = 16;
-      const scrollLeft = container.scrollLeft;
-      const newIndex = Math.round(scrollLeft / (cardWidth + gap));
-      setActiveIndex(Math.max(0, Math.min(newIndex, combos.length - 1)));
-    }
-  };
 
   // Slider navigation: scroll by 1 card width + gap
   const scrollSlider = (direction) => {
@@ -200,21 +29,6 @@ export default function ComboSection({
         left: direction === "left" ? -scrollAmount : scrollAmount,
         behavior: "smooth",
       });
-    }
-  };
-
-  const scrollToCard = (index) => {
-    if (sliderRef.current) {
-      const container = sliderRef.current;
-      const cards = container.querySelectorAll(".combo-deal-card");
-      if (cards[index]) {
-        cards[index].scrollIntoView({
-          behavior: "smooth",
-          inline: "center",
-          block: "nearest",
-        });
-        setActiveIndex(index);
-      }
     }
   };
 
@@ -246,37 +60,8 @@ export default function ComboSection({
 
         {/* ── Card Slider / Carousel ── */}
         <div className="combo-slider-wrapper">
-          {/* Navigation Controls: only show if multiple deals exist */}
-          {combos.length > 1 && (
-            <>
-              <button
-                type="button"
-                className="combo-arrow-btn combo-arrow-btn--prev"
-                onClick={() => scrollSlider("left")}
-                aria-label="Previous combo deals"
-                title="Previous deal"
-              >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="m15 18-6-6 6-6" />
-                </svg>
-              </button>
-
-              <button
-                type="button"
-                className="combo-arrow-btn combo-arrow-btn--next"
-                onClick={() => scrollSlider("right")}
-                aria-label="Next combo deals"
-                title="Next deal"
-              >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="m9 18 6-6-6-6" />
-                </svg>
-              </button>
-            </>
-          )}
-
           {/* Scrollable Track with Card Peek on both sides */}
-          <div className="combo-cards-track" ref={sliderRef} onScroll={handleScroll}>
+          <div className="combo-cards-track" ref={sliderRef}>
             {combos.map((combo, idx) => {
               const mixedImg = combo.mergedImageUrl;
               return (
@@ -310,18 +95,32 @@ export default function ComboSection({
             })}
           </div>
 
-          {/* Pagination dots for multi-combo sliders */}
+          {/* ── Bottom Slider Controls: Prev Button, Pagination Dots, Next Button ── */}
           {combos.length > 1 && (
-            <div className="combo-dots-wrapper" aria-label="Combo slide navigation">
-              {combos.map((_, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  className={`combo-dot ${activeIndex === i ? "active" : ""}`}
-                  onClick={() => scrollToCard(i)}
-                  aria-label={`Go to deal ${i + 1}`}
-                />
-              ))}
+            <div className="combo-slider-controls" aria-label="Combo slider navigation">
+              <button
+                type="button"
+                className="combo-arrow-btn combo-arrow-btn--prev"
+                onClick={() => scrollSlider("left")}
+                aria-label="Previous combo deals"
+                title="Previous deal"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m15 18-6-6 6-6" />
+                </svg>
+              </button>
+
+              <button
+                type="button"
+                className="combo-arrow-btn combo-arrow-btn--next"
+                onClick={() => scrollSlider("right")}
+                aria-label="Next combo deals"
+                title="Next deal"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m9 18 6-6-6-6" />
+                </svg>
+              </button>
             </div>
           )}
         </div>

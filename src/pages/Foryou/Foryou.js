@@ -4,17 +4,16 @@ import Header from './header/header'
 import Marquee from './marquee/marquee'
 import CategoriesSection from './category/category'
 import FeaturedEvents from './featureEvent/featureEvent'
+import EventPartners from '../../components/EventPartners/EventPartners'
 import CuratedShowcase from './curatedShowcase/curatedShowcase'
 import ComboSection from '../../components/ComboSection/ComboSection'
 import ShopByCategory from './shopByCategory/shopByCategory'
 import ShopByBrands from './shopByBrand/shopByBrand'
 import FAQ from './FAQ/faq'
-import { useDocument } from '../../hooks/useFirestore'
+import { useForYouContext } from '../../context/ForYouContext'
 
 function Foryou() {
-    const { data: layoutData } = useDocument('page_layouts', 'for_you');
-    const banners = layoutData?.banners || [];
-    const categories = layoutData?.categories || [];
+    const { banners, categories, combos, combosLoading } = useForYouContext();
 
     return (
         <section className='foryou-section'>
@@ -22,11 +21,14 @@ function Foryou() {
             <Marquee />
             <CategoriesSection categories={categories} />
             <FeaturedEvents />
+            <EventPartners theme="dark" />
             <CuratedShowcase />
             <ComboSection
                 theme="dark"
                 sectionTitle="COMBO DEALS & GEAR PACKAGES"
                 sectionSubtitle="Handpicked protective bundles curated with exclusive discounts for true riders."
+                combos={combos}
+                loading={combosLoading}
             />
             <ShopByCategory />
             <div className='foryou-section-image'>

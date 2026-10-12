@@ -10,6 +10,7 @@ import { useAuthModal } from "../../components/AuthModal/useAuthModal";
 import { COLLECTIONS, db } from "../../services/firebase";
 import { saveFavoriteEvent, removeFavoriteEvent } from "../../services/commerceService";
 import LocationModal from "../../components/layout/bottomNav/LocationModal";
+import EventPartners from "../../components/EventPartners/EventPartners";
 
 const timeFilters = ["All", "Today", "Upcoming", "Free", "Paid", "VIP"];
 const isVisibleEvent = (event) => String(event.status || "").toLowerCase() === "published";
@@ -1071,6 +1072,9 @@ export default function Events() {
               </span>
             </Link>
           </div>
+
+          {/* ═══ Event Partners & Organizer Logos Section ═══ */}
+          <EventPartners theme="dark" className="ep-section--partners" />
 
           {/* Section: Upcoming Event > (Screenshot-inspired Horizontal Carousel) */}
           <div className="ep-section ep-section--upcoming-carousel">

@@ -94,6 +94,7 @@ export const COLLECTIONS = {
   query: "query",
   combo: "combo",
   combos: "combos",
+  organizerLogos: "organizer_logos",
 };
 
 export const serverTimestamp = () => getFirebase().firestore.FieldValue.serverTimestamp();

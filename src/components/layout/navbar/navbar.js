@@ -1,16 +1,53 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import './navbar.css';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthModal } from '../../AuthModal/useAuthModal';
 import { useAuth } from '../../../context/AuthContext';
+import { useEventsContext } from '../../../context/EventsContext';
 import BecomePartner from '../../Partner/BecomePartner';
-// import svgPaths from '../../imports/ForYouPgae/svg-o2diz6f004';
+
+const DEFAULT_EVENT_CATEGORIES = [
+    { id: 'night-rides', label: 'Night Rides' },
+    { id: 'day-rides', label: 'Day Rides' },
+    { id: 'group-rides', label: 'Group Rides' },
+    { id: 'workshops', label: 'Workshops' },
+    { id: 'meetups', label: 'Meetups' },
+];
 
 const Navbar = () => {
-
-    const { pathname } = useLocation();
+    const { pathname, search } = useLocation();
+    const navigate = useNavigate();
     const { openLogin } = useAuthModal();
     const { isAuthenticated, logout } = useAuth();
+    const { categories: rawCategories = [] } = useEventsContext();
+
+    const searchParams = useMemo(() => new URLSearchParams(search), [search]);
+    const currentCategory = searchParams.get('category');
+    const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
+
+    useEffect(() => {
+        setSearchQuery(searchParams.get('q') || '');
+    }, [searchParams]);
+
+    const handleSearchSubmit = (e) => {
+        if (e) e.preventDefault();
+        const term = searchQuery.trim();
+        if (term) {
+            navigate(`/events/search?q=${encodeURIComponent(term)}`);
+        } else {
+            navigate('/events/search');
+        }
+    };
+
+    const eventCategories = useMemo(() => {
+        if (rawCategories && rawCategories.length > 0) {
+            return rawCategories.slice(0, 5).map((cat) => ({
+                id: cat.slug || cat.id || (cat.label || cat.title || cat.name || '').toLowerCase().replace(/\s+/g, '-'),
+                label: cat.label || cat.title || cat.name || 'Category',
+            }));
+        }
+        return DEFAULT_EVENT_CATEGORIES;
+    }, [rawCategories]);
 
     const isHidden =
         pathname.includes('/events/') ||
@@ -27,13 +64,75 @@ const Navbar = () => {
     return (
         <nav className="navbar" style={isHidden ? { display: 'none' } : {}}>
             <div className="navbar-container">
-                <Link to="/" className="navbar-logo-link" aria-label="Nitroxx Home">
-                    <img src="/assets/images/logo-white.png" alt="Nitroxx" className="navbar-logo-img" />
-                </Link>
+                <div className="navbar-left">
+                    <Link to="/" className="navbar-logo-link" aria-label="Nitroxx Home">
+                        <img src="/assets/images/logo-white.png" alt="Nitroxx" className="navbar-logo-img" />
+                    </Link>
+
+                    <div className="navbar-divider" />
+
+                    {/* 5 Event Category options (Desktop only - matches marketplace navbar) */}
+                    <nav className="navbar-events-nav" aria-label="Event Categories">
+                        {eventCategories.map((cat) => {
+                            const isCatActive =
+                                pathname === '/events' &&
+                                currentCategory &&
+                                (currentCategory.toLowerCase() === cat.id.toLowerCase() ||
+                                 currentCategory.toLowerCase() === cat.label.toLowerCase());
+
+                            return (
+                                <Link
+                                    key={cat.id}
+                                    to={`/events?category=${encodeURIComponent(cat.id)}`}
+                                    className={`navbar-event-cat-link ${isCatActive ? 'is-active' : ''}`}
+                                >
+                                    <span>{cat.label}</span>
+                                </Link>
+                            );
+                        })}
+                    </nav>
+                </div>
                 <div className='navbar-action-btn'>
                     <BecomePartner theme="dark" />
-                    <Link to="/events/search" className="navbar-search" aria-label="Search events">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" color='white' viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-search-icon lucide-search"><path d="m21 21-4.34-4.34" /><circle cx="11" cy="11" r="8" /></svg>
+
+                    {/* Desktop Search Bar (Marketplace Navbar Style) */}
+                    <form className="navbar-search-bar" onSubmit={handleSearchSubmit} role="search">
+                        <button type="submit" className="navbar-search-bar__btn" aria-label="Search events" title="Search events">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="navbar-search-bar__icon">
+                                <circle cx="11" cy="11" r="8" />
+                                <path d="m21 21-4.34-4.34" />
+                            </svg>
+                        </button>
+                        <input
+                            type="text"
+                            className="navbar-search-bar__input"
+                            placeholder="Search events, rides, meetups..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            autoComplete="off"
+                            spellCheck="false"
+                        />
+                        {searchQuery && (
+                            <button
+                                type="button"
+                                className="navbar-search-bar__clear"
+                                onClick={() => setSearchQuery('')}
+                                aria-label="Clear search"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18" />
+                                    <line x1="6" y1="6" x2="18" y2="18" />
+                                </svg>
+                            </button>
+                        )}
+                    </form>
+
+                    {/* Mobile Search Icon (only shown on mobile screens) */}
+                    <Link to="/events/search" className="navbar-search-mobile" aria-label="Search events">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="navbar-search-mobile__icon">
+                            <circle cx="11" cy="11" r="8" />
+                            <path d="m21 21-4.34-4.34" />
+                        </svg>
                     </Link>
                     {
                         isAuthenticated ? "" :

@@ -35,7 +35,7 @@
 
 .combo-container {
   width: 100%;
-  max-width: 1300px;
+  max-width: 90%;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -119,42 +119,7 @@
   box-sizing: border-box;
 }
 
-/* Floating Circular Arrow Buttons */
-.combo-arrow-btn {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 10;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: rgba(30, 36, 32, 0.92);
-  border: 2px solid rgba(255, 255, 255, 0.22);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  outline: none;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-}
 
-.combo-arrow-btn--prev {
-  left: clamp(8px, 2vw, 28px);
-}
-
-.combo-arrow-btn--next {
-  right: clamp(8px, 2vw, 28px);
-}
-
-.combo-arrow-btn:hover {
-  background: #111111;
-  border-color: rgba(255, 255, 255, 0.45);
-  transform: translateY(-50%) scale(1.08);
-}
 
 /* ── Cards Scroll Track (With Peek Effect) ── */
 .combo-cards-track {
@@ -390,14 +355,86 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* ── Bottom Slider Navigation Controls ── */
+.combo-slider-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 18px;
+  width: 100%;
+}
+
+/* Bottom Circular Arrow Buttons */
+.combo-arrow-btn {
+  position: static;
+  transform: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(30, 36, 32, 0.92);
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  flex-shrink: 0;
+}
+
+.combo-arrow-btn:hover {
+  background: #111111;
+  border-color: #ff5500;
+  color: #ff5500;
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+.combo-arrow-btn:active {
+  transform: scale(0.95);
+}
+
+/* Light Theme Styling for Arrow Buttons */
+.combo-section--light .combo-arrow-btn {
+  background: #ffffff;
+  border: 1.5px solid rgba(15, 23, 42, 0.15);
+  color: #0f172a;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+}
+
+.combo-section--light .combo-arrow-btn:hover {
+  background: #0f172a;
+  border-color: #0f172a;
+  color: #ffffff;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.16);
+}
+
+/* Dark Theme Styling for Arrow Buttons */
+.combo-section--dark .combo-arrow-btn {
+  background: rgba(24, 28, 25, 0.95);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+.combo-section--dark .combo-arrow-btn:hover {
+  background: #000000;
+  border-color: #ff5500;
+  color: #ff5500;
+}
+
 /* ── Carousel Dots ── */
 .combo-dots-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin-top: 14px;
-  width: 100%;
+  margin-top: 0;
+  width: auto;
 }
 
 .combo-dot {
@@ -559,4 +596,19 @@
       .combo-cards-track{
         margin-top: 2rem;
       }
+
+  .combo-slider-controls {
+    gap: 12px;
+    margin-top: 14px;
+  }
+
+  .combo-arrow-btn {
+    width: 38px;
+    height: 38px;
+  }
+
+  .combo-arrow-btn svg {
+    width: 16px;
+    height: 16px;
+  }
 }

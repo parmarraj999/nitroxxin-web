@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import "./header.css";
+import ForYouContext from "../../../context/ForYouContext";
 
-export default function RaceDay({ banners }) {
+export default function RaceDay({ banners: propBanners }) {
     const [active, setActive] = useState(0);
+    const forYouContext = useContext(ForYouContext);
+    const banners = propBanners !== undefined ? propBanners : (forYouContext?.banners || []);
 
     const fallbackBanners = [
         { id: 1, imageUrl: "../../../../assets/images/banner-1.jpeg", redirectUrl: "" },
