@@ -78,7 +78,7 @@ export default function ComboSection({
   const navigate = useNavigate();
 
   // 1. Live Firestore "combo" collection query (primary source)
-  const { data: liveCombos = [], loading: liveCombosLoading } = useCollection(
+  const { data: liveCombos = [] } = useCollection(
     COLLECTIONS.combo || "combo"
   );
   const { data: pluralCombos = [] } = useCollection("combos");
