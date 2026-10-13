@@ -47,6 +47,48 @@ const FALLBACK_ORGANIZERS = [
     logoUrl: '/assets/images/brand-6.png',
     city: 'Goa & Coorg',
   },
+  {
+    id: 'deccan-moto-guild',
+    name: 'Deccan Moto Guild',
+    tagline: 'Western Ghats Expeditions',
+    logoUrl: '/assets/images/brand-1.png',
+    city: 'Pune & Kolhapur',
+  },
+  {
+    id: 'ghat-chasers-racing',
+    name: 'Ghat Chasers MC',
+    tagline: 'Mountain Passes & Dawn Rides',
+    logoUrl: '/assets/images/brand-2.png',
+    city: 'Lonavala & Mahabaleshwar',
+  },
+  {
+    id: 'royal-riders-brotherhood',
+    name: 'Royal Brotherhood',
+    tagline: 'Heritage & Highway Touring',
+    logoUrl: '/assets/images/brand-3.png',
+    city: 'Rajasthan & Gujarat',
+  },
+  {
+    id: 'desert-storm-riders',
+    name: 'Desert Storm Raiders',
+    tagline: 'Dune Bashing & Wilderness',
+    logoUrl: '/assets/images/brand-4.png',
+    city: 'Jaisalmer & Bikaner',
+  },
+  {
+    id: 'midnight-throttles',
+    name: 'Midnight Throttles',
+    tagline: 'City Night Runs & Tunnel Rides',
+    logoUrl: '/assets/images/brand-5.png',
+    city: 'Mumbai & Thane',
+  },
+  {
+    id: 'valley-bikers-association',
+    name: 'Valley Bikers India',
+    tagline: 'Scenic Rides & Coffee Pitstops',
+    logoUrl: '/assets/images/brand-6.png',
+    city: 'Coorg & Ooty',
+  },
 ];
 
 export default function EventPartners({
@@ -66,7 +108,7 @@ export default function EventPartners({
 
   const organizers = useMemo(() => {
     if (rawOrganizers && rawOrganizers.length > 0) {
-      return rawOrganizers.map((doc, idx) => {
+      const liveList = rawOrganizers.map((doc, idx) => {
         const name =
           doc.name ||
           doc.organizerName ||
@@ -103,6 +145,18 @@ export default function EventPartners({
           url,
         };
       });
+
+      // Ensure at least 8 items for a rich two-row display
+      if (liveList.length < 8) {
+        const extraNeeded = 8 - liveList.length;
+        const extras = FALLBACK_ORGANIZERS.slice(0, extraNeeded).map((fb, i) => ({
+          ...fb,
+          id: `${fb.id}-fill-${i}`,
+        }));
+        return [...liveList, ...extras];
+      }
+
+      return liveList;
     }
     return FALLBACK_ORGANIZERS;
   }, [rawOrganizers]);
@@ -111,8 +165,8 @@ export default function EventPartners({
     if (sliderRef.current) {
       const container = sliderRef.current;
       const firstCard = container.querySelector('.event-partner-card');
-      const cardWidth = firstCard ? firstCard.getBoundingClientRect().width : 220;
-      const gap = 20;
+      const cardWidth = firstCard ? firstCard.getBoundingClientRect().width : 200;
+      const gap = 24;
       const scrollAmount = (cardWidth + gap) * 2;
 
       container.scrollBy({
@@ -178,6 +232,7 @@ export default function EventPartners({
                     alt={partner.name}
                     className="event-partner-logo-img"
                     loading="lazy"
+                    decoding="async"
                     onError={(e) => {
                       e.currentTarget.onerror = null;
                       e.currentTarget.src = `/assets/images/brand-${(idx % 6) + 1}.png`;

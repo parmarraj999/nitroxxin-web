@@ -32,7 +32,13 @@ function Foryou() {
             />
             <ShopByCategory />
             <div className='foryou-section-image'>
-                <img src={'./assets/images/for-you-bottom.png'} alt="Nitroxx Promotions" style={{ width: '94%', height: '85vh', borderRadius: '40px' }} />
+                <img
+                    src={'./assets/images/for-you-bottom.png'}
+                    alt="Nitroxx Promotions"
+                    loading="lazy"
+                    decoding="async"
+                    style={{ width: '94%', height: '85vh', borderRadius: '40px', objectFit: 'cover' }}
+                />
             </div>
             <ShopByBrands />
             <FAQ />

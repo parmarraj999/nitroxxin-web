@@ -87,6 +87,7 @@ export default function ComboSection({
                         alt={combo.title}
                         className="combo-card-mixed-img"
                         loading="lazy"
+                        decoding="async"
                       />
                     </div>
                   </div>

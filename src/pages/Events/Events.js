@@ -163,7 +163,7 @@ export function EventCard({ event, isBookmarked: propIsBookmarked, onToggleBookm
   return (
     <Link className="ep-event-card" to={`/event/${event.id}`}>
       <div className="ep-event-card__image">
-        {image ? <img src={image} alt={event.name || event.title} /> : <span>No image</span>}
+        {image ? <img src={image} alt={event.name || event.title} loading="lazy" decoding="async" /> : <span>No image</span>}
         <button
           type="button"
           className={`ep-event-card__bookmark${isBookmarked ? " ep-event-card__bookmark--active" : ""}`}

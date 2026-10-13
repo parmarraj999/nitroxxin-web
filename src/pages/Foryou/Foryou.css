@@ -1,9 +1,8 @@
 .foryou-section {
     width: 100%;
-    /* min-height: 100vh; */
-    background: linear-gradient(#1a1a2e, #131517 45%);
-    background-attachment: fixed;
-    background-size: cover;
+    min-height: 100vh;
+    background-color: #0d0f12;
+    background-image: radial-gradient(circle at 50% 0%, #1e1e36 0%, #131517 400px, #0b0d10 100%);
 }
 
 .foryou-section-image {

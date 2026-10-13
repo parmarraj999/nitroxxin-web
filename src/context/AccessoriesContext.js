@@ -9,19 +9,19 @@ import {
 } from "../services/normalizers";
 
 const PAGE_SIZE = 20;
-const CATALOG_LIMIT = 500;
+const CATALOG_LIMIT = 80;
 
 const AccessoriesContext = createContext();
 
 export function AccessoriesProvider({ children }) {
   // Collections for categories, subcategories, brands, bike brands, and banners
-  const categoriesQuery = useCollection(COLLECTIONS.categories, { limit: 100 });
-  const subcategoriesQuery = useCollection(COLLECTIONS.subcategories, { limit: 300 });
-  const brandsQuery = useCollection(COLLECTIONS.brands, { limit: 100 });
-  const bikeBrandsQuery = useCollection(COLLECTIONS.bikeBrands, { limit: 100 });
+  const categoriesQuery = useCollection(COLLECTIONS.categories, { limit: 60 });
+  const subcategoriesQuery = useCollection(COLLECTIONS.subcategories, { limit: 100 });
+  const brandsQuery = useCollection(COLLECTIONS.brands, { limit: 60 });
+  const bikeBrandsQuery = useCollection(COLLECTIONS.bikeBrands, { limit: 60 });
   const bannersQuery = useCollection(COLLECTIONS.banners, { limit: 5 });
 
-  // ── Product Collection (Loads all catalog items so search, filters, and categories work seamlessly) ──
+  // ── Product Collection (Loads catalog items progressively) ──
   const [productLimit, setProductLimit] = useState(CATALOG_LIMIT);
   const productsQuery = useCollection(COLLECTIONS.products, { limit: productLimit });
 
@@ -50,7 +50,7 @@ export function AccessoriesProvider({ children }) {
     if (productsQuery.loading || !hasMore) {
       return;
     }
-    setProductLimit((prev) => prev + 200);
+    setProductLimit((prev) => prev + 80);
   }, [productsQuery.loading, hasMore]);
 
   // Refetch / reset products if needed

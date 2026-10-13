@@ -16,6 +16,7 @@ const BrandCard = ({ id, image, imageUrl, logo, logoUrl, alt, name, label, title
                     alt={brandName}
                     className="brand-card-img"
                     loading="lazy"
+                    decoding="async"
                     onError={(e) => {
                         e.currentTarget.onerror = null;
                         e.currentTarget.src = '/assets/images/brand-1.png';

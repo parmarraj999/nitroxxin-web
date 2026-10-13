@@ -55,6 +55,8 @@ export default function RaceDay({ banners: propBanners }) {
                                 src={slide.imageUrl || slide.image}
                                 className="slide-image"
                                 alt={`Slide ${index + 1}`}
+                                decoding="async"
+                                loading={index === 0 ? "eager" : "lazy"}
                             />
                         );
                         const wrapperStyle = {

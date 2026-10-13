@@ -11,6 +11,8 @@ const CategoryCard = ({ id, image, title, imageName }) => {
                     src={imageName ? `../assets/category-icons/${imageName}` : image}
                     alt={title}
                     className="category-card-img"
+                    loading="lazy"
+                    decoding="async"
                     onError={(e) => {
                         e.currentTarget.onerror = null;
                         e.currentTarget.src = '/assets/images/category-helmet.png';
