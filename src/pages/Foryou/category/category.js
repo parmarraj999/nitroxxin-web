@@ -1,5 +1,6 @@
 import React, { useContext } from "react";
 import "./category.css";
+import { Link } from "react-router-dom";
 import ForYouContext from "../../../context/ForYouContext";
 
 const fallbackCategories = [
@@ -64,34 +65,26 @@ const CategoriesSection = ({ categories: propCategories }) => {
         {activeCategories.map((item, index) => {
           const cardStyle = {
             backgroundImage: `url(${item.imageUrl || item.image})`,
-            cursor: item.redirectUrl ? 'pointer' : 'default',
+            cursor: 'pointer',
             textDecoration: 'none',
             color: 'inherit'
           };
-
+          const slug = (item.slug || item.title || item.label || '').toLowerCase().replace(/\s+/g, '-');
+          let target = `/events/all?category=${encodeURIComponent(slug)}`;
           if (item.redirectUrl) {
-            return (
-              <a
-                className="category-card"
-                key={index}
-                href={item.redirectUrl}
-                style={cardStyle}
-              >
-                <div className="overlay"></div>
-                <h3>{item.title}</h3>
-              </a>
-            );
+            target = item.redirectUrl.startsWith('/') ? item.redirectUrl : `/events/all?category=${encodeURIComponent(slug)}`;
           }
 
           return (
-            <div
+            <Link
               className="category-card"
               key={index}
+              to={target}
               style={cardStyle}
             >
               <div className="overlay"></div>
               <h3>{item.title}</h3>
-            </div>
+            </Link>
           );
         })}
       </div>

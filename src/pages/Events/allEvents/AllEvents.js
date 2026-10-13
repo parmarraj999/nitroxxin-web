@@ -362,16 +362,29 @@ export default function AllEvents() {
 
       // 3. Category Query Match
       if (activeCategory && activeCategory !== "All") {
-        const catLower = activeCategory.toLowerCase();
-        const catObj = displayedCategories.find((c) => c.id === activeCategory);
-        const catLabelLower = (catObj?.label || "").toLowerCase();
+        const cleanCat = activeCategory.toLowerCase().replace(/[-_]/g, " ").trim();
+        const catObj = displayedCategories.find(
+          (c) => c.id === activeCategory || c.id?.toLowerCase() === activeCategory.toLowerCase() || (c.label || "").toLowerCase().replace(/[-_]/g, " ").trim() === cleanCat
+        );
+        const catLabelClean = (catObj?.label || "").toLowerCase().replace(/[-_]/g, " ").trim();
 
-        const matchesCat =
-          String(event.category || "").toLowerCase() === catLower ||
-          String(event.categoryId || "").toLowerCase() === catLower ||
-          String(event.categorySlug || "").toLowerCase() === catLower ||
-          String(event.categoryName || "").toLowerCase() === catLower ||
-          (catLabelLower && String(event.category || "").toLowerCase() === catLabelLower);
+        const matchesCat = [
+          event.category,
+          event.categoryId,
+          event.categorySlug,
+          event.categoryName,
+          event.type,
+        ].some((field) => {
+          if (!field) return false;
+          const cleanField = String(field).toLowerCase().replace(/[-_]/g, " ").trim();
+          return (
+            cleanField === cleanCat ||
+            cleanField === catLabelClean ||
+            cleanField.includes(cleanCat) ||
+            cleanCat.includes(cleanField) ||
+            (catLabelClean && (cleanField.includes(catLabelClean) || catLabelClean.includes(cleanField)))
+          );
+        });
 
         if (!matchesCat) return false;
       }

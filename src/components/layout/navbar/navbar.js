@@ -33,9 +33,9 @@ const Navbar = () => {
         if (e) e.preventDefault();
         const term = searchQuery.trim();
         if (term) {
-            navigate(`/events/search?q=${encodeURIComponent(term)}`);
+            navigate(`/events/all?search=${encodeURIComponent(term)}`);
         } else {
-            navigate('/events/search');
+            navigate('/events/all');
         }
     };
 
@@ -50,7 +50,7 @@ const Navbar = () => {
     }, [rawCategories]);
 
     const isHidden =
-        pathname.includes('/events/') ||
+        pathname.startsWith('/events/search') ||
         pathname.includes('/event/') ||
         pathname.includes('/accessories') ||
         pathname.includes('/shop') ||
@@ -75,15 +75,15 @@ const Navbar = () => {
                     <nav className="navbar-events-nav" aria-label="Event Categories">
                         {eventCategories.map((cat) => {
                             const isCatActive =
-                                pathname === '/events' &&
+                                (pathname.includes('/events') || pathname.includes('/all-events')) &&
                                 currentCategory &&
                                 (currentCategory.toLowerCase() === cat.id.toLowerCase() ||
-                                 currentCategory.toLowerCase() === cat.label.toLowerCase());
+                                 currentCategory.toLowerCase().replace(/[-_]/g, ' ') === cat.label.toLowerCase().replace(/[-_]/g, ' '));
 
                             return (
                                 <Link
                                     key={cat.id}
-                                    to={`/events?category=${encodeURIComponent(cat.id)}`}
+                                    to={`/events/all?category=${encodeURIComponent(cat.id)}`}
                                     className={`navbar-event-cat-link ${isCatActive ? 'is-active' : ''}`}
                                 >
                                     <span>{cat.label}</span>

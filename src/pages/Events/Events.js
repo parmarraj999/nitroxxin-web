@@ -1044,9 +1044,9 @@ export default function Events() {
               <div className="ep-categories">
                 {eventCategories.map((cat) => (
                   <Link
-                    to={activeCategory === cat.id ? "/events" : `/events?category=${cat.id}`}
+                    to={`/events/all?category=${encodeURIComponent(cat.id)}`}
                     key={cat.id}
-                    className={`ep-cat-card${activeCategory === cat.id ? " ep-cat-card--active" : ""}`}
+                    className="ep-cat-card"
                   >
                     <div className="ep-cat-card__image-slot">{cat.image ? <img src={cat.image} alt={cat.label} /> : "Category"}</div>
                     <div className="ep-cat-card__label">{cat.label}</div>
