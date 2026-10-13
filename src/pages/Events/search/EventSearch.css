@@ -601,8 +601,8 @@
 
 /* ── EVENT CARD (matching MarketplaceSearch product card structure in dark theme) ── */
 .ep-event-card {
-  background: rgba(255, 255, 255, 0.035);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  /* background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08); */
   border-radius: 18px;
   overflow: hidden;
   display: flex;

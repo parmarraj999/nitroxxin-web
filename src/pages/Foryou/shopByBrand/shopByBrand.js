@@ -1,7 +1,8 @@
-import React, { useRef } from 'react';
+import React, { useRef, useMemo } from 'react';
 import './shopByBrand.css';
 import { Link } from 'react-router-dom';
 import { useAccessoriesContext } from '../../../context/AccessoriesContext';
+import { isFeatureForYou } from '../../../services/normalizers';
 
 const BrandCard = ({ id, image, imageUrl, logo, logoUrl, alt, name, label, title }) => {
     const imgUrl = imageUrl || image || logoUrl || logo;
@@ -29,24 +30,16 @@ const BrandCard = ({ id, image, imageUrl, logo, logoUrl, alt, name, label, title
 };
 
 const ShopByBrands = () => {
-    const { brands: cachedBrands } = useAccessoriesContext();
+    const { brands: cachedBrands, brandsLoading: loading } = useAccessoriesContext();
     const sliderRef = useRef(null);
 
-    const fallbackBrands = [
-        { id: 'alpinestars', image: '/assets/images/brand-1.png', name: 'Alpinestars' },
-        { id: 'shoei', image: '/assets/images/brand-2.png', name: 'Shoei' },
-        { id: 'dainese', image: '/assets/images/brand-3.png', name: 'Dainese' },
-        { id: 'studds', image: '/assets/images/brand-4.png', name: 'Studds' },
-        { id: 'dji', image: '/assets/images/brand-5.png', name: 'DJI' },
-        { id: 'cardo', image: '/assets/images/brand-6.png', name: 'Cardo Systems' }
-    ];
-
-    // Show all available brands with featured ones first
-    const availableBrands = (cachedBrands && cachedBrands.length > 0)
-        ? [...cachedBrands]
-            .filter((b) => b.image || b.imageUrl || b.logo || b.logoUrl || b.label)
-            .sort((a, b) => (b.featuredForYou ? 1 : 0) - (a.featuredForYou ? 1 : 0))
-        : fallbackBrands;
+    // Only show brands where featureForYou: true
+    const availableBrands = useMemo(() => {
+        if (!cachedBrands || cachedBrands.length === 0) return [];
+        return cachedBrands.filter(
+            (b) => (b.image || b.imageUrl || b.logo || b.logoUrl || b.label) && isFeatureForYou(b)
+        );
+    }, [cachedBrands]);
 
     const scroll = (direction) => {
         if (sliderRef.current) {
@@ -54,6 +47,10 @@ const ShopByBrands = () => {
             sliderRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
         }
     };
+
+    if (!loading && availableBrands.length === 0) {
+        return null;
+    }
 
     return (
         <section className="shop-by-brands">
@@ -75,28 +72,30 @@ const ShopByBrands = () => {
                 </div>
             </div>
 
-            <div className="brands-slider-controls">
-                <button
-                    type="button"
-                    className="brand-ctrl-btn"
-                    onClick={() => scroll('left')}
-                    aria-label="Previous brands"
-                >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="15 18 9 12 15 6" />
-                    </svg>
-                </button>
-                <button
-                    type="button"
-                    className="brand-ctrl-btn"
-                    onClick={() => scroll('right')}
-                    aria-label="Next brands"
-                >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="9 18 15 12 9 6" />
-                    </svg>
-                </button>
-            </div>
+            {availableBrands.length > 3 && (
+                <div className="brands-slider-controls">
+                    <button
+                        type="button"
+                        className="brand-ctrl-btn"
+                        onClick={() => scroll('left')}
+                        aria-label="Previous brands"
+                    >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="15 18 9 12 15 6" />
+                        </svg>
+                    </button>
+                    <button
+                        type="button"
+                        className="brand-ctrl-btn"
+                        onClick={() => scroll('right')}
+                        aria-label="Next brands"
+                    >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="9 18 15 12 9 6" />
+                        </svg>
+                    </button>
+                </div>
+            )}
         </section>
     );
 };

@@ -119,14 +119,30 @@ export const normalizeCategory = (doc) => {
   };
 };
 
+export const isFeatureForYou = (item) => {
+  if (!item) return false;
+  return (
+    item.featureForYou === true ||
+    item.featuredForYou === true ||
+    item.isFeaturedForYou === true ||
+    item.feature_for_you === true ||
+    item.featured_for_you === true ||
+    String(item.featureForYou || "").toLowerCase() === "true" ||
+    String(item.featuredForYou || "").toLowerCase() === "true"
+  );
+};
+
 export const normalizeBrand = (doc) => {
   const data = doc.data ? doc.data() : doc;
+  const featured = isFeatureForYou(data);
   return {
     ...data,
     id: doc.id || data.id,
     label: data.label || data.name || data.title || "Brand",
     alt: data.alt || data.name || data.title || "Brand",
     image: data.logo || data.logoUrl || firstImage(data),
+    featureForYou: featured,
+    featuredForYou: featured,
   };
 };
 

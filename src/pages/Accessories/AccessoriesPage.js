@@ -7,6 +7,7 @@ import AccessoriesHeroSlider from "./accessoriesBanner/AccessoriesHeroSlider";
 import { useBikeBrandsContext } from "../../context/BikeBrandsContext";
 import SuggestedForYou from "./suggestedForYou/SuggestedForYou";
 import ComboSection from "../../components/ComboSection/ComboSection";
+import { isFeatureForYou } from "../../services/normalizers";
 
 function ChevronLeftIcon() {
   return (
@@ -69,7 +70,12 @@ export default function AccessoriesPage() {
     [products]
   );
   const displayCategories = categories;
-  const displayBrands = brands;
+  const displayBrands = useMemo(() => {
+    if (!brands || brands.length === 0) return [];
+    return brands.filter(
+      (b) => (b.image || b.imageUrl || b.logo || b.logoUrl || b.label || b.name) && isFeatureForYou(b)
+    );
+  }, [brands]);
   const displayBikeBrands = useMemo(() => {
     if (fetchedBikeBrands && fetchedBikeBrands.length > 0) {
       return fetchedBikeBrands;
@@ -137,7 +143,16 @@ export default function AccessoriesPage() {
               {displayBrands.map((brand) => (
                 <Link to={`/shop?brand=${encodeURIComponent(brand.label || brand.name || brand.title || "")}`} key={brand.id} className="ap-brand-card">
                   <div className="ap-brand-card__box">
-                    {brand.image ? <img src={brand.image} alt={brand.label} /> : <span>{brand.label}</span>}
+                    {brand.image || brand.imageUrl || brand.logo || brand.logoUrl ? (
+                      <img
+                        src={brand.image || brand.imageUrl || brand.logo || brand.logoUrl}
+                        alt={brand.label || brand.name || "Brand"}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    ) : (
+                      <span>{brand.label || brand.name}</span>
+                    )}
                   </div>
                 </Link>
               ))}
