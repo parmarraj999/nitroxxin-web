@@ -1,39 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { getOrCreateRecaptchaVerifier, resetRecaptchaVerifier, formatAuthError } from "../../services/authService";
-import { getExistingUsers } from "../../services/userService";
 import "./LoginModal.css";
 
 export default function LoginModal() {
-  const { triggerOTP, loginWithUid, modalLoading, modalError, setModalError } = useAuth();
-  const [loginMode, setLoginMode] = useState("phone"); // "phone" | "uid"
+  const { triggerOTP, signInWithGoogle, modalLoading, modalError, setModalError } = useAuth();
   const [phone, setPhone] = useState("");
-  const [testUid, setTestUid] = useState("");
   const [localError, setLocalError] = useState("");
-  const [presentUsers, setPresentUsers] = useState([]);
-  const [loadingUsers, setLoadingUsers] = useState(false);
-
-  // Fetch actual present users from Firestore when entering UID test mode
-  useEffect(() => {
-    if (loginMode === "uid") {
-      let isMounted = true;
-      setLoadingUsers(true);
-      getExistingUsers(10)
-        .then((users) => {
-          if (isMounted) setPresentUsers(users);
-        })
-        .catch((err) => {
-          console.error("Error loading present users:", err);
-        })
-        .finally(() => {
-          if (isMounted) setLoadingUsers(false);
-        });
-
-      return () => {
-        isMounted = false;
-      };
-    }
-  }, [loginMode]);
 
   const handlePhoneSubmit = async (e) => {
     e.preventDefault();
@@ -42,12 +15,12 @@ export default function LoginModal() {
 
     const trimmedPhone = phone.trim();
     if (!trimmedPhone) {
-      setLocalError("Phone number is required");
+      setLocalError("Please enter your mobile number");
       return;
     }
 
     if (!/^\d{10}$/.test(trimmedPhone)) {
-      setLocalError("Please enter a valid 10-digit phone number");
+      setLocalError("Please enter a valid 10-digit mobile number");
       return;
     }
 
@@ -70,205 +43,98 @@ export default function LoginModal() {
     }
   };
 
-  const handleUidSubmit = async (e) => {
-    e.preventDefault();
+  const handleGoogleSignIn = async () => {
     setLocalError("");
     setModalError(null);
-
-    const trimmedUid = testUid.trim();
-    if (!trimmedUid) {
-      setLocalError("Please enter an existing UID, Phone, or Email");
-      return;
-    }
-
     try {
-      await loginWithUid(trimmedUid);
+      if (typeof signInWithGoogle === "function") {
+        await signInWithGoogle();
+      }
     } catch (err) {
-      console.error("UID login error:", err);
-    }
-  };
-
-  const handleSelectPresentUser = async (userDoc) => {
-    setLocalError("");
-    setModalError(null);
-    setTestUid(userDoc.id);
-    try {
-      await loginWithUid(userDoc.id);
-    } catch (err) {
-      console.error("UID login error:", err);
+      console.error("Google login failed:", err);
     }
   };
 
   return (
     <div className="login-modal-content">
-      {/* Dev / Test Switcher */}
-      <div className="login-tab-container">
+      <form className="login-modal-form" onSubmit={handlePhoneSubmit} noValidate>
+        {/* Phone Input Box */}
+        <div className="login-field-group">
+          <div className={`login-input-box ${localError ? "login-input-box--error" : ""}`}>
+            <div className="login-country-pill">
+              <span className="login-country-flag">🇮🇳</span>
+              <span className="login-country-code">+91</span>
+            </div>
+            <div className="login-input-divider" />
+            <input
+              type="tel"
+              id="login-phone-field"
+              name="phone"
+              maxLength="10"
+              placeholder="Enter mobile number"
+              value={phone}
+              onChange={(e) => {
+                setLocalError("");
+                setModalError(null);
+                setPhone(e.target.value.replace(/\D/g, ""));
+              }}
+              disabled={modalLoading}
+              className="login-phone-input"
+              autoFocus
+            />
+          </div>
+          {localError && <span className="login-inline-error">{localError}</span>}
+          {modalError && <div className="login-alert-error">{modalError}</div>}
+        </div>
+
+        {/* Primary Action Button: Continue with Phone (Coral/Red Gradient Pill) */}
+        <button
+          type="submit"
+          className="login-action-btn login-btn-primary"
+          disabled={modalLoading || phone.length === 0}
+        >
+          {modalLoading ? (
+            <span className="login-btn-loading">
+              <span className="login-spinner" />
+              <span>Sending code...</span>
+            </span>
+          ) : (
+            "Continue with Phone"
+          )}
+        </button>
+
+        {/* Secondary Action Button: Continue with Google (Dark Pill with Google Icon) */}
         <button
           type="button"
-          className={`login-tab-btn ${loginMode === "phone" ? "active" : ""}`}
-          onClick={() => {
-            setLoginMode("phone");
-            setLocalError("");
-            setModalError(null);
-          }}
+          className="login-action-btn login-btn-google"
+          onClick={handleGoogleSignIn}
+          disabled={modalLoading}
         >
-          📱 Mobile OTP
+          <svg className="google-icon-svg" width="20" height="20" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.26v3.15C3.29 21.39 7.37 24 12 24z"/>
+            <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.26C.46 8.16 0 9.94 0 12s.46 3.84 1.26 5.42l4.02-3.15z"/>
+            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.37 0 3.29 2.61 1.26 6.58l4.02 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+          </svg>
+          <span>Continue with Google</span>
         </button>
-        <button
-          type="button"
-          className={`login-tab-btn ${loginMode === "uid" ? "active" : ""}`}
-          onClick={() => {
-            setLoginMode("uid");
-            setLocalError("");
-            setModalError(null);
-          }}
-        >
-          🧪 Present UID Login
-        </button>
-      </div>
 
-      {loginMode === "phone" ? (
-        <>
-          <div className="login-prompt-header">
-            <h3 className="login-prompt-title">Enter your mobile number</h3>
-            <p className="login-prompt-subtitle">
-              If you don't have an account yet, we'll create one for you
-            </p>
-          </div>
+        {/* Footer Link */}
+        <p className="login-footer-text">
+          Don't have an account?{" "}
+          <span
+            className="login-signup-link"
+            role="button"
+            tabIndex={0}
+            onClick={() => document.getElementById("login-phone-field")?.focus()}
+          >
+            Sign Up
+          </span>
+        </p>
 
-          <form className="login-modal-form" onSubmit={handlePhoneSubmit} noValidate>
-            <div className="login-input-wrapper">
-              <div className="phone-input-container">
-                <div className="phone-country-select">
-                  <span className="country-flag">🇮🇳</span>
-                  <span className="country-code">+91</span>
-                  <span className="dropdown-arrow">▼</span>
-                </div>
-                <input
-                  type="tel"
-                  id="phone"
-                  name="phone"
-                  maxLength="10"
-                  placeholder="Enter mobile number"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
-                  disabled={modalLoading}
-                  className="phone-field"
-                  autoFocus
-                />
-              </div>
-              {localError && <span className="field-error">{localError}</span>}
-            </div>
-
-            {modalError && <div className="modal-alert-error">{modalError}</div>}
-
-            <button
-              type="submit"
-              className="login-submit-btn"
-              disabled={modalLoading}
-            >
-              {modalLoading ? "Sending OTP..." : "Continue"}
-            </button>
-          </form>
-        </>
-      ) : (
-        <>
-          <div className="login-prompt-header">
-            <h3 className="login-prompt-title">Login with Present UID</h3>
-            <p className="login-prompt-subtitle">
-              Choose an existing user from the database or enter a UID/Phone to test without creating new documents
-            </p>
-          </div>
-
-          {/* Present Users in Firestore List */}
-          <div className="present-users-section">
-            <div className="present-users-header">
-              <span className="present-users-title">👤 Present Accounts in Database</span>
-              {loadingUsers && <span className="present-users-loading">Loading accounts…</span>}
-            </div>
-
-            {presentUsers.length > 0 ? (
-              <div className="present-users-grid">
-                {presentUsers.map((u) => {
-                  const displayName = u.fullName || u.name || u.displayName || "User";
-                  const phoneText = u.phone || u.phoneNumber || "No phone";
-                  return (
-                    <button
-                      key={u.id}
-                      type="button"
-                      className="present-user-card"
-                      disabled={modalLoading}
-                      onClick={() => handleSelectPresentUser(u)}
-                    >
-                      <div className="present-user-avatar">
-                        {u.profilePhoto || u.photoURL ? (
-                          <img src={u.profilePhoto || u.photoURL} alt={displayName} />
-                        ) : (
-                          <span>{displayName[0]?.toUpperCase() || "U"}</span>
-                        )}
-                      </div>
-                      <div className="present-user-details">
-                        <div className="present-user-top">
-                          <span className="present-user-name">{displayName}</span>
-                          <span className="present-user-login-badge">Select ➔</span>
-                        </div>
-                        <div className="present-user-sub">
-                          <span className="present-user-phone">{phoneText}</span>
-                          <span className="present-user-uid" title={u.id}>
-                            UID: {u.id.slice(0, 10)}…{u.id.slice(-4)}
-                          </span>
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            ) : !loadingUsers ? (
-              <div className="present-users-empty">No users found in database</div>
-            ) : null}
-          </div>
-
-          <form className="login-modal-form" onSubmit={handleUidSubmit} noValidate>
-            <div className="login-input-wrapper">
-              <label className="manual-uid-label" htmlFor="testUid">
-                Or enter UID, Phone, or Email manually:
-              </label>
-              <div className="uid-input-container">
-                <span className="uid-input-icon">🔑</span>
-                <input
-                  type="text"
-                  id="testUid"
-                  name="testUid"
-                  placeholder="e.g. zpUzjlcVLkN4JAbq3OCerqY5SCw2 or 8869959066"
-                  value={testUid}
-                  onChange={(e) => setTestUid(e.target.value)}
-                  disabled={modalLoading}
-                  className="uid-field"
-                />
-              </div>
-              {localError && <span className="field-error">{localError}</span>}
-
-              <div className="uid-safe-notice">
-                <span>🛡️ Safe for Testing: Only logs in from present users. Never creates new documents.</span>
-              </div>
-            </div>
-
-            {modalError && <div className="modal-alert-error">{modalError}</div>}
-
-            <button
-              type="submit"
-              className="login-submit-btn uid-submit-btn"
-              disabled={modalLoading}
-            >
-              {modalLoading ? "Authenticating..." : "Sign In with Present Account"}
-            </button>
-          </form>
-        </>
-      )}
-
-      <p className="login-terms-footer">
-        By continuing, you agree to our <a href="/terms" className="footer-link">Terms of Service</a> and <a href="/privacy" className="footer-link">Privacy Policy</a>.
-      </p>
+        {/* Hidden reCAPTCHA anchor */}
+        <div id="recaptcha-container"></div>
+      </form>
     </div>
   );
 }

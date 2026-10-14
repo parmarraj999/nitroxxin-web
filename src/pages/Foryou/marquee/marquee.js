@@ -7,6 +7,9 @@ export default function Marquee() {
 
     return (
         <div className="marquee-container">
+            <div className='strip-ribbon'>
+                <img src={'/assets/images/strip-banner.png'}  alt='stripe-banner' />
+            </div>
             <div className="marquee-content">
                 <span className="marquee-text">{repeatedText}</span>
                 <span className="marquee-text">{repeatedText}</span>

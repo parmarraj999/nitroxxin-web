@@ -169,10 +169,17 @@
     font-size: clamp(20px, 6vw, 28px);
     padding-right: 14px;
   }
+  .faq-question-row{
+    margin-bottom: 15px;
+  }
   .faq-toggle {
-    width: 46px;
-    height: 46px;
-    flex: 0 0 46px;
+    width: 35px;
+    height: 35px;
+    /* flex: 0 0 46px; */
+  }
+  .faq-toggle svg{
+    width: 18px;
+    height: 18px;
   }
   .faq-answer {
     font-size: 15px;
@@ -194,6 +201,10 @@
   }
   .faq-question-row {
     align-items: flex-start;
+  }
+  .faq-question{
+    font-size: 18px;
+    padding: 0;
   }
   .faq-brand h2 {
     font-size: clamp(22px, 8vw, 18px);

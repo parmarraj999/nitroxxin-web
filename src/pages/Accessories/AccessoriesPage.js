@@ -93,7 +93,7 @@ export default function AccessoriesPage() {
       {/* ═══ MARQUEE & HERO SLIDER SECTION ═══ */}
       <AccessoriesHeroSlider banners={banners} />
 
-      <img src={'/assets/images/strip-banner.png'} style={{ width: '100%', height: '200px', marginTop:'2rem' }} alt='stripe-banner' />
+      <img src={'/assets/images/strip-banner.png'} style={{ width: '100%', height: '120px', marginTop:'2rem' }} alt='stripe-banner' />
 
       {displayCategories.length > 0 && (
         <div className="ap-section">

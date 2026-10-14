@@ -95,6 +95,7 @@
 @media screen and (max-width: 480px) {
   .featured-events {
     padding: 0 12px;
+    height: 50vh;
   }
 
   .featured-events .section-title {

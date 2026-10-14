@@ -1,155 +1,235 @@
+/* =========================================================
+   OTP MODAL STYLING (Verification Screen)
+   ========================================================= */
+
 .otp-modal-content {
+  width: 100%;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  width: 100%;
 }
 
-.otp-prompt-header {
+.otp-header-info {
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
-.otp-prompt-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: #ffffff;
-  margin: 0 0 6px 0;
-  letter-spacing: 0.2px;
-}
-
-.otp-prompt-subtitle {
-  font-size: 13px;
-  color: #8b919d;
+.otp-sent-to-text {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.5;
   margin: 0;
-  line-height: 1.45;
 }
 
-.highlight-phone {
+.otp-phone-highlight {
   color: #ffffff;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.3px;
 }
 
-.change-phone-btn {
+.otp-change-number-btn {
   background: none;
   border: none;
-  color: #ff1f1f;
+  color: #ef5350;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  padding: 0;
-  margin-left: 2px;
-  transition: color 0.2s ease;
-}
-
-.change-phone-btn:hover {
-  color: #ff007f;
+  margin-left: 6px;
   text-decoration: underline;
+  padding: 0;
+  outline: none;
 }
 
-.otp-modal-form {
+.otp-change-number-btn:hover {
+  color: #ff7675;
+}
+
+/* Form & Inputs */
+.otp-form {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 18px;
+  width: 100%;
 }
 
-.otp-inputs-row {
+.otp-inputs-grid {
   display: flex;
   justify-content: center;
   gap: 10px;
   width: 100%;
 }
 
-.otp-digit-field {
+.otp-digit-box {
   width: 48px;
   height: 54px;
-  background-color: #16181a;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  text-align: center;
-  font-size: 20px;
-  font-weight: 700;
-  color: #ffffff;
-  outline: none;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.otp-digit-field:focus {
-  border-color: #ff1f1f;
-  box-shadow: 0 0 15px rgba(255, 31, 31, 0.25);
-  background-color: #191b1d;
-}
-
-.otp-submit-btn {
-  background: linear-gradient(90deg, #ff1f1f 0%, #ff007f 100%);
-  color: #ffffff;
-  border: none;
   border-radius: 14px;
-  padding: 14px;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 4px 15px rgba(255, 31, 31, 0.2);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: #141619;
+  border: 1px solid #282a32;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  color: #ffffff;
+  text-align: center;
+  outline: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
 }
 
-.otp-submit-btn:hover:not(:disabled) {
-  box-shadow: 0 6px 20px rgba(255, 31, 127, 0.4);
-  transform: translateY(-1px);
-  filter: brightness(1.1);
+.otp-digit-box:focus {
+  border-color: #ef5350;
+  background-color: #1a1c21;
+  box-shadow: 0 0 0 3px rgba(239, 83, 80, 0.2);
+  transform: translateY(-2px);
 }
 
-.otp-submit-btn:disabled {
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.3);
-  box-shadow: none;
+.otp-digit-box--filled {
+  border-color: rgba(255, 255, 255, 0.25);
+  background-color: #181a1e;
+}
+
+.otp-digit-box:disabled {
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
-.otp-submit-btn:active:not(:disabled) {
-  transform: translateY(1px);
-}
-
-.otp-resend-container {
-  margin-top: 20px;
+/* Alert Error */
+.otp-alert-error {
+  background: rgba(229, 57, 53, 0.12);
+  border: 1px solid rgba(229, 57, 53, 0.3);
+  color: #ff8a80;
+  font-size: 13px;
+  padding: 10px 14px;
+  border-radius: 12px;
   text-align: center;
 }
 
-.resend-timer-text {
+/* Verify Button */
+.otp-verify-btn {
+  width: 100%;
+  height: 52px;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #d32f2f 0%, #ef5350 100%);
+  color: #ffffff;
+  border: none;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 6px 20px rgba(229, 57, 53, 0.35);
+  outline: none;
+}
+
+.otp-verify-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(229, 57, 53, 0.48);
+  filter: brightness(1.05);
+}
+
+.otp-verify-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.otp-verify-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Spinner */
+.otp-btn-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.otp-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: otp-spin 0.8s linear infinite;
+}
+
+@keyframes otp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Resend Row */
+.otp-resend-row {
+  text-align: center;
+  margin-top: 14px;
+}
+
+.otp-countdown-text {
   font-size: 13px;
-  color: #5d6370;
+  color: rgba(255, 255, 255, 0.6);
   margin: 0;
 }
 
-.timer-seconds {
-  color: #ff1f1f;
-  font-weight: 600;
+.otp-seconds-badge {
+  color: #ef5350;
+  font-weight: 700;
 }
 
-.resend-code-btn {
+.otp-resend-action-btn {
   background: none;
   border: none;
-  color: #ff1f1f;
+  color: #ef5350;
+  font-family: 'Inter', sans-serif;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
-  padding: 4px 8px;
-  transition: color 0.2s ease;
-}
-
-.resend-code-btn:hover {
-  color: #ff007f;
+  outline: none;
   text-decoration: underline;
+  transition: color 0.15s ease;
+  padding: 4px 8px;
 }
 
-/* Mobile responsiveness adjustments */
-@media (max-width: 380px) {
-  .otp-inputs-row {
-    gap: 6px;
+.otp-resend-action-btn:hover {
+  color: #ff7675;
+}
+
+/* Back Link Row */
+.otp-back-row {
+  text-align: center;
+  margin-top: 10px;
+}
+
+.otp-back-link-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.15s ease;
+  padding: 4px 8px;
+}
+
+.otp-back-link-btn:hover {
+  color: #ffffff;
+}
+
+/* Mobile Adjustments for OTP inputs */
+@media screen and (max-width: 480px) {
+  .otp-inputs-grid {
+    gap: 8px;
   }
-  .otp-digit-field {
-    width: 38px;
-    height: 46px;
-    font-size: 18px;
+
+  .otp-digit-box {
+    width: 44px;
+    height: 50px;
+    font-size: 20px;
+    border-radius: 12px;
   }
 }

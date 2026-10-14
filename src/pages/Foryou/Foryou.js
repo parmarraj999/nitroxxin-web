@@ -38,7 +38,7 @@ function Foryou() {
                     alt="Nitroxx Promotions"
                     loading="lazy"
                     decoding="async"
-                    style={{ width: '94%', height: '85vh', borderRadius: '40px', objectFit: 'cover' }}
+                    style={{ width: '94%', height: '85vh', objectFit: 'cover' }}
                 />
             </div>
            

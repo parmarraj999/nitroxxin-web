@@ -18,14 +18,14 @@ export default function OTPModal() {
   const [timer, setTimer] = useState(30);
   const inputRefs = useRef([]);
 
-  // Focus the first input box on component mount
+  // Auto-focus first input on mount
   useEffect(() => {
     if (inputRefs.current[0]) {
       inputRefs.current[0].focus();
     }
   }, []);
 
-  // Countdown timer for resend OTP
+  // 30s countdown timer for resending OTP
   useEffect(() => {
     let interval = null;
     if (timer > 0) {
@@ -39,19 +39,18 @@ export default function OTPModal() {
   }, [timer]);
 
   const handleChange = (value, index) => {
-    if (!/^\d*$/.test(value)) return; // Only allow digits
+    if (!/^\d*$/.test(value)) return;
 
     const newOtp = [...otp];
-    // If user typed/pasted a single digit
     newOtp[index] = value.slice(-1);
     setOtp(newOtp);
 
-    // Auto-advance to next input if filled
+    // Auto-advance to next input box
     if (value && index < 5 && inputRefs.current[index + 1]) {
       inputRefs.current[index + 1].focus();
     }
 
-    // Auto-submit if all 6 digits are entered
+    // Auto-verify if all 6 digits are provided
     const completeCode = newOtp.join("");
     if (completeCode.length === 6) {
       handleVerification(completeCode);
@@ -59,7 +58,6 @@ export default function OTPModal() {
   };
 
   const handleKeyDown = (e, index) => {
-    // Handle backspace navigation
     if (e.key === "Backspace" && !otp[index] && index > 0 && inputRefs.current[index - 1]) {
       inputRefs.current[index - 1].focus();
     }
@@ -81,20 +79,19 @@ export default function OTPModal() {
       await confirmOTP(code);
     } catch (err) {
       console.error("OTP verification failed:", err);
-      // Clear inputs on failure to allow retry
       setOtp(new Array(6).fill(""));
       inputRefs.current[0]?.focus();
     }
   };
 
   const handleResend = async () => {
-    if (timer > 0) return;
+    if (timer > 0 || modalLoading) return;
     setModalError(null);
     setOtp(new Array(6).fill(""));
     try {
       const verifier = getOrCreateRecaptchaVerifier("recaptcha-container");
       if (!verifier) {
-        throw new Error("reCAPTCHA verifier is missing. Please restart.");
+        throw new Error("Verification service is unavailable. Please restart.");
       }
       await triggerOTP(phoneNumber, verifier);
       setTimer(30);
@@ -109,7 +106,7 @@ export default function OTPModal() {
     e.preventDefault();
     const fullOtp = otp.join("");
     if (fullOtp.length < 6) {
-      setModalError("Please enter the full 6-digit OTP code");
+      setModalError("Please enter the complete 6-digit OTP");
       return;
     }
     handleVerification(fullOtp);
@@ -117,18 +114,22 @@ export default function OTPModal() {
 
   return (
     <div className="otp-modal-content">
-      <div className="otp-prompt-header">
-        <h3 className="otp-prompt-title">Enter OTP</h3>
-        <p className="otp-prompt-subtitle">
-          We have sent a verification code to <span className="highlight-phone">{phoneNumber}</span>{" "}
-          <button className="change-phone-btn" onClick={openLogin} disabled={modalLoading}>
-            (Change)
+      <div className="otp-header-info">
+        <p className="otp-sent-to-text">
+          Code sent to <span className="otp-phone-highlight">{phoneNumber || "your mobile"}</span>
+          <button
+            type="button"
+            className="otp-change-number-btn"
+            onClick={openLogin}
+            disabled={modalLoading}
+          >
+            Edit
           </button>
         </p>
       </div>
 
-      <form className="otp-modal-form" onSubmit={handleFormSubmit}>
-        <div className="otp-inputs-row" onPaste={handlePaste}>
+      <form className="otp-form" onSubmit={handleFormSubmit}>
+        <div className="otp-inputs-grid" onPaste={handlePaste}>
           {otp.map((digit, idx) => (
             <input
               key={idx}
@@ -140,37 +141,56 @@ export default function OTPModal() {
               onChange={(e) => handleChange(e.target.value, idx)}
               onKeyDown={(e) => handleKeyDown(e, idx)}
               disabled={modalLoading}
-              className="otp-digit-field"
+              className={`otp-digit-box ${digit ? "otp-digit-box--filled" : ""}`}
+              autoComplete="one-time-code"
             />
           ))}
         </div>
 
-        {modalError && <div className="modal-alert-error">{modalError}</div>}
+        {modalError && <div className="otp-alert-error">{modalError}</div>}
 
         <button
           type="submit"
-          className="otp-submit-btn"
+          className="otp-verify-btn"
           disabled={modalLoading || otp.join("").length < 6}
         >
-          {modalLoading ? "Verifying..." : "Continue"}
+          {modalLoading ? (
+            <span className="otp-btn-loading">
+              <span className="otp-spinner" />
+              <span>Verifying...</span>
+            </span>
+          ) : (
+            "Verify & Continue"
+          )}
         </button>
       </form>
 
-      <div className="otp-resend-container">
+      <div className="otp-resend-row">
         {timer > 0 ? (
-          <p className="resend-timer-text">
-            Didn't get the OTP? (Request again in <span className="timer-seconds">{timer}s</span>)
-          </p>
+          <span className="otp-countdown-text">
+            Didn't receive code? Resend in <span className="otp-seconds-badge">{timer}s</span>
+          </span>
         ) : (
           <button
             type="button"
-            className="resend-code-btn"
+            className="otp-resend-action-btn"
             onClick={handleResend}
             disabled={modalLoading}
           >
             Resend OTP
           </button>
         )}
+      </div>
+
+      <div className="otp-back-row">
+        <button
+          type="button"
+          className="otp-back-link-btn"
+          onClick={openLogin}
+          disabled={modalLoading}
+        >
+          ← Back to Phone Login
+        </button>
       </div>
     </div>
   );

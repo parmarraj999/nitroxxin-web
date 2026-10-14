@@ -1,5 +1,12 @@
 import { authInstance } from "./firebase";
-import { signInWithPhoneNumber, signOut, onAuthStateChanged, RecaptchaVerifier } from "firebase/auth";
+import {
+  signInWithPhoneNumber,
+  signOut,
+  onAuthStateChanged,
+  RecaptchaVerifier,
+  GoogleAuthProvider,
+  signInWithPopup,
+} from "firebase/auth";
 
 /**
  * Initializes or retrieves the singleton RecaptchaVerifier instance.
@@ -144,3 +151,20 @@ export const logoutUser = () => {
 export const subscribeToAuth = (callback) => {
   return onAuthStateChanged(authInstance, callback);
 };
+
+/**
+ * Initiates Google Sign-In using Firebase Auth popup.
+ * @returns {Promise<object>} Firebase User
+ */
+export const loginWithGoogle = async () => {
+  try {
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+    const result = await signInWithPopup(authInstance, provider);
+    return result.user;
+  } catch (error) {
+    console.error("Google sign-in error:", error);
+    throw error;
+  }
+};
+

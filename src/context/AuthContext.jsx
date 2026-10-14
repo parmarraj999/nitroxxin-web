@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
 import { firestoreInstance } from "../services/firebase";
 import { doc, onSnapshot } from "firebase/firestore";
-import { subscribeToAuth, sendOTP, verifyOTP, logoutUser } from "../services/authService";
+import { subscribeToAuth, sendOTP, verifyOTP, logoutUser, loginWithGoogle } from "../services/authService";
 import { createUserProfile, updateUserProfile, ensureUserProfile, findExistingUser } from "../services/userService";
 import { uploadProfileImage, uploadDrivingLicenseImage } from "../services/storageService";
 
@@ -231,6 +231,37 @@ export const FirebaseAuthProvider = ({ children }) => {
     }
   }, []);
 
+  const signInWithGoogle = useCallback(async () => {
+    setModalLoading(true);
+    setModalError(null);
+    try {
+      const firebaseUser = await loginWithGoogle();
+      if (firebaseUser) {
+        try {
+          await ensureUserProfile(firebaseUser.uid, {
+            fullName: firebaseUser.displayName || "",
+            email: firebaseUser.email || "",
+            profilePhoto: firebaseUser.photoURL || "",
+            phone: firebaseUser.phoneNumber || "",
+          });
+        } catch (profileErr) {
+          console.warn("Could not ensure profile document:", profileErr);
+        }
+        setIsAuthOpen(false);
+        setConfirmationResult(null);
+        return firebaseUser;
+      }
+    } catch (err) {
+      console.error("Google sign-in error in context:", err);
+      if (err.code !== "auth/popup-closed-by-user") {
+        setModalError(err.message || "Failed to sign in with Google.");
+      }
+      throw err;
+    } finally {
+      setModalLoading(false);
+    }
+  }, []);
+
   const logout = useCallback(async () => {
     setLoading(true);
     try {
@@ -319,6 +350,8 @@ export const FirebaseAuthProvider = ({ children }) => {
     closeAuth,
     triggerOTP,
     confirmOTP,
+    signInWithGoogle,
+    loginWithGoogle: signInWithGoogle,
     completeProfileSetup,
   }), [
     user,
@@ -340,6 +373,7 @@ export const FirebaseAuthProvider = ({ children }) => {
     closeAuth,
     triggerOTP,
     confirmOTP,
+    signInWithGoogle,
     completeProfileSetup,
   ]);
 

@@ -85,7 +85,50 @@ export function ForYouProvider({ children }) {
 
   const layoutData = cachedLayout || layoutQuery.data;
   const banners = useMemo(() => layoutData?.banners || [], [layoutData]);
-  const categories = useMemo(() => layoutData?.categories || [], [layoutData]);
+
+  // Query event categories from events_layout
+  const eventsLayoutQuery = useDocument("page_layouts", "events_layout");
+  const singularEventsQuery = useDocument("page_layout", "events_layout");
+  const eventCategories = useMemo(() => {
+    const rawList =
+      eventsLayoutQuery.data?.categories ||
+      singularEventsQuery.data?.categories ||
+      layoutData?.categories ||
+      [];
+
+    if (rawList && Array.isArray(rawList) && rawList.length > 0) {
+      return rawList.map((cat, idx) => {
+        let slug = "";
+        if (cat.redirectUrl && cat.redirectUrl.includes("category=") && cat.redirectUrl.split("category=")[1].split("&")[0]) {
+          slug = cat.redirectUrl.split("category=")[1].split("&")[0];
+        } else if (cat.slug) {
+          slug = cat.slug;
+        } else if (cat.title || cat.label) {
+          slug = (cat.title || cat.label).toLowerCase().replace(/\s+/g, "_");
+        } else {
+          slug = `cat-${idx}`;
+        }
+
+        const image = cat.imageUrl || cat.image || "";
+        const label = cat.title || cat.label || "Category";
+
+        return {
+          id: slug,
+          label,
+          title: label,
+          image,
+          imageUrl: image,
+          redirectUrl: cat.redirectUrl,
+          targetUrl: `/events/all?category=${encodeURIComponent(slug)}`,
+        };
+      });
+    }
+    return [];
+  }, [eventsLayoutQuery.data, singularEventsQuery.data, layoutData?.categories]);
+
+  const categories = useMemo(() => {
+    return eventCategories.length > 0 ? eventCategories : (layoutData?.categories || []);
+  }, [eventCategories, layoutData?.categories]);
 
   // 2. Combo collections and layout configurations
   const liveCombosQuery = useCollection(COLLECTIONS.combo || "combo");
@@ -199,6 +242,7 @@ export function ForYouProvider({ children }) {
       layoutData,
       banners,
       categories,
+      eventCategories,
       combos,
       combosLoading,
       loading: layoutQuery.loading && !layoutData,
@@ -210,6 +254,7 @@ export function ForYouProvider({ children }) {
       layoutData,
       banners,
       categories,
+      eventCategories,
       combos,
       combosLoading,
       layoutQuery.loading,

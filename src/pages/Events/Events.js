@@ -11,6 +11,7 @@ import { COLLECTIONS, db } from "../../services/firebase";
 import { saveFavoriteEvent, removeFavoriteEvent } from "../../services/commerceService";
 import LocationModal from "../../components/layout/bottomNav/LocationModal";
 import EventPartners from "../../components/EventPartners/EventPartners";
+import { useEventCategoryContext } from "../../context/EventCategoryContext";
 
 const timeFilters = ["All", "Today", "Upcoming", "Free", "Paid", "VIP"];
 const isVisibleEvent = (event) => String(event.status || "").toLowerCase() === "published";
@@ -217,13 +218,18 @@ export default function Events() {
     layoutData?.data?.banners ||
     (Array.isArray(layoutData?.data) ? layoutData.data : null);
 
+  const { categories: contextCategories } = useEventCategoryContext();
   const rawCategories = layoutData?.categories || layoutData?.data?.categories;
 
   const displayedCategories = useMemo(() => {
+    if (contextCategories && Array.isArray(contextCategories) && contextCategories.length > 0) {
+      return contextCategories;
+    }
+
     if (rawCategories && Array.isArray(rawCategories) && rawCategories.length > 0) {
       return rawCategories.map((cat, idx) => {
         let slug = "";
-        if (cat.redirectUrl && cat.redirectUrl.includes("category=")) {
+        if (cat.redirectUrl && cat.redirectUrl.includes("category=") && cat.redirectUrl.split("category=")[1].split("&")[0]) {
           slug = cat.redirectUrl.split("category=")[1].split("&")[0];
         } else if (cat.slug) {
           slug = cat.slug;
@@ -249,7 +255,7 @@ export default function Events() {
       label: cfg.category,
       image: "",
     }));
-  }, [rawCategories, categories]);
+  }, [contextCategories, rawCategories, categories]);
 
   const [query] = useState("");
   const [activeSlide, setActiveSlide] = useState(0);
@@ -885,7 +891,7 @@ export default function Events() {
         onClose={() => setIsLocationModalOpen(false)}
         onSelectCity={handleSelectCity}
         currentCity={selectedCity}
-        onAutoDetect={() => {}}
+        onAutoDetect={() => { }}
         isDetecting={false}
       />
       {/* <div className="ep-hero__flex">
@@ -1073,8 +1079,6 @@ export default function Events() {
             </Link>
           </div>
 
-          {/* ═══ Event Partners & Organizer Logos Section ═══ */}
-          <EventPartners theme="dark" className="ep-section--partners" />
 
           {/* Section: Upcoming Event > (Screenshot-inspired Horizontal Carousel) */}
           <div className="ep-section ep-section--upcoming-carousel">
@@ -1091,6 +1095,8 @@ export default function Events() {
               </Link>
               <p className="ep-upcoming-header__subtitle">Latest upcoming events listed here</p>
             </div>
+
+           
 
             {upcomingEventsList.length > 0 ? (
               <div className="ep-upcoming-carousel-wrap">
@@ -1131,6 +1137,9 @@ export default function Events() {
               />
             )}
           </div>
+
+           {/* ═══ Event Partners & Organizer Logos Section ═══ */}
+            <EventPartners theme="dark" className="ep-section--partners" />
 
           {/* Section: Top Events */}
           <div className="ep-section">

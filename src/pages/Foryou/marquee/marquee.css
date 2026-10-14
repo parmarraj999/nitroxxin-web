@@ -33,13 +33,30 @@
   }
 }
 
+.strip-ribbon{
+  display: none;
+}
+.strip-ribbon img{
+  width: 100%;
+  height: 80px
+}
+
 
 @media screen and (max-width:654px) {
   .marquee-container{
     padding: 14px 0;
+    background-color: transparent;
+    margin-top: 1rem;
+  }
+  .marquee-content{
     display: none;
   }
-
+  .strip-ribbon{
+    display: block;
+  }
+  .strip-ribbon img{
+    height: 50px;
+  }
   .marquee-text{
     font-size: 28px;
   }

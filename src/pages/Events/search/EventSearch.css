@@ -430,11 +430,11 @@
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.ep-search-visited-card:hover {
+/* .ep-search-visited-card:hover {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 31, 31, 0.5);
   transform: translateY(-3px);
-}
+} */
 
 .ep-search-visited-card__remove {
   position: absolute;
@@ -609,15 +609,6 @@
   flex-direction: column;
   cursor: pointer;
   position: relative;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-}
-
-.ep-event-card:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 31, 31, 0.55);
-  transform: translateY(-5px);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45), 0 0 24px rgba(255, 31, 31, 0.14);
 }
 
 /* Thumbnail Wrap */

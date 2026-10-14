@@ -29,6 +29,7 @@ import ComboDetailPage from './pages/Accessories/combo/ComboDetailPage';
 import { AuthProvider } from './components/AuthModal/useAuthModal';
 import { FirebaseAuthProvider } from './context/AuthContext';
 import { EventsProvider } from './context/EventsContext';
+import { EventCategoryProvider } from './context/EventCategoryContext';
 import { AccessoriesProvider } from './context/AccessoriesContext';
 import { BikeBrandsProvider } from './context/BikeBrandsContext';
 import { ForYouProvider } from './context/ForYouContext';
@@ -170,17 +171,19 @@ function App() {
   return (
     <FirebaseAuthProvider>
       <EventsProvider>
-        <AccessoriesProvider>
-          <BikeBrandsProvider>
-            <ForYouProvider>
-              <Router>
-                <AuthProvider>
-                  <AppShell />
-                </AuthProvider>
-              </Router>
-            </ForYouProvider>
-          </BikeBrandsProvider>
-        </AccessoriesProvider>
+        <EventCategoryProvider>
+          <AccessoriesProvider>
+            <BikeBrandsProvider>
+              <ForYouProvider>
+                <Router>
+                  <AuthProvider>
+                    <AppShell />
+                  </AuthProvider>
+                </Router>
+              </ForYouProvider>
+            </BikeBrandsProvider>
+          </AccessoriesProvider>
+        </EventCategoryProvider>
       </EventsProvider>
     </FirebaseAuthProvider>
   );

@@ -496,6 +496,13 @@ BAR (heading + search side by side) ===== */
   font-size: 13px;
 }
 
+.ep-cat-card__image-slot img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .ep-cat-card__label {
   position: absolute;
   bottom: 0;
@@ -534,9 +541,9 @@ BAR (heading + search side by side) ===== */
   width: 100%;
 }
 
-.ep-event-card:hover {
+/* .ep-event-card:hover {
   transform: translateY(-4px);
-}
+} */
 
 /* 16:9 aspect ratio image container */
 .ep-event-card__image {
