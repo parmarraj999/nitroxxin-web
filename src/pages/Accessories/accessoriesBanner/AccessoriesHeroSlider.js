@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import "./AccessoriesHeroSlider.css";
+import { useDocument } from "../../../hooks/useFirestore";
 
 const MARQUEE_TEXTS = [
   "NEW ARRIVALS",
@@ -67,29 +68,110 @@ export default function AccessoriesHeroSlider({ banners = [] }) {
   const [isHovered, setIsHovered] = useState(false);
   const touchStartX = useRef(null);
 
-  // Combine default slides with dynamic banners from Firestore if present
-  const slides = useMemo(() => {
-    const dynamicBanners = (banners || [])
-      .filter((b) => b && (b.image || b.imageUrl))
-      .map((b, idx) => ({
-        id: b.id || `dyn-banner-${idx}`,
-        image: b.image || b.imageUrl,
-        alt: b.title || "Nitroxx accessories banner",
-        title: b.title || "",
-        tagline: b.subtitle || b.description || "",
-        link: b.link || b.redirectUrl || "#shop",
-        badge: b.badge || "FEATURED",
-        hasOverlayText: Boolean(b.title || b.subtitle),
-      }));
+  // Fetch page layout from Firestore: page_layout > accessories_layout (and page_layouts fallback)
+  const { data: singularDoc } = useDocument("page_layout", "accessories_layout");
+  const { data: pluralDoc } = useDocument("page_layouts", "accessories_layout");
+  const { data: fallbackDoc } = useDocument("page_layouts", "accessories");
+  const layoutData = singularDoc || pluralDoc || fallbackDoc;
 
-    if (dynamicBanners.length > 0) {
-      // Primary featured streetwear banner first, then database banners
-      return [DEFAULT_SLIDES[0], ...dynamicBanners, DEFAULT_SLIDES[1]];
+  // Map dynamic banners from page_layout > accessories_layout
+  const slides = useMemo(() => {
+    const rawList =
+      layoutData?.banners ||
+      layoutData?.data?.banners ||
+      (Array.isArray(banners) && banners.length > 0 ? banners : null);
+
+    const bannerList = Array.isArray(rawList)
+      ? rawList
+      : rawList && typeof rawList === "object"
+      ? Object.values(rawList)
+      : [];
+
+    const heroSlidesList =
+      layoutData?.heroSlides ||
+      layoutData?.data?.heroSlides ||
+      [];
+
+    // Filter valid banner items that contain an image
+    const validBanners = bannerList.filter(
+      (b) => b && (b.imageUrl || b.image || b.bannerUrl || b.banner)
+    );
+
+    // Fallback to heroSlides if banners array does not contain valid images
+    const sourceList =
+      validBanners.length > 0
+        ? validBanners
+        : Array.isArray(heroSlidesList)
+        ? heroSlidesList.filter((s) => s && (s.imageUrl || s.image || s.bannerUrl || s.banner))
+        : [];
+
+    const mappedSlides = sourceList.map((b, idx) => {
+      const image = b.imageUrl || b.image || b.bannerUrl || b.banner;
+      const title = b.title || b.productName || b.name || "";
+      const badge = b.badge || b.tag || "FEATURED";
+
+      // Match heroSlide for richer subtitle if available
+      const matchingSlide = Array.isArray(heroSlidesList)
+        ? heroSlidesList.find(
+            (s) =>
+              (b.productId && s?.productId === b.productId) ||
+              (title && s?.title === title)
+          )
+        : null;
+
+      let tagline =
+        b.subtitle ||
+        b.tagline ||
+        b.description ||
+        b.subTitle ||
+        matchingSlide?.subtitle ||
+        matchingSlide?.description ||
+        "";
+
+      if (!tagline && b.brand) {
+        tagline = b.price
+          ? `${b.brand} • ₹${Number(b.price).toLocaleString("en-IN")}`
+          : b.brand;
+      }
+
+      let link = b.redirectUrl || b.link || b.url || "";
+      if (!link && b.productId) {
+        link = `/products/details/${b.productId}`;
+      }
+      if (!link) {
+        link = "#shop";
+      }
+
+      return {
+        id: b.id || b.productId || `dyn-banner-${idx}`,
+        image,
+        alt: b.alt || title || "Nitroxx accessories banner",
+        title,
+        tagline,
+        link,
+        badge,
+        hasOverlayText:
+          b.hasOverlayText !== undefined
+            ? Boolean(b.hasOverlayText)
+            : Boolean(title || tagline || badge),
+      };
+    });
+
+    if (mappedSlides.length > 0) {
+      return mappedSlides;
     }
+
     return DEFAULT_SLIDES;
-  }, [banners]);
+  }, [layoutData, banners]);
 
   const total = slides.length;
+
+  // Reset index if slides count changes and currentIndex exceeds length
+  useEffect(() => {
+    if (currentIndex >= total && total > 0) {
+      setCurrentIndex(0);
+    }
+  }, [currentIndex, total]);
 
   const nextSlide = useCallback(() => {
     setCurrentIndex((prev) => (total > 0 ? (prev + 1) % total : 0));
@@ -174,6 +256,45 @@ export default function AccessoriesHeroSlider({ banners = [] }) {
         >
           {slides.map((slide, index) => {
             const isShopAnchor = slide.link === "#shop";
+            const isExternal =
+              typeof slide.link === "string" &&
+              (slide.link.startsWith("http://") || slide.link.startsWith("https://"));
+
+            const slideContent = (
+              <>
+                <img
+                  src={slide.image}
+                  alt={slide.alt || slide.title || "Banner"}
+                  className="ap-hero-slide__image"
+                  loading={index === 0 ? "eager" : "lazy"}
+                />
+                {slide.hasOverlayText && (
+                  <div className="ap-hero-slide__overlay">
+                    <div className="ap-hero-slide__content">
+                      {slide.badge && (
+                        <span className="ap-hero-slide__badge-pill">
+                          {slide.badge}
+                        </span>
+                      )}
+                      {slide.title && (
+                        <h2 className="ap-hero-slide__title">{slide.title}</h2>
+                      )}
+                      {slide.tagline && (
+                        <p className="ap-hero-slide__tagline">{slide.tagline}</p>
+                      )}
+                      <span className="ap-hero-slide__btn">
+                        Shop Now
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="5" y1="12" x2="19" y2="12" />
+                          <polyline points="12 5 19 12 12 19" />
+                        </svg>
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </>
+            );
+
             return (
               <div key={slide.id || index} className="ap-hero-slide">
                 {isShopAnchor ? (
@@ -182,66 +303,23 @@ export default function AccessoriesHeroSlider({ banners = [] }) {
                     className="ap-hero-slide__inner"
                     onClick={(e) => handleSlideClick(e, slide.link)}
                   >
-                    <img
-                      src={slide.image}
-                      alt={slide.alt || slide.title || "Banner"}
-                      className="ap-hero-slide__image"
-                    />
-                    {slide.hasOverlayText && (
-                      <div className="ap-hero-slide__overlay">
-                        <div className="ap-hero-slide__content">
-                          {slide.badge && (
-                            <span className="ap-hero-slide__badge-pill">
-                              {slide.badge}
-                            </span>
-                          )}
-                          <h2 className="ap-hero-slide__title">{slide.title}</h2>
-                          {slide.tagline && (
-                            <p className="ap-hero-slide__tagline">{slide.tagline}</p>
-                          )}
-                          <span className="ap-hero-slide__btn">
-                            Shop Now
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                              <line x1="5" y1="12" x2="19" y2="12" />
-                              <polyline points="12 5 19 12 12 19" />
-                            </svg>
-                          </span>
-                        </div>
-                      </div>
-                    )}
+                    {slideContent}
+                  </a>
+                ) : isExternal ? (
+                  <a
+                    href={slide.link}
+                    className="ap-hero-slide__inner"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {slideContent}
                   </a>
                 ) : (
                   <Link
                     to={slide.link}
                     className="ap-hero-slide__inner"
                   >
-                    <img
-                      src={slide.image}
-                      alt={slide.alt || slide.title || "Banner"}
-                      className="ap-hero-slide__image"
-                    />
-                    {slide.hasOverlayText && (
-                      <div className="ap-hero-slide__overlay">
-                        <div className="ap-hero-slide__content">
-                          {slide.badge && (
-                            <span className="ap-hero-slide__badge-pill">
-                              {slide.badge}
-                            </span>
-                          )}
-                          <h2 className="ap-hero-slide__title">{slide.title}</h2>
-                          {slide.tagline && (
-                            <p className="ap-hero-slide__tagline">{slide.tagline}</p>
-                          )}
-                          <span className="ap-hero-slide__btn">
-                            Shop Now
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                              <line x1="5" y1="12" x2="19" y2="12" />
-                              <polyline points="12 5 19 12 12 19" />
-                            </svg>
-                          </span>
-                        </div>
-                      </div>
-                    )}
+                    {slideContent}
                   </Link>
                 )}
               </div>

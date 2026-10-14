@@ -1049,7 +1049,7 @@ export default function Events() {
                     className="ep-cat-card"
                   >
                     <div className="ep-cat-card__image-slot">{cat.image ? <img src={cat.image} alt={cat.label} /> : "Category"}</div>
-                    <div className="ep-cat-card__label">{cat.label}</div>
+                    {/* <div className="ep-cat-card__label">{cat.label}</div> */}
                   </Link>
                 ))}
               </div>

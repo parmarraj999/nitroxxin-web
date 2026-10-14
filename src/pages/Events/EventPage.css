@@ -477,18 +477,18 @@ BAR (heading + search side by side) ===== */
 
 .ep-cat-card {
   flex-shrink: 0;
-  width: 200px;
-  height: 220px;
+  width: 250px;
+  height: 360px;
   border-radius: 20px;
   overflow: hidden;
   position: relative;
-  border: 2px solid #fff;
+  /* border: 2px solid #fff; */
 }
 
 .ep-cat-card__image-slot {
   width: 100%;
   height: 100%;
-  background: rgba(255, 255, 255, 0.05);
+  /* background: rgba(255, 255, 255, 0.05); */
   display: flex;
   align-items: center;
   justify-content: center;
