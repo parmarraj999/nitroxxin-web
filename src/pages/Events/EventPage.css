@@ -1089,8 +1089,8 @@ BAR (heading + search side by side) ===== */
     grid-template-columns: 1fr;
   }
   .ep-cat-card{
-    width: 150px;
-    height: 160px;
+    width: 180px;
+    height: 250px;
   }
   .ep-cat-card__label{
     font-size: 12px;

@@ -20,6 +20,7 @@ function Foryou() {
             <Header banners={banners} />
             <Marquee />
             <CategoriesSection categories={categories} />
+             <ShopByBrands />
             <FeaturedEvents />
             <EventPartners theme="dark" />
             <CuratedShowcase />
@@ -40,7 +41,7 @@ function Foryou() {
                     style={{ width: '94%', height: '85vh', borderRadius: '40px', objectFit: 'cover' }}
                 />
             </div>
-            <ShopByBrands />
+           
             <FAQ />
         </section>
     )
