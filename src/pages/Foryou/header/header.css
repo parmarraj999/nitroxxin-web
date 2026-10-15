@@ -14,12 +14,10 @@
 .slide-container {
   position: relative;
   width: 100%;
-  max-width: 90%;
+  max-width: 80%;
   margin-top: 6rem;
-  background: #f0f0f0;
   border-radius: 12px;
   overflow: hidden;
-  /* box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); */
 }
 
 /* Dotted texture overlay */
@@ -35,9 +33,13 @@
 
 .slide-inner {
   position: relative;
-  padding: 30px 50px 40px;
-  min-height: 90vh;
+  /* padding: 30px 50px 40px; */
+  /* min-height: 90vh; */
   z-index: 2;
+  display: flex;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  
 }
 
 .slide-image {
@@ -45,7 +47,8 @@
   flex: 0 0 100%;
   width: 100%;
   min-width: 100%;
-  height: clamp(420px, 90vh, 860px);
+  /* height:90vh; */
+  aspect-ratio: 16 / 9;
   object-fit: cover;
   border-radius: 12px;
 }
