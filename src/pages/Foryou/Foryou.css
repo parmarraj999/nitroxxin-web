@@ -4,7 +4,9 @@
     background-color: #0d0f12;
     background-image: radial-gradient(circle at 50% 0%, #1e1e36 0%, #131517 400px, #0b0d10 100%);
 }
-
+.foryou-section::-webkit-scrollbar{
+    display: none;
+}
 .foryou-section-image {
     display: flex;
     justify-content: center;

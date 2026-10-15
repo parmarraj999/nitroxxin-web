@@ -22,12 +22,12 @@ export default function RaceDay({ banners: propBanners }) {
 
     const total = activeBanners.length;
 
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setActive((a) => (total > 0 ? (a + 1) % total : 0));
-        }, 3000);
-        return () => clearInterval(interval);
-    }, [total]);
+    // useEffect(() => {
+    //     const interval = setInterval(() => {
+    //         setActive((a) => (total > 0 ? (a + 1) % total : 0));
+    //     }, 3000);
+    //     return () => clearInterval(interval);
+    // }, [total]);
 
 
     return (
