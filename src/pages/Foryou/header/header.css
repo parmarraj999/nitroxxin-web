@@ -125,7 +125,8 @@
 
 @media (max-width: 900px) {
   .slide-image { 
-    height: 200px;
+    height: auto;
+    aspect-ratio: 16 / 9;
     border-radius: 12px;
   }
   .slider-wrapper {

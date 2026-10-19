@@ -14,7 +14,7 @@ import {
   FaWallet,
 } from 'react-icons/fa';
 import './EventBooking.css';
-import { useDocument } from '../../../hooks/useFirestore';
+import { useDocument, useCollection } from '../../../hooks/useFirestore';
 import { COLLECTIONS } from '../../../services/firebase';
 import { normalizeEvent } from '../../../services/normalizers';
 import { useEventsContext } from '../../../context/EventsContext';
@@ -48,6 +48,82 @@ const makeAttendee = (index = 0) => ({
   idType: 'Aadhaar',
   idLast4: '',
 });
+
+const extractCleanPhone = (sourcePhone) => {
+  if (!sourcePhone) return '';
+  let str = String(sourcePhone).trim();
+  if (str.startsWith('+91')) {
+    str = str.slice(3).trim();
+  } else if (str.startsWith('91') && str.length === 12) {
+    str = str.slice(2).trim();
+  } else if (str.startsWith('0') && str.length === 11) {
+    str = str.slice(1).trim();
+  }
+  return str.replace(/[\s-]/g, '');
+};
+
+const getBestUserPhone = (prof, usr) => {
+  const candidate =
+    prof?.phone ||
+    prof?.phoneNumber ||
+    prof?.mobile ||
+    prof?.mobileNumber ||
+    prof?.contactPhone ||
+    prof?.contactNumber ||
+    usr?.phone ||
+    usr?.phoneNumber ||
+    usr?.providerData?.find((p) => p?.phoneNumber)?.phoneNumber ||
+    localStorage.getItem('nitroxx_user_phone') ||
+    localStorage.getItem('userPhone') ||
+    '';
+  return extractCleanPhone(candidate) || (candidate ? String(candidate).trim() : '');
+};
+
+const getBestEmergency = (prof) => {
+  const name =
+    prof?.emergencyContactName ||
+    prof?.emergencyName ||
+    (typeof prof?.emergencyContact === 'string' && isNaN(Number(prof.emergencyContact)) ? prof.emergencyContact : '') ||
+    '';
+  const rawPhone =
+    prof?.emergencyNumber ||
+    prof?.emergencyPhone ||
+    prof?.emergencyContactPhone ||
+    (typeof prof?.emergencyContact === 'string' && !isNaN(Number(prof.emergencyContact.replace(/\D/g, ''))) ? prof.emergencyContact : '') ||
+    '';
+  return {
+    name,
+    phone: extractCleanPhone(rawPhone) || (rawPhone ? String(rawPhone).trim() : ''),
+  };
+};
+
+const getBestBikeDetails = (prof, bikesList) => {
+  const primary =
+    bikesList && bikesList.length > 0
+      ? bikesList[0]
+      : prof?.bikes && prof.bikes.length > 0
+      ? prof.bikes[0]
+      : prof?.bike || null;
+
+  if (primary) {
+    return {
+      brand: primary.brand || primary.make || '',
+      model: primary.model || primary.bikeModel || '',
+      registration:
+        primary.regNumber ||
+        primary.registration ||
+        primary.registrationNumber ||
+        primary.plateNumber ||
+        '',
+    };
+  }
+
+  return {
+    brand: prof?.bikeBrand || prof?.motorcycleBrand || '',
+    model: prof?.bikeModel || prof?.motorcycleModel || '',
+    registration: prof?.bikeRegistration || prof?.regNumber || prof?.vehicleNumber || '',
+  };
+};
 
 const formatMoney = (amount) => `Rs. ${Math.round(Number(amount || 0)).toLocaleString('en-IN')}`;
 
@@ -485,6 +561,8 @@ export default function EventBooking() {
   const { user, profile } = useAuth();
   const { openLogin } = useAuthModal();
 
+  const { data: userBikes } = useCollection(user?.uid ? `users/${user.uid}/bikes` : null);
+
   const [step, setStep] = useState(1);
   const [counts, setCounts] = useState({});
   const [attendees, setAttendees] = useState([makeAttendee(0)]);
@@ -558,18 +636,100 @@ export default function EventBooking() {
     }
     setBookingForSelf(checked);
     if (!checked) return;
+
+    const userPhone = getBestUserPhone(profile, user);
+    const userName = profile?.fullName || profile?.name || profile?.displayName || user?.fullName || user?.displayName || '';
+    const userEmail = profile?.email || user?.email || '';
+
     const self = {
-      name: profile?.fullName || profile?.name || profile?.displayName || user?.fullName || user?.displayName || '',
-      phone: profile?.phone || profile?.phoneNumber || user?.phone || user?.phoneNumber || '',
-      email: profile?.email || user?.email || '',
+      name: userName,
+      phone: userPhone,
+      email: userEmail,
       age: profile?.age || profile?.dateOfBirth || '',
       gender: profile?.gender || '',
       idType: profile?.idType || 'Aadhaar',
       idLast4: profile?.idLast4 || '',
     };
-    setContact({ name: self.name, phone: self.phone, email: self.email });
-    setAttendees((current) => [{ ...(current[0] || makeAttendee(0)), ...self }, ...current.slice(1)]);
+
+    setContact((prev) => ({
+      name: self.name || prev.name,
+      phone: self.phone || prev.phone,
+      email: self.email || prev.email,
+    }));
+
+    setAttendees((current) => [
+      { ...(current[0] || makeAttendee(0)), ...self },
+      ...current.slice(1),
+    ]);
+
+    const emerg = getBestEmergency(profile);
+    if (emerg.name || emerg.phone) {
+      setEmergency((prev) => ({
+        name: emerg.name || prev.name,
+        phone: emerg.phone || prev.phone,
+      }));
+    }
+
+    const bikeData = getBestBikeDetails(profile, userBikes);
+    if (bikeData.brand || bikeData.model || bikeData.registration) {
+      setBike((prev) => ({
+        brand: bikeData.brand || prev.brand,
+        model: bikeData.model || prev.model,
+        registration: (bikeData.registration || prev.registration).toUpperCase(),
+      }));
+    }
   };
+
+  // Reactive sync when profile/user or bikes arrive asynchronously while bookingForSelf is checked
+  useEffect(() => {
+    if (!bookingForSelf || (!user && !profile)) return;
+
+    const userPhone = getBestUserPhone(profile, user);
+    const userName = profile?.fullName || profile?.name || profile?.displayName || user?.fullName || user?.displayName || '';
+    const userEmail = profile?.email || user?.email || '';
+
+    if (userPhone || userName || userEmail) {
+      setContact((prev) => ({
+        name: prev.name || userName,
+        phone: prev.phone || userPhone,
+        email: prev.email || userEmail,
+      }));
+
+      setAttendees((current) => {
+        const first = current[0] || makeAttendee(0);
+        return [
+          {
+            ...first,
+            name: first.name || userName,
+            phone: first.phone || userPhone,
+            email: first.email || userEmail,
+            age: first.age || profile?.age || profile?.dateOfBirth || '',
+            gender: first.gender || profile?.gender || '',
+            idType: first.idType || profile?.idType || 'Aadhaar',
+            idLast4: first.idLast4 || profile?.idLast4 || '',
+          },
+          ...current.slice(1),
+        ];
+      });
+    }
+
+    const emerg = getBestEmergency(profile);
+    if (emerg.name || emerg.phone) {
+      setEmergency((prev) => ({
+        name: prev.name || emerg.name,
+        phone: prev.phone || emerg.phone,
+      }));
+    }
+
+    const bikeData = getBestBikeDetails(profile, userBikes);
+    if (bikeData.brand || bikeData.model || bikeData.registration) {
+      setBike((prev) => ({
+        brand: prev.brand || bikeData.brand,
+        model: prev.model || bikeData.model,
+        registration: (prev.registration || bikeData.registration).toUpperCase(),
+      }));
+    }
+  }, [bookingForSelf, profile, user, userBikes]);
 
   const summary = useMemo(() => {
     const tierTotals = tiers.reduce((next, tier) => ({ ...next, [tier.key]: tier.price * counts[tier.key] }), {});

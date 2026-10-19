@@ -72,8 +72,21 @@ export default function BottomNav() {
         setIsModalOpen(false);
     };
 
+    const isEventDetailPage =
+        pathname.startsWith('/event/') ||
+        (pathname.startsWith('/events/') &&
+            !['/events/all', '/events/near-you', '/events/near-me', '/events/upcoming', '/events/search'].some((p) =>
+                pathname.startsWith(p)
+            ));
+
+    const isHidden =
+        pathname.includes('/profile') ||
+        pathname.includes('/book') ||
+        pathname.includes('/privacy') ||
+        isEventDetailPage;
+
     return (
-        <div className="bottom-nav-wrapper" style={pathname.includes('/profile') || pathname.includes('/book') ? { display: "none" } : {}}>
+        <div className="bottom-nav-wrapper" style={isHidden ? { display: "none" } : {}}>
             <div className="bottom-nav-tabs">
                 <button
                     className={`nav-tab ${pathname === '/' ? 'active-red' : ''}`}

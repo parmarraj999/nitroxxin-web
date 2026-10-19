@@ -1886,4 +1886,78 @@ BAR (heading + search side by side) ===== */
   }
 }
 
+/* ===== TOP EVENTS SECTION (Mobile Horizontal Sliding) ===== */
+.ep-section--top-events {
+  position: relative;
+}
+
+.ep-top-events-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.ep-top-events-header .ep-section__title {
+  margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+  .ep-section--top-events {
+    margin-top: 28px;
+    margin-bottom: 32px;
+  }
+
+  .ep-top-events-header {
+    margin-bottom: 16px;
+  }
+
+  .ep-top-events-grid {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    width: calc(100% + 32px) !important;
+    max-width: calc(100% + 32px) !important;
+    margin-left: -16px !important;
+    margin-right: -16px !important;
+    padding: 6px 16px 18px 16px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-snap-type: x mandatory !important;
+    scroll-padding-left: 16px !important;
+    -webkit-overflow-scrolling: touch !important;
+    scroll-behavior: smooth !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+    gap: 16px !important;
+    box-sizing: border-box !important;
+  }
+
+  .ep-top-events-grid::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .ep-top-events-grid .ep-event-card {
+    flex: 0 0 clamp(260px, 78vw, 310px) !important;
+    width: clamp(260px, 78vw, 310px) !important;
+    min-width: clamp(260px, 78vw, 310px) !important;
+    max-width: 82vw !important;
+    height: auto !important;
+    scroll-snap-align: start !important;
+    scroll-snap-stop: normal !important;
+    box-sizing: border-box !important;
+  }
+
+  .ep-top-events-grid .ep-event-card__image {
+    width: 100% !important;
+    aspect-ratio: 16 / 9 !important;
+    height: auto !important;
+    max-height: none !important;
+    border-radius: 16px !important;
+  }
+}
+
+
 

@@ -29,9 +29,22 @@ body,
 
 /* Normal pages get zoom: 0.8 on desktop */
 @media (min-width: 901px) {
-  .app-container:not(.is-profile-view) {
+  .app-container:not(.is-profile-view):not(.is-privacy-view) {
     zoom: 0.8;
   }
+}
+
+/* Privacy Policy Section: FULL SCREEN CLEAN WHITE - MATCHING REFERENCE IMAGE */
+.app-container.is-privacy-view,
+.app-container:has(.nitroxx-white-policy-layout) {
+  zoom: 1 !important;
+  width: 100% !important;
+  min-height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: #ffffff !important;
+  color: #111827 !important;
+  overflow: visible !important;
 }
 
 /* Profile & Search Sections: FULL SCREEN 100vh - NO ZOOM - NO GAPS */

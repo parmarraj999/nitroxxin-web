@@ -1142,11 +1142,13 @@ export default function Events() {
             <EventPartners theme="dark" className="ep-section--partners" />
 
           {/* Section: Top Events */}
-          <div className="ep-section">
-            <p className="ep-section__title">Top Events</p>
+          <div className="ep-section ep-section--top-events">
+            <div className="ep-top-events-header">
+              <p className="ep-section__title">Top Events</p>
+            </div>
             {topEvents.length > 0 ? (
-              <div className="ep-events-grid">
-                {topEvents.slice(0, 6).map((event) => (
+              <div className="ep-events-grid ep-top-events-grid">
+                {topEvents.slice(0, 8).map((event) => (
                   <EventCard
                     key={`top-${event.id}`}
                     event={event}

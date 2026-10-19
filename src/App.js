@@ -47,6 +47,8 @@ import Payments from './pages/profile/pages/Payments';
 import Wallet from './pages/profile/pages/Wallet';
 import ThrottleList from './pages/profile/pages/ThrottleList';
 import ShareFeedback from './pages/profile/pages/ShareFeedback';
+import PrivacyPolicy from './pages/Privacy/PrivacyPolicy';
+import ScreenLoader from './components/ScreenLoader/ScreenLoader';
 
 import AuthModalContainer from './components/AuthModal/AuthModalContainer';
 
@@ -56,8 +58,15 @@ const Navigation = () => {
   const isProfilePage = location.pathname.includes('/profile');
   const isSearchPage = location.pathname.includes('/search');
   const isComboPage = location.pathname.includes('/combo');
+  const isPrivacyPage = location.pathname.includes('/privacy');
+  const isEventDetailPage =
+    location.pathname.startsWith('/event/') ||
+    (location.pathname.startsWith('/events/') &&
+      !['/events/all', '/events/near-you', '/events/near-me', '/events/upcoming', '/events/search'].some((p) =>
+        location.pathname.startsWith(p)
+      ));
 
-  if (isBookingPage || isProfilePage || isSearchPage || isComboPage) return null;
+  if (isBookingPage || isProfilePage || isSearchPage || isComboPage || isPrivacyPage || isEventDetailPage) return null;
 
   return (
     <>
@@ -72,8 +81,9 @@ const FooterWrapper = () => {
   const isBookingPage = location.pathname.includes('/book');
   const isProfilePage = location.pathname.includes('/profile');
   const isSearchPage = location.pathname.includes('/search');
+  const isPrivacyPage = location.pathname.includes('/privacy');
 
-  if (isBookingPage || isProfilePage || isSearchPage) return null;
+  if (isBookingPage || isProfilePage || isSearchPage || isPrivacyPage) return null;
 
   return <Footer />;
 };
@@ -86,9 +96,11 @@ const AppShell = () => {
   const location = useLocation();
   const isProfilePage = location.pathname.includes('/profile');
   const isSearchPage = location.pathname.includes('/search');
+  const isPrivacyPage = location.pathname.includes('/privacy');
 
   return (
-    <div className={`app-container${isProfilePage ? ' is-profile-view' : ''}${isSearchPage ? ' is-search-view' : ''}`}>
+    <div className={`app-container${isProfilePage ? ' is-profile-view' : ''}${isSearchPage ? ' is-search-view' : ''}${isPrivacyPage ? ' is-privacy-view' : ''}`}>
+      <ScreenLoader />
       <Navigation />
 
       <Routes>
@@ -139,6 +151,8 @@ const AppShell = () => {
           <Route path="/accessories/combo/:comboId" element={<ComboDetailPage />} />
         </Route>
         <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>}>
           <Route index element={<ProfileOverview />} />

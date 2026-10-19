@@ -49,9 +49,16 @@ const Navbar = () => {
         return DEFAULT_EVENT_CATEGORIES;
     }, [rawCategories]);
 
+    const isEventDetailPage =
+        pathname.startsWith('/event/') ||
+        (pathname.startsWith('/events/') &&
+            !['/events/all', '/events/near-you', '/events/near-me', '/events/upcoming', '/events/search'].some((p) =>
+                pathname.startsWith(p)
+            ));
+
     const isHidden =
         pathname.startsWith('/events/search') ||
-        pathname.includes('/event/') ||
+        isEventDetailPage ||
         pathname.includes('/accessories') ||
         pathname.includes('/shop') ||
         pathname.includes('/category') ||

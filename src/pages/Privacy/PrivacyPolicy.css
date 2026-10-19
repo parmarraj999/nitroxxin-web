@@ -1,0 +1,162 @@
+/* ==========================================================================
+   NITROXX PRIVACY POLICY - CLEAN WHITE THEME (NO SIDEBARS)
+   Centered, readable legal document layout
+   ========================================================================== */
+
+/* Main outer layout container */
+.nitroxx-white-policy-layout {
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  width: 100%;
+  background-color: #ffffff;
+  color: #1f2937;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.6;
+  box-sizing: border-box;
+}
+
+/* --------------------------------------------------------------------------
+   Center Main Document Body
+   -------------------------------------------------------------------------- */
+.policy-center-content {
+  width: 100%;
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 44px clamp(18px, 4vw, 36px) 100px;
+  box-sizing: border-box;
+}
+
+/* Breadcrumbs (Home Icon > Privacy Policy Pill) */
+.policy-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  color: #6b7280;
+  margin-bottom: 24px;
+}
+
+.breadcrumb-home-link {
+  color: #4b5563;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.15s ease;
+}
+
+.breadcrumb-home-link:hover {
+  color: #111827;
+}
+
+.breadcrumb-separator {
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.breadcrumb-pill {
+  background-color: #f3f0fd;
+  color: #6d28d9;
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 3px 12px;
+  border-radius: 9999px;
+  text-decoration: none;
+}
+
+/* Document Header Titles */
+.policy-main-title {
+  font-size: 40px;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+  margin: 0 0 14px 0;
+}
+
+.policy-scope-subtitle {
+  font-size: 15.5px;
+  color: #4b5563;
+  margin: 0 0 12px 0;
+  font-weight: 500;
+}
+
+.policy-last-updated {
+  font-size: 14px;
+  font-style: italic;
+  color: #4b5563;
+  margin: 0 0 40px 0;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #f0f0f2;
+}
+
+/* Section Headings */
+.policy-heading-2 {
+  font-size: 26px;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: -0.015em;
+  margin: 44px 0 16px 0;
+  scroll-margin-top: 24px;
+}
+
+/* Paragraphs & Text */
+.policy-paragraph {
+  font-size: 15px;
+  line-height: 1.8;
+  color: #374151;
+  margin: 0 0 18px 0;
+  text-align: left;
+}
+
+.policy-paragraph strong {
+  color: #111827;
+  font-weight: 600;
+}
+
+/* Clean Bullet Lists */
+.policy-bullet-list {
+  list-style-type: disc;
+  padding-left: 24px;
+  margin: 14px 0 22px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.policy-bullet-item {
+  font-size: 15px;
+  line-height: 1.75;
+  color: #374151;
+  padding-left: 4px;
+}
+
+.policy-bullet-item strong {
+  color: #111827;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Design
+   -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  .policy-center-content {
+    padding: 28px 18px 60px;
+  }
+
+  .policy-main-title {
+    font-size: 30px;
+  }
+
+  .policy-heading-2 {
+    font-size: 22px;
+    margin-top: 32px;
+  }
+
+  .policy-paragraph,
+  .policy-bullet-item {
+    font-size: 14.5px;
+    line-height: 1.7;
+  }
+}
