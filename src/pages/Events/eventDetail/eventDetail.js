@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import "./eventDetail.css";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useDocument } from "../../../hooks/useFirestore";
@@ -55,6 +55,61 @@ export default function EventDetail() {
 
   const event = eventFromContext || (fallbackQuery.data ? normalizeEvent(fallbackQuery.data) : null);
   const loading = eventsLoading || (fallbackQuery.loading && !eventFromContext);
+
+  console.log(event);
+
+  // Extract bike requirements safely (optional)
+  const bikeRequirements = event?.bikeRequirements || (
+    (event?.bikeType || event?.bikeModel || event?.brand)
+      ? {
+          bikeType: event.bikeType,
+          brand: event.brand || event.bikeBrand,
+          model: event.model || event.bikeModel,
+          engineCC: event.engineCC || event.minimumCC,
+          criteria: event.criteria || event.bikeCriteria,
+        }
+      : null
+  );
+
+  const bikeRequirementItems = useMemo(() => {
+    if (!bikeRequirements || typeof bikeRequirements !== 'object') return [];
+
+    const items = [];
+    if (bikeRequirements.bikeType && String(bikeRequirements.bikeType).trim()) {
+      items.push({ key: 'type', label: 'Bike Type', value: String(bikeRequirements.bikeType).trim() });
+    }
+    if (bikeRequirements.brand && String(bikeRequirements.brand).trim()) {
+      items.push({ key: 'brand', label: 'Brand', value: String(bikeRequirements.brand).trim() });
+    }
+    const model = bikeRequirements.model || event?.bikeModel;
+    if (model && String(model).trim()) {
+      items.push({ key: 'model', label: 'Model', value: String(model).trim() });
+    }
+    const cc = bikeRequirements.engineCC || bikeRequirements.engineCc || event?.minimumCC;
+    if (cc !== undefined && cc !== null && String(cc).trim()) {
+      const ccStr = String(cc).trim();
+      const formattedCC = ccStr.toLowerCase().includes('cc') ? ccStr : `${ccStr} cc`;
+      items.push({ key: 'engineCC', label: 'Engine Capacity', value: formattedCC });
+    }
+    if (bikeRequirements.criteria && String(bikeRequirements.criteria).trim()) {
+      items.push({ key: 'criteria', label: 'Criteria / Condition', value: String(bikeRequirements.criteria).trim(), isWide: true });
+    }
+
+    const handledKeys = new Set(['bikeType', 'brand', 'model', 'engineCC', 'engineCc', 'criteria']);
+    Object.entries(bikeRequirements).forEach(([key, val]) => {
+      if (!handledKeys.has(key) && val !== null && val !== undefined && typeof val !== 'object' && String(val).trim()) {
+        const formattedLabel = key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase());
+        items.push({
+          key,
+          label: formattedLabel,
+          value: String(val).trim(),
+          isWide: String(val).length > 50,
+        });
+      }
+    });
+
+    return items;
+  }, [bikeRequirements, event?.bikeModel, event?.minimumCC]);
 
   const relatedEvents = events;
   const { user } = useAuth();
@@ -549,6 +604,25 @@ export default function EventDetail() {
                 </>
               )}
 
+              {/* ── Bike Requirements (Optional) ── */}
+              {bikeRequirementItems.length > 0 && (
+                <>
+                  <p className="ed-section-heading ed-things-heading">Bike Requirements</p>
+                  <div className="ed-category-grid ed-bike-requirements-grid">
+                    {bikeRequirementItems.map((item) => (
+                      <div
+                        className={`ed-category-item ${item.isWide ? 'ed-category-item--wide' : ''}`}
+                        key={item.key}
+                        style={{ height: 'fit-content' }}
+                      >
+                        <p className="ed-category-label">{item.label}</p>
+                        <p className="ed-category-value">{item.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
               {/* ── Mandatory Rider Requirements ── */}
               {event.mandatoryRequirements && event.mandatoryRequirements.length > 0 && (
                 <>
@@ -632,7 +706,14 @@ export default function EventDetail() {
                     <p className="ed-price">{event.ticketPrice ? `₹${event.ticketPrice}` : (event.priceText || "Free")}</p>
                     {event.ticketType && <p className="ed-info-sub" style={{ marginTop: 2 }}>{event.ticketType}</p>}
                   </div>
-                  <button className="ed-book-btn" onClick={() => navigate(`/event/${event.id}/book`)}>Book Ticket</button>
+                  <button
+                    className="ed-book-btn"
+                    onClick={() => navigate(`/event/${event.id}/book`, {
+                      state: { event, ticketTemplateUrl: event.ticketTemplateUrl }
+                    })}
+                  >
+                    Book Ticket
+                  </button>
                 </div>
               </div>
 

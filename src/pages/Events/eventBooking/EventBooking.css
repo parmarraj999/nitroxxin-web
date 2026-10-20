@@ -756,3 +756,164 @@
   }
 }
 
+/* ════════════════════════════════════════════════════
+   Step 3: Bike Requirement Callout & Garage Selector
+   ════════════════════════════════════════════════════ */
+.eb-bike-req-banner {
+  margin: 16px 0 24px;
+  padding: 20px;
+  border-radius: 14px;
+  background: #fbfcfe;
+  border: 1.5px solid #e2e8f0;
+}
+
+.eb-bike-req-banner__header {
+  margin-bottom: 14px;
+}
+
+.eb-bike-req-pill {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #ea580c;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  padding: 3px 8px;
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+.eb-bike-req-banner__header h4 {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.eb-bike-req-banner__header p {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.eb-bike-req-chips {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.eb-bike-req-chip {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.eb-bike-req-chip--full {
+  grid-column: 1 / -1;
+}
+
+.eb-bike-req-chip__label {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.eb-bike-req-chip__val {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* Garage Quick Select */
+.eb-garage-selector {
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1.5px dashed #cbd5e1;
+}
+
+.eb-garage-title {
+  margin: 0 0 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.eb-garage-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.eb-garage-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.eb-garage-chip:hover {
+  border-color: #ea580c;
+  background: #fffaf5;
+}
+
+.eb-garage-chip.is-selected {
+  border-color: #ea580c;
+  background: #fff7ed;
+  box-shadow: 0 0 0 1px #ea580c;
+}
+
+.eb-garage-chip strong {
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.eb-garage-chip span {
+  font-size: 11px;
+  color: #64748b;
+}
+
+/* Compliance Alerts */
+.eb-bike-compliance-box {
+  margin-top: 14px;
+}
+
+.eb-compliance-alert {
+  padding: 11px 15px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.eb-compliance-alert--success {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.eb-compliance-alert--warn {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+

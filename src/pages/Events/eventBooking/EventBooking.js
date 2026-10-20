@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   FaArrowLeft,
   FaCalendarAlt,
@@ -115,6 +115,7 @@ const getBestBikeDetails = (prof, bikesList) => {
         primary.registrationNumber ||
         primary.plateNumber ||
         '',
+      engineCC: primary.cc || primary.engineCC || primary.capacity || '',
     };
   }
 
@@ -122,6 +123,7 @@ const getBestBikeDetails = (prof, bikesList) => {
     brand: prof?.bikeBrand || prof?.motorcycleBrand || '',
     model: prof?.bikeModel || prof?.motorcycleModel || '',
     registration: prof?.bikeRegistration || prof?.regNumber || prof?.vehicleNumber || '',
+    engineCC: prof?.engineCC || prof?.bikeCC || '',
   };
 };
 
@@ -228,14 +230,43 @@ function TicketStep({ counts, setCount, tiers, seatsLeft }) {
 
 function CategoryBookingBrief({ event }) {
   const { config, details } = getCategoryDetails(event);
-  if (!config) return null;
-  return <section className="eb-category-brief">
-    <div><p className="eb-kicker">Before you book</p><h3>{config.category} details</h3></div>
-    {details.length ? <div className="eb-category-brief__grid">{details.map((field) => {
-      const isLongText = typeof field.value === 'string' && field.value.length > 60;
-      return <div key={field.id} className={isLongText ? 'eb-category-item--wide' : ''}><span>{field.label}</span><strong>{formatCategoryValue(field.value, field)}</strong></div>
-    })}</div> : <p>The organizer will share category-specific instructions before the event.</p>}
-  </section>;
+  const bikeReq = event?.bikeRequirements;
+  const hasBike = Boolean(bikeReq && (bikeReq.bikeType || bikeReq.brand || bikeReq.model || bikeReq.engineCC));
+
+  if (!config && !hasBike) return null;
+
+  return (
+    <section className="eb-category-brief">
+      <div>
+        <p className="eb-kicker">Before you book</p>
+        <h3>{config?.category || 'Ride'} requirements & details</h3>
+      </div>
+      <div className="eb-category-brief__grid">
+        {hasBike && (
+          <>
+            {bikeReq.bikeType && <div><span>Bike Type</span><strong>{bikeReq.bikeType}</strong></div>}
+            {bikeReq.brand && <div><span>Required Brand</span><strong>{bikeReq.brand}</strong></div>}
+            {bikeReq.model && <div><span>Required Model</span><strong>{bikeReq.model}</strong></div>}
+            {bikeReq.engineCC && (
+              <div>
+                <span>Minimum CC</span>
+                <strong>{String(bikeReq.engineCC).toLowerCase().includes('cc') ? bikeReq.engineCC : `${bikeReq.engineCC} cc`}</strong>
+              </div>
+            )}
+          </>
+        )}
+        {details.map((field) => {
+          const isLongText = typeof field.value === 'string' && field.value.length > 60;
+          return (
+            <div key={field.id} className={isLongText ? 'eb-category-item--wide' : ''}>
+              <span>{field.label}</span>
+              <strong>{formatCategoryValue(field.value, field)}</strong>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
 }
 
 function AttendeesStep({ totalTickets, attendees, updateAttendee, contact, setContact, emergency, setEmergency, bookingForSelf, onBookingForSelf, user }) {
@@ -310,11 +341,33 @@ function AttendeesStep({ totalTickets, attendees, updateAttendee, contact, setCo
   );
 }
 
-function RideSetupStep({ joinAs, setJoinAs, bike, setBike, preferences, setPreferences, selectedTiers }) {
+function RideSetupStep({
+  event,
+  joinAs,
+  setJoinAs,
+  bike,
+  setBike,
+  preferences,
+  setPreferences,
+  selectedTiers,
+  userBikes = [],
+}) {
+  const bikeReq = event?.bikeRequirements;
+  const hasRequirement = Boolean(
+    bikeReq && (bikeReq.brand || bikeReq.model || bikeReq.engineCC || bikeReq.bikeType || bikeReq.criteria)
+  );
+
+  const reqCC = bikeReq?.engineCC ? parseInt(String(bikeReq.engineCC).replace(/\D/g, ''), 10) : 0;
+  const userCC = parseInt(
+    String(bike.engineCC || (bike.model ? (bike.model.match(/\b\d{3,4}\b/) || [])[0] : '') || 0).replace(/\D/g, ''),
+    10
+  );
+  const ccBelow = reqCC > 0 && userCC > 0 && userCC < reqCC;
+
   // strictly derive joinAs from selected ticket types
   useEffect(() => {
     if (selectedTiers && selectedTiers.length > 0) {
-      const isBiker = selectedTiers.some(tier => {
+      const isBiker = selectedTiers.some((tier) => {
         const type = (tier.ticketFor || tier.name || '').toLowerCase();
         return type.includes('rider') || type.includes('driver') || type.includes('biker');
       });
@@ -325,66 +378,226 @@ function RideSetupStep({ joinAs, setJoinAs, bike, setBike, preferences, setPrefe
   return (
     <section className="eb-panel">
       <div className="eb-panel__head">
-        <p className="eb-kicker">Ride setup</p>
-        <h2>{joinAs === 'biker' ? 'Vehicle setup' : 'Rider preferences'}</h2>
+        <div>
+          <p className="eb-kicker">Ride setup</p>
+          <h2>{joinAs === 'biker' ? 'Vehicle setup' : 'Rider preferences'}</h2>
+        </div>
         <span>This helps Nitroxx plan parking, marshals, and rider grouping.</span>
       </div>
-      {joinAs === 'biker' && (
-        <div className="eb-form-grid eb-form-grid--wide">
-        <Field label="Bike brand">
-          <input value={bike.brand} onChange={(e) => setBike({ ...bike, brand: e.target.value })} placeholder="Royal Enfield, BMW, KTM" />
-        </Field>
-        <Field label="Model">
-          <input value={bike.model} onChange={(e) => setBike({ ...bike, model: e.target.value })} placeholder="Himalayan, GS 310, Duke" />
-        </Field>
-        <Field label="Registration number">
-          <input value={bike.registration} onChange={(e) => setBike({ ...bike, registration: e.target.value.toUpperCase() })} placeholder="DL 01 XX 0000" />
-        </Field>
-        <Field label="Riding experience">
-          <select value={preferences.experience} onChange={(e) => setPreferences({ ...preferences, experience: e.target.value })}>
-            <option>Beginner</option>
-            <option>Intermediate</option>
-            <option>Advanced</option>
-            <option>Professional</option>
-          </select>
-        </Field>
-        <Field label="Preferred pace">
-          <select value={preferences.pace} onChange={(e) => setPreferences({ ...preferences, pace: e.target.value })}>
-            <option>Relaxed</option>
-            <option>Balanced</option>
-            <option>Sport</option>
-          </select>
-        </Field>
-        <Field label="Parking need">
-          <select value={preferences.parking} onChange={(e) => setPreferences({ ...preferences, parking: e.target.value })}>
-            <option>Bike parking</option>
-            <option>Car parking</option>
-            <option>No parking required</option>
-          </select>
-        </Field>
-      </div>
-      )}
-      {joinAs !== 'biker' && (
-        <div className="eb-form-grid eb-form-grid--wide">
-           <Field label="Riding experience (Optional)">
-             <select value={preferences.experience} onChange={(e) => setPreferences({ ...preferences, experience: e.target.value })}>
-               <option>Beginner</option>
-               <option>Intermediate</option>
-               <option>Advanced</option>
-               <option>Professional</option>
-             </select>
-           </Field>
-           <Field label="Preferred pace (Optional)">
-             <select value={preferences.pace} onChange={(e) => setPreferences({ ...preferences, pace: e.target.value })}>
-               <option>Relaxed</option>
-               <option>Balanced</option>
-               <option>Sport</option>
-             </select>
-           </Field>
+
+      {/* ── Case 1: Event has Bike Requirements ── */}
+      {hasRequirement && joinAs === 'biker' && (
+        <div className="eb-bike-req-banner">
+          <div className="eb-bike-req-banner__header">
+            <span className="eb-bike-req-pill">Event Bike Criteria</span>
+            <h4>Organizer Required Bike Specification</h4>
+            <p>
+              This ride requires the specified bike, or an <strong>equal / upper model</strong> with matching or higher engine capacity.
+            </p>
+          </div>
+
+          <div className="eb-bike-req-chips">
+            {bikeReq.brand && (
+              <div className="eb-bike-req-chip">
+                <span className="eb-bike-req-chip__label">Brand</span>
+                <strong className="eb-bike-req-chip__val">{bikeReq.brand}</strong>
+              </div>
+            )}
+            {bikeReq.model && (
+              <div className="eb-bike-req-chip">
+                <span className="eb-bike-req-chip__label">Min Model</span>
+                <strong className="eb-bike-req-chip__val">{bikeReq.model} (or upper model)</strong>
+              </div>
+            )}
+            {reqCC > 0 && (
+              <div className="eb-bike-req-chip">
+                <span className="eb-bike-req-chip__label">Min Capacity</span>
+                <strong className="eb-bike-req-chip__val">≥ {reqCC} cc</strong>
+              </div>
+            )}
+            {bikeReq.bikeType && (
+              <div className="eb-bike-req-chip">
+                <span className="eb-bike-req-chip__label">Type</span>
+                <strong className="eb-bike-req-chip__val">{bikeReq.bikeType}</strong>
+              </div>
+            )}
+            {bikeReq.criteria && (
+              <div className="eb-bike-req-chip eb-bike-req-chip--full">
+                <span className="eb-bike-req-chip__label">Notes</span>
+                <strong className="eb-bike-req-chip__val">{bikeReq.criteria}</strong>
+              </div>
+            )}
+          </div>
         </div>
       )}
+
+      {/* Garage Quick Select (if user has saved bikes) */}
+      {joinAs === 'biker' && userBikes && userBikes.length > 0 && (
+        <div className="eb-garage-selector">
+          <p className="eb-garage-title">Select from your garage:</p>
+          <div className="eb-garage-chips">
+            {userBikes.map((ub, idx) => {
+              const bBrand = ub.brand || ub.make || '';
+              const bModel = ub.model || ub.bikeModel || '';
+              const bReg = ub.regNumber || ub.registration || ub.registrationNumber || '';
+              const bCC = ub.cc || ub.engineCC || ub.capacity || '';
+              const isSelected = bike.registration === bReg && bike.model === bModel;
+
+              return (
+                <button
+                  key={ub.id || idx}
+                  type="button"
+                  className={`eb-garage-chip ${isSelected ? 'is-selected' : ''}`}
+                  onClick={() => {
+                    setBike((prev) => ({
+                      ...prev,
+                      brand: bBrand,
+                      model: bModel,
+                      registration: bReg.toUpperCase(),
+                      engineCC: bCC ? String(bCC) : prev.engineCC,
+                      requirementConfirmed: true,
+                    }));
+                  }}
+                >
+                  <strong>{bBrand} {bModel}</strong>
+                  <span>{bReg} {bCC ? `(${bCC}cc)` : ''}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {joinAs === 'biker' && (
+        <div className="eb-form-grid eb-form-grid--wide">
+          <Field label="Bike brand">
+            <input
+              value={bike.brand}
+              onChange={(e) => setBike({ ...bike, brand: e.target.value })}
+              placeholder={hasRequirement && bikeReq.brand ? `e.g. ${bikeReq.brand}` : 'Royal Enfield, BMW, KTM'}
+            />
+          </Field>
+          <Field label="Model">
+            <input
+              value={bike.model}
+              onChange={(e) => setBike({ ...bike, model: e.target.value })}
+              placeholder={hasRequirement && bikeReq.model ? `e.g. ${bikeReq.model} or higher` : 'Himalayan, GS 310, Duke'}
+            />
+          </Field>
+          <Field label="Engine Capacity (CC)">
+            <input
+              type="text"
+              value={bike.engineCC || ''}
+              onChange={(e) => setBike({ ...bike, engineCC: e.target.value.replace(/\D/g, '') })}
+              placeholder={reqCC > 0 ? `Min ${reqCC} cc` : 'e.g. 450'}
+            />
+          </Field>
+          <Field label="Registration number">
+            <input
+              value={bike.registration}
+              onChange={(e) => setBike({ ...bike, registration: e.target.value.toUpperCase() })}
+              placeholder="DL 01 XX 0000"
+            />
+          </Field>
+          <Field label="Riding experience">
+            <select
+              value={preferences.experience}
+              onChange={(e) => setPreferences({ ...preferences, experience: e.target.value })}
+            >
+              <option>Beginner</option>
+              <option>Intermediate</option>
+              <option>Advanced</option>
+              <option>Professional</option>
+            </select>
+          </Field>
+          <Field label="Preferred pace">
+            <select
+              value={preferences.pace}
+              onChange={(e) => setPreferences({ ...preferences, pace: e.target.value })}
+            >
+              <option>Relaxed</option>
+              <option>Balanced</option>
+              <option>Sport</option>
+            </select>
+          </Field>
+          <Field label="Parking need">
+            <select
+              value={preferences.parking}
+              onChange={(e) => setPreferences({ ...preferences, parking: e.target.value })}
+            >
+              <option>Bike parking</option>
+              <option>Car parking</option>
+              <option>No parking required</option>
+            </select>
+          </Field>
+        </div>
+      )}
+
+      {/* Requirement Compliance Feedback & Checkbox */}
+      {hasRequirement && joinAs === 'biker' && (
+        <div className="eb-bike-compliance-box">
+          {ccBelow ? (
+            <div className="eb-compliance-alert eb-compliance-alert--warn">
+              ⚠️ Entered engine capacity ({userCC}cc) is below the required minimum of {reqCC}cc.
+            </div>
+          ) : userCC >= reqCC && reqCC > 0 ? (
+            <div className="eb-compliance-alert eb-compliance-alert--success">
+              ✓ Engine capacity ({userCC}cc) meets or exceeds requirement ({reqCC}cc).
+            </div>
+          ) : null}
+
+          <label className="eb-self-booking" style={{ margin: '14px 0 0' }}>
+            <input
+              type="checkbox"
+              checked={bike.requirementConfirmed || false}
+              onChange={(e) => setBike({ ...bike, requirementConfirmed: e.target.checked })}
+            />
+            <span>
+              <strong>
+                I confirm my bike meets the criteria or is an equal / upper model
+              </strong>
+              <small>
+                {bikeReq.model || bikeReq.brand
+                  ? `Eligible: ${[bikeReq.brand, bikeReq.model].filter(Boolean).join(' ')} or equal/higher specification motorcycle.`
+                  : 'I confirm this vehicle fulfills all event technical specifications.'}
+              </small>
+            </span>
+          </label>
+        </div>
+      )}
+
+      {joinAs !== 'biker' && (
+        <div className="eb-form-grid eb-form-grid--wide">
+          <Field label="Riding experience (Optional)">
+            <select
+              value={preferences.experience}
+              onChange={(e) => setPreferences({ ...preferences, experience: e.target.value })}
+            >
+              <option>Beginner</option>
+              <option>Intermediate</option>
+              <option>Advanced</option>
+              <option>Professional</option>
+            </select>
+          </Field>
+          <Field label="Preferred pace (Optional)">
+            <select
+              value={preferences.pace}
+              onChange={(e) => setPreferences({ ...preferences, pace: e.target.value })}
+            >
+              <option>Relaxed</option>
+              <option>Balanced</option>
+              <option>Sport</option>
+            </select>
+          </Field>
+        </div>
+      )}
+
       <Field label="Special request">
-        <textarea value={preferences.notes} onChange={(e) => setPreferences({ ...preferences, notes: e.target.value })} placeholder="Accessibility needs, group name, medical note, arrival delay..." />
+        <textarea
+          value={preferences.notes}
+          onChange={(e) => setPreferences({ ...preferences, notes: e.target.value })}
+          placeholder="Accessibility needs, group name, medical note, arrival delay..."
+        />
       </Field>
     </section>
   );
@@ -549,14 +762,25 @@ function BookingSummary({ event, summary, counts, selectedAddOns, currentStep, a
 export default function EventBooking() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { events, eventsLoading } = useEventsContext();
   const eventFromContext = events.find((e) => e.id === id);
+  const eventFromState = location.state?.event;
 
-  const fallbackQuery = useDocument(COLLECTIONS.events, !eventFromContext && !eventsLoading ? id : null);
+  const fallbackQuery = useDocument(COLLECTIONS.events, !eventFromContext && !eventFromState && !eventsLoading ? id : null);
 
-  const event = useMemo(() => eventFromContext || (fallbackQuery.data ? normalizeEvent(fallbackQuery.data) : null), [eventFromContext, fallbackQuery.data]);
-  const loading = eventsLoading || (fallbackQuery.loading && !eventFromContext);
+  const event = useMemo(() => {
+    const raw = eventFromContext || eventFromState || (fallbackQuery.data ? normalizeEvent(fallbackQuery.data) : null);
+    if (!raw) return null;
+    const template = raw.ticketTemplateUrl || location.state?.ticketTemplateUrl || '';
+    return {
+      ...raw,
+      ticketTemplateUrl: template,
+    };
+  }, [eventFromContext, eventFromState, fallbackQuery.data, location.state]);
+
+  const loading = eventsLoading || (fallbackQuery.loading && !eventFromContext && !eventFromState);
 
   const { user, profile } = useAuth();
   const { openLogin } = useAuthModal();
@@ -569,7 +793,7 @@ export default function EventBooking() {
   const [contact, setContact] = useState({ name: '', phone: '', email: '' });
   const [emergency, setEmergency] = useState({ name: '', phone: '' });
   const [joinAs, setJoinAs] = useState('biker');
-  const [bike, setBike] = useState({ brand: '', model: '', registration: '' });
+  const [bike, setBike] = useState({ brand: '', model: '', registration: '', engineCC: '', requirementConfirmed: false });
   const [preferences, setPreferences] = useState({
     experience: 'Intermediate',
     pace: 'Balanced',
@@ -727,6 +951,8 @@ export default function EventBooking() {
         brand: prev.brand || bikeData.brand,
         model: prev.model || bikeData.model,
         registration: (prev.registration || bikeData.registration).toUpperCase(),
+        engineCC: prev.engineCC || bikeData.engineCC || '',
+        requirementConfirmed: prev.requirementConfirmed || false,
       }));
     }
   }, [bookingForSelf, profile, user, userBikes]);
@@ -839,8 +1065,31 @@ export default function EventBooking() {
         return 'Each attendee needs name, phone, and age.';
       }
     }
-    if (step === 3 && joinAs !== 'pillion' && (!bike.brand || !bike.model || !bike.registration)) {
-      return 'Add bike brand, model, and registration number.';
+    if (step === 3 && joinAs !== 'pillion') {
+      if (!bike.brand || !bike.model || !bike.registration) {
+        return 'Please enter your bike brand, model, and registration number.';
+      }
+
+      const bikeReq = event?.bikeRequirements;
+      const hasReq = Boolean(
+        bikeReq && (bikeReq.brand || bikeReq.model || bikeReq.engineCC || bikeReq.bikeType)
+      );
+
+      if (hasReq) {
+        const reqCC = parseInt(String(bikeReq.engineCC || 0).replace(/\D/g, ''), 10);
+        const userCC = parseInt(
+          String(bike.engineCC || (bike.model ? (bike.model.match(/\b\d{3,4}\b/) || [])[0] : '') || 0).replace(/\D/g, ''),
+          10
+        );
+
+        if (reqCC > 0 && userCC > 0 && userCC < reqCC) {
+          return `Your bike's engine capacity (${userCC}cc) is lower than the required minimum of ${reqCC}cc.`;
+        }
+
+        if (!bike.requirementConfirmed) {
+          return `Please confirm that your bike satisfies the event requirement (${[bikeReq.brand, bikeReq.model].filter(Boolean).join(' ') || 'required bike'} or upper model).`;
+        }
+      }
     }
     if (step === 4 && (!preferences.helmetConfirmed || !preferences.termsAccepted)) {
       return 'Confirm helmet safety and accept event terms.';
@@ -1005,13 +1254,15 @@ export default function EventBooking() {
     if (step === 3) {
       return (
         <RideSetupStep
+          event={event}
           joinAs={joinAs}
           setJoinAs={setJoinAs}
           bike={bike}
           setBike={setBike}
           preferences={preferences}
           setPreferences={setPreferences}
-          selectedTiers={tiers.filter(t => counts[t.key] > 0)}
+          selectedTiers={tiers.filter((t) => counts[t.key] > 0)}
+          userBikes={userBikes}
         />
       );
     }

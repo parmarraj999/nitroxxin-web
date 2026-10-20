@@ -530,6 +530,7 @@ export const bookEvent = async ({
       paymentStatus: "paid",
       paymentMethod: "online",
       eventId,
+      ticketTemplateUrl: eventSnapshot.ticketTemplateUrl || event?.ticketTemplateUrl || "",
       eventSnapshot: JSON.parse(JSON.stringify(eventSnapshot)),
       attendee: {
         uid: user?.uid || "",
@@ -553,6 +554,7 @@ export const bookEvent = async ({
       userId: user.uid,
       title: eventSnapshot.title || eventSnapshot.name || "",
       name: eventSnapshot.name || eventSnapshot.title || "",
+      ticketTemplateUrl: eventSnapshot.ticketTemplateUrl || event?.ticketTemplateUrl || "",
       banner: eventSnapshot.banner || eventSnapshot.bannerImage || eventSnapshot.image || (eventSnapshot.images && eventSnapshot.images[0]) || "",
       bannerImage: eventSnapshot.bannerImage || eventSnapshot.banner || eventSnapshot.image || "",
       image: eventSnapshot.image || eventSnapshot.bannerImage || eventSnapshot.banner || "",

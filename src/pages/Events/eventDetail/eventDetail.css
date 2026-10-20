@@ -1029,18 +1029,23 @@
   grid-column: 1/-1;
 }
 
+.ed-category-label,
 .ed-category-item span {
   color: rgba(255, 255, 255, .5);
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: .05em;
+  margin: 0;
 }
 
+.ed-category-value,
 .ed-category-item strong {
   color: #fff;
   font-size: 14px;
   line-height: 1.55;
   white-space: pre-line;
+  margin: 0;
+  font-weight: 600;
 }
 
 .ed-category-empty {

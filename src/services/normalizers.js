@@ -87,6 +87,38 @@ export const normalizeEvent = (doc) => {
     }
   }
 
+  const rawBikeReq = data.bikeRequirements || data.bikeRequirement || null;
+  const hasDirectBikeProps = Boolean(data.bikeType || data.bikeModel || data.bikeBrand || data.minimumCC || data.engineCC);
+  const resolvedBikeReq = (rawBikeReq && typeof rawBikeReq === 'object')
+    ? {
+        ...rawBikeReq,
+        bikeType: rawBikeReq.bikeType || data.bikeType || "",
+        brand: rawBikeReq.brand || data.bikeBrand || data.brand || "",
+        model: rawBikeReq.model || data.bikeModel || data.model || "",
+        engineCC: rawBikeReq.engineCC || rawBikeReq.engineCc || data.engineCC || data.minimumCC || "",
+        criteria: rawBikeReq.criteria || rawBikeReq.bikeCriteria || data.bikeCriteria || "",
+      }
+    : (hasDirectBikeProps
+      ? {
+          bikeType: data.bikeType || "",
+          brand: data.bikeBrand || data.brand || "",
+          model: data.bikeModel || data.model || "",
+          engineCC: data.engineCC || data.minimumCC || "",
+          criteria: data.bikeCriteria || "",
+        }
+      : null);
+
+  const hasBikeDetails = resolvedBikeReq && Object.values(resolvedBikeReq).some(v => v !== null && v !== undefined && String(v).trim() !== "");
+  const bikeRequirements = hasBikeDetails ? resolvedBikeReq : null;
+
+  const ticketTemplateUrl =
+    data.ticketTemplateUrl ||
+    data.templateUrl ||
+    data.ticketTemplate?.url ||
+    data.ticketTemplate?.imageUrl ||
+    data.ticketTemplate?.image ||
+    "";
+
   return {
     ...data,
     id,
@@ -105,6 +137,8 @@ export const normalizeEvent = (doc) => {
     category: data.categoryName || data.category || data.categoryId || "",
     hostId: data.hostId || data.organizerId || "",
     status: String(data.status || "Published"),
+    ticketTemplateUrl,
+    bikeRequirements,
   };
 };
 
