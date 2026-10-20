@@ -58,45 +58,44 @@ export default function EventDetail() {
 
   console.log(event);
 
-  // Extract bike requirements safely (optional)
-  const bikeRequirements = event?.bikeRequirements || (
-    (event?.bikeType || event?.bikeModel || event?.brand)
-      ? {
-          bikeType: event.bikeType,
-          brand: event.brand || event.bikeBrand,
-          model: event.model || event.bikeModel,
-          engineCC: event.engineCC || event.minimumCC,
-          criteria: event.criteria || event.bikeCriteria,
-        }
-      : null
-  );
-
   const bikeRequirementItems = useMemo(() => {
-    if (!bikeRequirements || typeof bikeRequirements !== 'object') return [];
+    const req = event?.bikeRequirements || (
+      (event?.bikeType || event?.bikeModel || event?.brand)
+        ? {
+            bikeType: event.bikeType,
+            brand: event.brand || event.bikeBrand,
+            model: event.model || event.bikeModel,
+            engineCC: event.engineCC || event.minimumCC,
+            criteria: event.criteria || event.bikeCriteria,
+          }
+        : null
+    );
+
+    if (!req || typeof req !== 'object') return [];
 
     const items = [];
-    if (bikeRequirements.bikeType && String(bikeRequirements.bikeType).trim()) {
-      items.push({ key: 'type', label: 'Bike Type', value: String(bikeRequirements.bikeType).trim() });
+    if (req.bikeType && String(req.bikeType).trim()) {
+      items.push({ key: 'type', label: 'Bike Type', value: String(req.bikeType).trim() });
     }
-    if (bikeRequirements.brand && String(bikeRequirements.brand).trim()) {
-      items.push({ key: 'brand', label: 'Brand', value: String(bikeRequirements.brand).trim() });
+    if (req.brand && String(req.brand).trim()) {
+      items.push({ key: 'brand', label: 'Brand', value: String(req.brand).trim() });
     }
-    const model = bikeRequirements.model || event?.bikeModel;
+    const model = req.model || event?.bikeModel;
     if (model && String(model).trim()) {
       items.push({ key: 'model', label: 'Model', value: String(model).trim() });
     }
-    const cc = bikeRequirements.engineCC || bikeRequirements.engineCc || event?.minimumCC;
+    const cc = req.engineCC || req.engineCc || event?.minimumCC;
     if (cc !== undefined && cc !== null && String(cc).trim()) {
       const ccStr = String(cc).trim();
       const formattedCC = ccStr.toLowerCase().includes('cc') ? ccStr : `${ccStr} cc`;
       items.push({ key: 'engineCC', label: 'Engine Capacity', value: formattedCC });
     }
-    if (bikeRequirements.criteria && String(bikeRequirements.criteria).trim()) {
-      items.push({ key: 'criteria', label: 'Criteria / Condition', value: String(bikeRequirements.criteria).trim(), isWide: true });
+    if (req.criteria && String(req.criteria).trim()) {
+      items.push({ key: 'criteria', label: 'Criteria / Condition', value: String(req.criteria).trim(), isWide: true });
     }
 
     const handledKeys = new Set(['bikeType', 'brand', 'model', 'engineCC', 'engineCc', 'criteria']);
-    Object.entries(bikeRequirements).forEach(([key, val]) => {
+    Object.entries(req).forEach(([key, val]) => {
       if (!handledKeys.has(key) && val !== null && val !== undefined && typeof val !== 'object' && String(val).trim()) {
         const formattedLabel = key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase());
         items.push({
@@ -109,7 +108,7 @@ export default function EventDetail() {
     });
 
     return items;
-  }, [bikeRequirements, event?.bikeModel, event?.minimumCC]);
+  }, [event]);
 
   const relatedEvents = events;
   const { user } = useAuth();
