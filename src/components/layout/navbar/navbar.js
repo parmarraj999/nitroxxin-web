@@ -85,7 +85,7 @@ const Navbar = () => {
                                 (pathname.includes('/events') || pathname.includes('/all-events')) &&
                                 currentCategory &&
                                 (currentCategory.toLowerCase() === cat.id.toLowerCase() ||
-                                 currentCategory.toLowerCase().replace(/[-_]/g, ' ') === cat.label.toLowerCase().replace(/[-_]/g, ' '));
+                                    currentCategory.toLowerCase().replace(/[-_]/g, ' ') === cat.label.toLowerCase().replace(/[-_]/g, ' '));
 
                             return (
                                 <Link

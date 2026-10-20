@@ -103,6 +103,7 @@
 
 /* Hide event categories and divider on tablet & mobile - desktop resolution only */
 @media (max-width: 992px) {
+
     .navbar-divider,
     .navbar-events-nav {
         display: none !important;

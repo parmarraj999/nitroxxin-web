@@ -449,12 +449,7 @@ export default function EventDetail() {
             )}
           </div>
 
-          <p className="ed-event-title">
-            {event.title || event.name}
-            {event.location && !String(event.title || event.name).toLowerCase().includes(String(event.location).toLowerCase())
-              ? `, ${event.location}`
-              : ""}
-          </p>
+          <p className="ed-event-title">{event.title || event.name}</p>
           <p className="ed-event-meta">
             {event.category && <span className="ed-event-category">{event.category}</span>}
             <span className="ed-event-date">{event.dateTimeText || event.dateText}</span>

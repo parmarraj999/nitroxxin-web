@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
 import { useEventsContext } from '../../context/EventsContext';
 import { useForYouContext } from '../../context/ForYouContext';
@@ -21,40 +22,40 @@ export default function ScreenLoader() {
   const startTimeRef = useRef(Date.now());
   const isTriggeredRef = useRef(false);
 
-  // Check if the current opened page's data is ready
-  const checkDataLoaded = () => {
-    // 1. Home / For You page
-    if (pathname === '/' || pathname === '') {
-      const hasForYou = !layoutLoading || (banners && banners.length > 0) || (combos && combos.length > 0);
-      const hasEvents = !eventsLoading || (events && events.length > 0);
-      return hasForYou && hasEvents;
-    }
-
-    // 2. Events browse or detail routes
-    if (pathname.startsWith('/event') || pathname.startsWith('/all-events')) {
-      return !eventsLoading || (events && events.length > 0);
-    }
-
-    // 3. Marketplace / Accessories routes
-    if (
-      pathname.startsWith('/accessories') ||
-      pathname.startsWith('/shop') ||
-      pathname.startsWith('/category') ||
-      pathname.startsWith('/brand') ||
-      pathname.startsWith('/product')
-    ) {
-      return !productsLoading || (products && products.length > 0);
-    }
-
-    // 4. Other pages (privacy, profile, cart, etc.)
-    return !authLoading;
-  };
-
   useEffect(() => {
     if (isTriggeredRef.current) return;
 
     const MIN_DISPLAY_MS = 600;
     const MAX_TIMEOUT_MS = 2500;
+
+    // Check if the current opened page's data is ready
+    const checkDataLoaded = () => {
+      // 1. Home / For You page
+      if (pathname === '/' || pathname === '') {
+        const hasForYou = !layoutLoading || (banners && banners.length > 0) || (combos && combos.length > 0);
+        const hasEvents = !eventsLoading || (events && events.length > 0);
+        return hasForYou && hasEvents;
+      }
+
+      // 2. Events browse or detail routes
+      if (pathname.startsWith('/event') || pathname.startsWith('/all-events')) {
+        return !eventsLoading || (events && events.length > 0);
+      }
+
+      // 3. Marketplace / Accessories routes
+      if (
+        pathname.startsWith('/accessories') ||
+        pathname.startsWith('/shop') ||
+        pathname.startsWith('/category') ||
+        pathname.startsWith('/brand') ||
+        pathname.startsWith('/product')
+      ) {
+        return !productsLoading || (products && products.length > 0);
+      }
+
+      // 4. Other pages (privacy, profile, cart, etc.)
+      return !authLoading;
+    };
 
     const completeLoader = () => {
       if (isTriggeredRef.current) return;
@@ -107,16 +108,15 @@ export default function ScreenLoader() {
     authLoading,
   ]);
 
-  if (isDone) return null;
+  if (isDone || typeof document === 'undefined') return null;
 
-  return (
+  return createPortal(
     <div
       className={`screen-loader-overlay${isFading ? ' screen-loader--fade-out' : ''}`}
       aria-label="Loading application"
     >
       <div className="screen-loader-container">
         <div className="screen-loader-logo-wrapper">
-          <div className="screen-loader-glow" />
           <img
             src="/assets/image/loader-logo.png"
             alt="Nitroxx"
@@ -128,6 +128,7 @@ export default function ScreenLoader() {
           />
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
