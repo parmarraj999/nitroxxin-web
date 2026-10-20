@@ -916,4 +916,567 @@
   border: 1px solid #fecaca;
 }
 
+/* ════════════════════════════════════════════════════
+   Bike Eligibility Radio Cards (Yes I have / Upper CC)
+   ════════════════════════════════════════════════════ */
+.eb-bike-eligibility-group {
+  margin: 12px 0 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.eb-eligibility-heading {
+  margin: 0 0 4px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #1e293b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.eb-eligibility-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.eb-eligibility-card:hover {
+  border-color: #cbd5e1;
+  background: #f1f5f9;
+}
+
+.eb-eligibility-card.is-selected {
+  border-color: #ea580c;
+  background: #fff7ed;
+  box-shadow: 0 0 0 1px #ea580c;
+}
+
+.eb-eligibility-card input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: #ea580c;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.eb-eligibility-card__title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.eb-eligibility-tick-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 19px;
+  height: 19px;
+  border-radius: 5px;
+  border: 1.5px solid #cbd5e1;
+  background: #ffffff;
+  color: #ea580c;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.eb-eligibility-card.is-selected .eb-eligibility-tick-box {
+  background: #ea580c;
+  border-color: #ea580c;
+  color: #ffffff;
+}
+
+/* =========================================================================
+   OFFICIAL EVENT TICKET PASS MODAL POPUP & VERTICAL PASS STYLING
+   ========================================================================= */
+
+:root {
+  --ticket-surround-bg: #0b111e;
+}
+
+/* Modal Overlay & Backdrop */
+.eb-ticket-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.eb-ticket-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 12, 22, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.eb-ticket-modal-container {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  animation: ebModalPopIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  margin: auto;
+}
+
+@keyframes ebModalPopIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.eb-ticket-modal-close {
+  position: absolute;
+  top: -12px;
+  right: -6px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.eb-ticket-modal-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+.eb-ticket-modal-header {
+  text-align: center;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.eb-ticket-celebrate-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: rgba(34, 197, 94, 0.2);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  color: #4ade80;
+  font-size: 12.5px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  letter-spacing: 0.02em;
+}
+
+.eb-ticket-modal-header h3 {
+  font-size: 21px;
+  font-weight: 800;
+  margin: 0 0 4px;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+.eb-ticket-modal-header p {
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Outer Ticket Shell */
+.ticket-pass-outer-shell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.vertical-image-ticket-card {
+  position: relative;
+  width: 350px;
+  max-width: 100%;
+  min-height: 600px;
+  border-radius: 26px;
+  padding: 22px 22px 24px;
+  box-shadow: 
+    0 24px 60px rgba(0, 0, 0, 0.45),
+    0 2px 10px rgba(0, 0, 0, 0.2);
+  box-sizing: border-box;
+  color: #000000;
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  overflow: visible;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+  --ticket-surround-bg: #0b111e;
+}
+
+/* Top & Bottom Scallop Bites (7 Semicircle Cutouts Each) */
+.ticket-scallops-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-evenly;
+  pointer-events: none;
+  z-index: 10;
+  padding: 0 6px;
+}
+
+.ticket-scallops-bar.top {
+  top: -9px;
+}
+
+.ticket-scallops-bar.bottom {
+  bottom: -9px;
+}
+
+.scallop-cutout-bite {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--ticket-surround-bg, #0b111e);
+  flex-shrink: 0;
+  transition: background 0.2s ease;
+}
+
+/* Left & Right Edge Notches At The Tear / Fold Line */
+.ticket-edge-notch {
+  position: absolute;
+  top: 112px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--ticket-surround-bg, #0b111e);
+  z-index: 10;
+  transition: background 0.2s ease;
+}
+
+.ticket-edge-notch.notch-left {
+  left: -14px;
+}
+
+.ticket-edge-notch.notch-right {
+  right: -14px;
+}
+
+/* Horizontal Dashed Fold / Tear Line */
+.ticket-dashed-fold-divider {
+  position: absolute;
+  top: 125px;
+  left: 14px;
+  right: 14px;
+  border-top: 2.5px dashed #000000;
+  opacity: 0.95;
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* Top Stub Area (Above Dashed Line): NitroXX Tickets Logo */
+.ticket-top-stub-area {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 88px;
+  width: 100%;
+}
+
+.nitroxx-tickets-brand-lockup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.nitroxx-brand-title-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.nitroxx-brand-word {
+  font-size: 24px;
+  font-weight: 900;
+  color: #000000;
+  letter-spacing: -0.04em;
+}
+
+.nitroxx-xx-vector {
+  display: inline-block;
+  margin-top: -1px;
+}
+
+.nitroxx-tickets-word {
+  font-size: 13px;
+  font-weight: 800;
+  color: #000000;
+  letter-spacing: 0.02em;
+  margin-top: -2px;
+}
+
+/* Main Ticket Content (Below Dashed Line) */
+.ticket-main-content-area {
+  margin-top: 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.ticket-bold-event-title {
+  font-size: 20px;
+  font-weight: 900;
+  color: #000000;
+  text-transform: uppercase;
+  line-height: 1.15;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.02em;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.ticket-venue-location-text {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #000000;
+  margin: 0 0 8px 0;
+  opacity: 0.95;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.ticket-solid-divider {
+  width: 100%;
+  height: 1.5px;
+  background: #000000;
+  margin: 6px 0;
+  opacity: 0.95;
+}
+
+/* 3-Column Metrics Row (Date | Time | Tickets) */
+.ticket-metrics-three-cols {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+  padding: 4px 0;
+}
+
+.ticket-metric-col {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ticket-metric-col .metric-label {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #000000;
+}
+
+.ticket-metric-col .metric-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #000000;
+  letter-spacing: -0.01em;
+}
+
+/* Bottom Section: Rotated Vertical Text + Scannable QR Code */
+.ticket-qr-action-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.ticket-vertical-scan-text {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  color: #000000;
+  text-transform: uppercase;
+  user-select: none;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.ticket-qr-frame {
+  width: 205px;
+  height: 205px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.ticket-rendered-qr-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+.ticket-qr-fallback-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 12px;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.ticket-pass-id-fallback {
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 800;
+  color: #000000;
+}
+
+/* Modal Actions */
+.eb-ticket-modal-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  max-width: 350px;
+  margin-top: 4px;
+}
+
+.eb-ticket-btn {
+  flex: 1;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.eb-ticket-btn--primary {
+  background: #ff2244;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(255, 34, 68, 0.4);
+}
+
+.eb-ticket-btn--primary:hover {
+  background: #e01b3a;
+  transform: translateY(-1px);
+}
+
+.eb-ticket-btn--secondary {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.eb-ticket-btn--secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.eb-ticket-id-copy-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.eb-ticket-copy-btn {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.85);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.eb-ticket-copy-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+/* Print Mode Adaptations */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .vertical-image-ticket-card,
+  .vertical-image-ticket-card * {
+    visibility: visible;
+  }
+  .vertical-image-ticket-card {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: none !important;
+    --ticket-surround-bg: #ffffff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+
 

@@ -59,17 +59,19 @@ export default function EventDetail() {
   console.log(event);
 
   const bikeRequirementItems = useMemo(() => {
-    const req = event?.bikeRequirements || (
-      (event?.bikeType || event?.bikeModel || event?.brand)
-        ? {
-            bikeType: event.bikeType,
-            brand: event.brand || event.bikeBrand,
-            model: event.model || event.bikeModel,
-            engineCC: event.engineCC || event.minimumCC,
-            criteria: event.criteria || event.bikeCriteria,
-          }
-        : null
-    );
+    const req = (event?.specificBikeRequired === false && !event?.bikeRequirements?.specificBikeRequired)
+      ? null
+      : (event?.bikeRequirements || (
+          (event?.bikeType || event?.bikeModel || event?.brand || event?.bikeBrand || event?.bikeEngineCC || event?.engineCC || event?.minimumCC)
+            ? {
+                bikeType: event.bikeType,
+                brand: event.brand || event.bikeBrand,
+                model: event.model || event.bikeModel,
+                engineCC: event.engineCC || event.bikeEngineCC || event.minimumCC,
+                criteria: event.criteria || event.bikeCriteria,
+              }
+            : null
+        ));
 
     if (!req || typeof req !== 'object') return [];
 

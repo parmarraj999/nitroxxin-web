@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   FaArrowLeft,
@@ -127,6 +128,33 @@ const getBestBikeDetails = (prof, bikesList) => {
   };
 };
 
+const resolveBikeRequirements = (event) => {
+  if (!event) return null;
+  const raw = event.bikeRequirements || event.bikeRequirement || null;
+
+  const brand = raw?.brand || raw?.bikeBrand || event.bikeBrand || event.brand || '';
+  const model = raw?.model || raw?.bikeModel || event.bikeModel || event.model || '';
+  const engineCC = raw?.engineCC || raw?.bikeEngineCC || raw?.engineCc || event.bikeEngineCC || event.engineCC || event.minimumCC || '';
+  const bikeType = raw?.bikeType || event.bikeType || '';
+  const criteria = raw?.criteria || raw?.bikeCriteria || event.bikeCriteria || '';
+
+  const isExplicitlyDisabled = event.specificBikeRequired === false && !raw?.specificBikeRequired;
+  if (isExplicitlyDisabled) return null;
+
+  const hasSpecificFlag = Boolean(event.specificBikeRequired || raw?.specificBikeRequired);
+  const hasDetails = Boolean(brand || model || engineCC || bikeType || criteria);
+
+  if (!hasSpecificFlag && !hasDetails) return null;
+
+  return {
+    brand: String(brand || '').trim(),
+    model: String(model || '').trim(),
+    engineCC: String(engineCC || '').trim(),
+    bikeType: String(bikeType || '').trim(),
+    criteria: String(criteria || '').trim(),
+  };
+};
+
 const formatMoney = (amount) => `Rs. ${Math.round(Number(amount || 0)).toLocaleString('en-IN')}`;
 
 function Field({ label, children }) {
@@ -230,7 +258,7 @@ function TicketStep({ counts, setCount, tiers, seatsLeft }) {
 
 function CategoryBookingBrief({ event }) {
   const { config, details } = getCategoryDetails(event);
-  const bikeReq = event?.bikeRequirements;
+  const bikeReq = resolveBikeRequirements(event);
   const hasBike = Boolean(bikeReq && (bikeReq.bikeType || bikeReq.brand || bikeReq.model || bikeReq.engineCC));
 
   if (!config && !hasBike) return null;
@@ -352,10 +380,8 @@ function RideSetupStep({
   selectedTiers,
   userBikes = [],
 }) {
-  const bikeReq = event?.bikeRequirements;
-  const hasRequirement = Boolean(
-    bikeReq && (bikeReq.brand || bikeReq.model || bikeReq.engineCC || bikeReq.bikeType || bikeReq.criteria)
-  );
+  const bikeReq = resolveBikeRequirements(event);
+  const hasRequirement = Boolean(bikeReq);
 
   const reqCC = bikeReq?.engineCC ? parseInt(String(bikeReq.engineCC).replace(/\D/g, ''), 10) : 0;
   const userCC = parseInt(
@@ -364,14 +390,17 @@ function RideSetupStep({
   );
   const ccBelow = reqCC > 0 && userCC > 0 && userCC < reqCC;
 
-  // strictly derive joinAs from selected ticket types
+  // derive joinAs from selected ticket types: default to biker unless ticket is explicitly pillion/passenger
   useEffect(() => {
     if (selectedTiers && selectedTiers.length > 0) {
-      const isBiker = selectedTiers.some((tier) => {
+      const isExplicitPillion = selectedTiers.every((tier) => {
         const type = (tier.ticketFor || tier.name || '').toLowerCase();
-        return type.includes('rider') || type.includes('driver') || type.includes('biker');
+        return (type.includes('pillion') || type.includes('passenger') || type.includes('spectator')) &&
+          !type.includes('rider') && !type.includes('driver') && !type.includes('biker');
       });
-      setJoinAs(isBiker ? 'biker' : 'pillion');
+      setJoinAs(isExplicitPillion ? 'pillion' : 'biker');
+    } else {
+      setJoinAs('biker');
     }
   }, [selectedTiers, setJoinAs]);
 
@@ -428,6 +457,82 @@ function RideSetupStep({
               </div>
             )}
           </div>
+
+          {/* Requirement Compliance: Option to tick "Yes I have" or "I have upper CC / model of bike" */}
+          <div className="eb-bike-eligibility-group">
+            <p className="eb-eligibility-heading">Tick your bike eligibility:</p>
+
+            <label className={`eb-eligibility-card ${bike.eligibilityType === 'exact' ? 'is-selected' : ''}`}>
+              <input
+                type="radio"
+                name="bikeEligibility"
+                value="exact"
+                checked={bike.eligibilityType === 'exact'}
+                onChange={() => {
+                  setBike((prev) => ({
+                    ...prev,
+                    eligibilityType: 'exact',
+                    requirementConfirmed: true,
+                    brand: prev.brand || bikeReq.brand || '',
+                    model: prev.model || bikeReq.model || '',
+                    engineCC: prev.engineCC || (reqCC > 0 ? String(reqCC) : ''),
+                  }));
+                }}
+              />
+              <div className="eb-eligibility-card__text">
+                <div className="eb-eligibility-card__title-row">
+                  <span className="eb-eligibility-tick-box">
+                    {bike.eligibilityType === 'exact' ? '✓' : ''}
+                  </span>
+                  <strong>Yes, I have the required bike</strong>
+                </div>
+                <small>
+                  I have the {[bikeReq.brand, bikeReq.model].filter(Boolean).join(' ') || 'required bike'}{reqCC > 0 ? ` (${reqCC} cc)` : ''} specified for this event.
+                </small>
+              </div>
+            </label>
+
+            <label className={`eb-eligibility-card ${bike.eligibilityType === 'upper' ? 'is-selected' : ''}`}>
+              <input
+                type="radio"
+                name="bikeEligibility"
+                value="upper"
+                checked={bike.eligibilityType === 'upper'}
+                onChange={() => {
+                  setBike((prev) => ({
+                    ...prev,
+                    eligibilityType: 'upper',
+                    requirementConfirmed: true,
+                  }));
+                }}
+              />
+              <div className="eb-eligibility-card__text">
+                <div className="eb-eligibility-card__title-row">
+                  <span className="eb-eligibility-tick-box">
+                    {bike.eligibilityType === 'upper' ? '✓' : ''}
+                  </span>
+                  <strong>I have an upper CC / higher model of bike</strong>
+                </div>
+                <small>
+                  My bike has higher engine displacement ({reqCC > 0 ? `> ${reqCC} cc` : 'higher capacity'}) or is an upper model capable of this event.
+                </small>
+              </div>
+            </label>
+          </div>
+
+          {userCC > 0 && reqCC > 0 && (
+            <div style={{ marginTop: '12px' }}>
+              {ccBelow && bike.eligibilityType === 'exact' ? (
+                <div className="eb-compliance-alert eb-compliance-alert--warn">
+                  ⚠️ Entered engine capacity ({userCC}cc) is below the required minimum of {reqCC}cc. If your motorcycle has higher specifications, tick &quot;I have an upper CC / higher model of bike&quot;.
+                </div>
+              ) : userCC >= reqCC ? (
+                <div className="eb-compliance-alert eb-compliance-alert--success">
+                  ✓ Engine capacity ({userCC}cc) meets or exceeds requirement ({reqCC}cc).
+                </div>
+              ) : null}
+            </div>
+          )}
         </div>
       )}
 
@@ -533,38 +638,7 @@ function RideSetupStep({
         </div>
       )}
 
-      {/* Requirement Compliance Feedback & Checkbox */}
-      {hasRequirement && joinAs === 'biker' && (
-        <div className="eb-bike-compliance-box">
-          {ccBelow ? (
-            <div className="eb-compliance-alert eb-compliance-alert--warn">
-              ⚠️ Entered engine capacity ({userCC}cc) is below the required minimum of {reqCC}cc.
-            </div>
-          ) : userCC >= reqCC && reqCC > 0 ? (
-            <div className="eb-compliance-alert eb-compliance-alert--success">
-              ✓ Engine capacity ({userCC}cc) meets or exceeds requirement ({reqCC}cc).
-            </div>
-          ) : null}
-
-          <label className="eb-self-booking" style={{ margin: '14px 0 0' }}>
-            <input
-              type="checkbox"
-              checked={bike.requirementConfirmed || false}
-              onChange={(e) => setBike({ ...bike, requirementConfirmed: e.target.checked })}
-            />
-            <span>
-              <strong>
-                I confirm my bike meets the criteria or is an equal / upper model
-              </strong>
-              <small>
-                {bikeReq.model || bikeReq.brand
-                  ? `Eligible: ${[bikeReq.brand, bikeReq.model].filter(Boolean).join(' ')} or equal/higher specification motorcycle.`
-                  : 'I confirm this vehicle fulfills all event technical specifications.'}
-              </small>
-            </span>
-          </label>
-        </div>
-      )}
+      {/* Special request */}
 
       {joinAs !== 'biker' && (
         <div className="eb-form-grid eb-form-grid--wide">
@@ -759,6 +833,277 @@ function BookingSummary({ event, summary, counts, selectedAddOns, currentStep, a
   );
 }
 
+const formatTicketDate = (dateVal) => {
+  if (!dateVal) return '--/--';
+  try {
+    const d = new Date(dateVal);
+    if (!isNaN(d.getTime())) {
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      return `${day}/${month}`;
+    }
+  } catch (e) {}
+  const match = String(dateVal).match(/\b(\d{1,2})[/.-](\d{1,2})\b/);
+  if (match) {
+    return `${match[1].padStart(2, '0')}/${match[2].padStart(2, '0')}`;
+  }
+  return String(dateVal).slice(0, 5);
+};
+
+const formatTicketTime = (timeVal, dateTimeText) => {
+  if (timeVal) {
+    const str = String(timeVal).trim();
+    if (/^\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)?$/i.test(str)) {
+      if (/am|pm/i.test(str)) return str.toUpperCase();
+      const parts = str.split(':');
+      let h = parseInt(parts[0], 10);
+      const m = parts[1].padStart(2, '0');
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+      return `${String(h).padStart(2, '0')}:${m} ${ampm}`;
+    }
+    return str;
+  }
+  if (dateTimeText) {
+    const match = String(dateTimeText).match(/\b\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)?\b/i);
+    if (match) return match[0].toUpperCase();
+  }
+  return '10:00 AM';
+};
+
+function NitroxxTicketsLogo({ className = '', style = {} }) {
+  return (
+    <div className={`nitroxx-tickets-brand-lockup ${className}`} style={style}>
+      <div className="nitroxx-brand-title-row">
+        <span className="nitroxx-brand-word">Nitro</span>
+        <svg
+          className="nitroxx-xx-vector"
+          viewBox="0 0 64 28"
+          width="56"
+          height="24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
+        >
+          {/* Left X with gear/circle in center */}
+          <path d="M4 3L26 25" stroke="#000000" strokeWidth="4.8" strokeLinecap="round" />
+          <path d="M26 3L4 25" stroke="#000000" strokeWidth="4.8" strokeLinecap="round" />
+          <circle cx="15" cy="14" r="5" fill="#ffffff" stroke="#000000" strokeWidth="2.4" />
+          <circle cx="15" cy="14" r="1.8" fill="#000000" />
+          {/* Right X overlapping */}
+          <path d="M24 3L46 25" stroke="#000000" strokeWidth="4.8" strokeLinecap="round" />
+          <path d="M46 3L24 25" stroke="#000000" strokeWidth="4.8" strokeLinecap="round" />
+        </svg>
+      </div>
+      <span className="nitroxx-tickets-word">Tickets</span>
+    </div>
+  );
+}
+
+function TicketSuccessModal({
+  booking,
+  event,
+  onClose,
+  onNavigateProfile,
+}) {
+  const [copied, setCopied] = useState(false);
+  const [qrLoaded, setQrLoaded] = useState(true);
+
+  const title = event?.title || event?.name || 'Ride Pass';
+  const location = event?.venue || event?.location || event?.city || 'Gateway of India, Colaba';
+
+  // Format Date (e.g., "08/12")
+  const dateFormatted = formatTicketDate(event?.startDate || event?.date || event?.dateText);
+
+  // Format Time (e.g., "02:00 PM")
+  const timeFormatted = formatTicketTime(event?.startTime || event?.time, event?.dateTimeText || event?.dateText);
+
+  // Ticket Count (e.g., "x2")
+  const qty = booking?.totalTickets || 1;
+
+  // Background resolution: use ticketTemplateUrl from event data or fallback colorful pastel gradient
+  const activeTemplateUrl =
+    event?.ticketTemplateUrl ||
+    booking?.ticketTemplateUrl ||
+    event?.templateUrl ||
+    event?.ticketTemplate?.url ||
+    event?.ticketTemplate?.imageUrl ||
+    '';
+
+  const backgroundStyle = activeTemplateUrl
+    ? {
+        backgroundImage: `url(${activeTemplateUrl})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }
+    : {
+        background: 'linear-gradient(160deg, #b388ff 0%, #80d8ff 35%, #ff80ab 70%, #ffd180 100%)',
+      };
+
+  const ticketId = booking?.bookingId ? `NX-${booking.bookingId}` : `NX-${Date.now().toString(36).toUpperCase()}`;
+
+  // Unique QR check-in payload
+  const qrCheckInPayload = JSON.stringify({
+    ticket: ticketId,
+    event: event?.id || '',
+    attendee: booking?.attendee?.name || 'Rider',
+    seats: qty,
+    verified: true,
+  });
+
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrCheckInPayload)}&color=000000&margin=0`;
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleCopyId = () => {
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(ticketId);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  return createPortal(
+    <div className="eb-ticket-modal-overlay" role="dialog" aria-modal="true">
+      <div className="eb-ticket-modal-backdrop" onClick={onClose} />
+
+      <div className="eb-ticket-modal-container">
+        <button
+          className="eb-ticket-modal-close"
+          type="button"
+          onClick={onClose}
+          aria-label="Close ticket pass"
+        >
+          ✕
+        </button>
+
+        <div className="eb-ticket-modal-header">
+          <div className="eb-ticket-celebrate-pill">
+            <FaCheck /> Booking Confirmed
+          </div>
+          <h3>Your Official Event Pass</h3>
+          <p>Show this pass &amp; QR code at the event gate for instant check-in.</p>
+        </div>
+
+        {/* The Exact Vertical Ticket Pass matching reference image */}
+        <div className="ticket-pass-outer-shell">
+          <div className="vertical-image-ticket-card" style={backgroundStyle}>
+            {/* TOP SCALLOP BITES (7 SEMICIRCLE CUTOUTS) */}
+            <div className="ticket-scallops-bar top" aria-hidden="true">
+              {Array.from({ length: 7 }).map((_, i) => (
+                <span key={i} className="scallop-cutout-bite" />
+              ))}
+            </div>
+
+            {/* SIDE NOTCHES AT THE FOLD LINE */}
+            <div className="ticket-edge-notch notch-left" aria-hidden="true" />
+            <div className="ticket-edge-notch notch-right" aria-hidden="true" />
+
+            {/* TOP SECTION (ABOVE DASHED LINE): NITROXX TICKETS LOGO */}
+            <div className="ticket-top-stub-area">
+              <NitroxxTicketsLogo />
+            </div>
+
+            {/* HORIZONTAL DASHED FOLD / TEAR LINE */}
+            <div className="ticket-dashed-fold-divider" aria-hidden="true" />
+
+            {/* MAIN TICKET BODY */}
+            <div className="ticket-main-content-area">
+              {/* EVENT TITLE */}
+              <h1 className="ticket-bold-event-title">{title}</h1>
+
+              {/* EVENT LOCATION / VENUE */}
+              <div className="ticket-venue-location-text">{location}</div>
+
+              {/* HORIZONTAL SOLID RULE */}
+              <div className="ticket-solid-divider" />
+
+              {/* 3-COLUMN METRICS: DATE | TIME | TICKETS */}
+              <div className="ticket-metrics-three-cols">
+                <div className="ticket-metric-col">
+                  <span className="metric-label">Date</span>
+                  <span className="metric-value">{dateFormatted}</span>
+                </div>
+                <div className="ticket-metric-col">
+                  <span className="metric-label">Time</span>
+                  <span className="metric-value">{timeFormatted}</span>
+                </div>
+                <div className="ticket-metric-col">
+                  <span className="metric-label">Tickets</span>
+                  <span className="metric-value">x{qty}</span>
+                </div>
+              </div>
+
+              {/* HORIZONTAL SOLID RULE */}
+              <div className="ticket-solid-divider" />
+
+              {/* QR CODE SECTION WITH VERTICAL ROTATED TEXT */}
+              <div className="ticket-qr-action-section">
+                <div className="ticket-vertical-scan-text">
+                  SCAN THIS QR WHEN ENTER
+                </div>
+
+                <div className="ticket-qr-frame">
+                  {qrLoaded ? (
+                    <img
+                      src={qrUrl}
+                      alt="Scan ticket pass QR code for check-in"
+                      className="ticket-rendered-qr-img"
+                      onError={() => setQrLoaded(false)}
+                    />
+                  ) : (
+                    <div className="ticket-qr-fallback-box">
+                      <FaTicketAlt size={48} color="#000000" />
+                      <span className="ticket-pass-id-fallback">{ticketId}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* BOTTOM SCALLOP BITES (7 SEMICIRCLE CUTOUTS) */}
+            <div className="ticket-scallops-bar bottom" aria-hidden="true">
+              {Array.from({ length: 7 }).map((_, i) => (
+                <span key={i} className="scallop-cutout-bite" />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Action Controls */}
+        <div className="eb-ticket-modal-actions">
+          <button
+            type="button"
+            className="eb-ticket-btn eb-ticket-btn--primary"
+            onClick={handlePrint}
+          >
+            📥 Download / Print
+          </button>
+
+          <button
+            type="button"
+            className="eb-ticket-btn eb-ticket-btn--secondary"
+            onClick={onNavigateProfile}
+          >
+            🎟️ View Bookings
+          </button>
+        </div>
+
+        <div className="eb-ticket-id-copy-row">
+          <span>Ticket ID: <strong>{ticketId}</strong></span>
+          <button type="button" onClick={handleCopyId} className="eb-ticket-copy-btn">
+            {copied ? '✓ Copied' : 'Copy ID'}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 export default function EventBooking() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -773,9 +1118,10 @@ export default function EventBooking() {
   const event = useMemo(() => {
     const raw = eventFromContext || eventFromState || (fallbackQuery.data ? normalizeEvent(fallbackQuery.data) : null);
     if (!raw) return null;
-    const template = raw.ticketTemplateUrl || location.state?.ticketTemplateUrl || '';
+    const normalized = normalizeEvent(raw);
+    const template = normalized.ticketTemplateUrl || location.state?.ticketTemplateUrl || '';
     return {
-      ...raw,
+      ...normalized,
       ticketTemplateUrl: template,
     };
   }, [eventFromContext, eventFromState, fallbackQuery.data, location.state]);
@@ -793,7 +1139,7 @@ export default function EventBooking() {
   const [contact, setContact] = useState({ name: '', phone: '', email: '' });
   const [emergency, setEmergency] = useState({ name: '', phone: '' });
   const [joinAs, setJoinAs] = useState('biker');
-  const [bike, setBike] = useState({ brand: '', model: '', registration: '', engineCC: '', requirementConfirmed: false });
+  const [bike, setBike] = useState({ brand: '', model: '', registration: '', engineCC: '', requirementConfirmed: false, eligibilityType: '' });
   const [preferences, setPreferences] = useState({
     experience: 'Intermediate',
     pace: 'Balanced',
@@ -809,6 +1155,7 @@ export default function EventBooking() {
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponError, setCouponError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [bookingConfirmation, setBookingConfirmation] = useState(null);
   const [error, setError] = useState('');
   const [bookingForSelf, setBookingForSelf] = useState(false);
 
@@ -1070,24 +1417,22 @@ export default function EventBooking() {
         return 'Please enter your bike brand, model, and registration number.';
       }
 
-      const bikeReq = event?.bikeRequirements;
-      const hasReq = Boolean(
-        bikeReq && (bikeReq.brand || bikeReq.model || bikeReq.engineCC || bikeReq.bikeType)
-      );
+      const bikeReq = resolveBikeRequirements(event);
+      const hasReq = Boolean(bikeReq);
 
       if (hasReq) {
+        if (!bike.eligibilityType && !bike.requirementConfirmed) {
+          return `Please confirm your bike eligibility: tick "Yes, I have the required bike" or "I have an upper CC / higher model of bike".`;
+        }
+
         const reqCC = parseInt(String(bikeReq.engineCC || 0).replace(/\D/g, ''), 10);
         const userCC = parseInt(
           String(bike.engineCC || (bike.model ? (bike.model.match(/\b\d{3,4}\b/) || [])[0] : '') || 0).replace(/\D/g, ''),
           10
         );
 
-        if (reqCC > 0 && userCC > 0 && userCC < reqCC) {
-          return `Your bike's engine capacity (${userCC}cc) is lower than the required minimum of ${reqCC}cc.`;
-        }
-
-        if (!bike.requirementConfirmed) {
-          return `Please confirm that your bike satisfies the event requirement (${[bikeReq.brand, bikeReq.model].filter(Boolean).join(' ') || 'required bike'} or upper model).`;
+        if (bike.eligibilityType === 'exact' && reqCC > 0 && userCC > 0 && userCC < reqCC) {
+          return `Your entered engine capacity (${userCC}cc) is lower than the required minimum of ${reqCC}cc. If your bike has higher specs, tick "I have an upper CC / higher model of bike".`;
         }
       }
     }
@@ -1119,7 +1464,7 @@ export default function EventBooking() {
     const executeBooking = async (paymentDetails = {}) => {
       setSubmitting(true);
       try {
-        await bookEvent({
+        const bookingResult = await bookEvent({
           user,
           profile,
           event,
@@ -1152,7 +1497,15 @@ export default function EventBooking() {
           notes: preferences.notes,
         });
         setSubmitting(false);
-        navigate('/profile/joined-events');
+        setBookingConfirmation({
+          bookingId: bookingResult?.bookingId || `BKG-${Date.now().toString(36).toUpperCase()}`,
+          bookingRefId: bookingResult?.id || '',
+          totalTickets,
+          total: summary.total,
+          event,
+          attendee: contact,
+          bike,
+        });
       } catch (err) {
         setError(err.message || 'Booking failed. Please try again.');
         setSubmitting(false);
@@ -1309,6 +1662,21 @@ export default function EventBooking() {
           />
         </div>
       </div>
+
+      {bookingConfirmation && (
+        <TicketSuccessModal
+          booking={bookingConfirmation}
+          event={event}
+          onClose={() => {
+            setBookingConfirmation(null);
+            navigate('/profile/joined-events');
+          }}
+          onNavigateProfile={() => {
+            setBookingConfirmation(null);
+            navigate('/profile/joined-events');
+          }}
+        />
+      )}
     </div>
   );
 }

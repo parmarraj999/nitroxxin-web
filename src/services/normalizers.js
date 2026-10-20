@@ -88,14 +88,26 @@ export const normalizeEvent = (doc) => {
   }
 
   const rawBikeReq = data.bikeRequirements || data.bikeRequirement || null;
-  const hasDirectBikeProps = Boolean(data.bikeType || data.bikeModel || data.bikeBrand || data.minimumCC || data.engineCC);
+  const hasDirectBikeProps = Boolean(
+    data.bikeType ||
+    data.bikeModel ||
+    data.bikeBrand ||
+    data.brand ||
+    data.model ||
+    data.minimumCC ||
+    data.engineCC ||
+    data.bikeEngineCC ||
+    data.bikeCriteria ||
+    data.specificBikeRequired
+  );
+
   const resolvedBikeReq = (rawBikeReq && typeof rawBikeReq === 'object')
     ? {
         ...rawBikeReq,
         bikeType: rawBikeReq.bikeType || data.bikeType || "",
-        brand: rawBikeReq.brand || data.bikeBrand || data.brand || "",
-        model: rawBikeReq.model || data.bikeModel || data.model || "",
-        engineCC: rawBikeReq.engineCC || rawBikeReq.engineCc || data.engineCC || data.minimumCC || "",
+        brand: rawBikeReq.brand || rawBikeReq.bikeBrand || data.bikeBrand || data.brand || "",
+        model: rawBikeReq.model || rawBikeReq.bikeModel || data.bikeModel || data.model || "",
+        engineCC: rawBikeReq.engineCC || rawBikeReq.bikeEngineCC || rawBikeReq.engineCc || data.bikeEngineCC || data.engineCC || data.minimumCC || "",
         criteria: rawBikeReq.criteria || rawBikeReq.bikeCriteria || data.bikeCriteria || "",
       }
     : (hasDirectBikeProps
@@ -103,13 +115,14 @@ export const normalizeEvent = (doc) => {
           bikeType: data.bikeType || "",
           brand: data.bikeBrand || data.brand || "",
           model: data.bikeModel || data.model || "",
-          engineCC: data.engineCC || data.minimumCC || "",
+          engineCC: data.bikeEngineCC || data.engineCC || data.minimumCC || "",
           criteria: data.bikeCriteria || "",
         }
       : null);
 
   const hasBikeDetails = resolvedBikeReq && Object.values(resolvedBikeReq).some(v => v !== null && v !== undefined && String(v).trim() !== "");
-  const bikeRequirements = hasBikeDetails ? resolvedBikeReq : null;
+  const isExplicitlyDisabled = data.specificBikeRequired === false && !rawBikeReq?.specificBikeRequired;
+  const bikeRequirements = (!isExplicitlyDisabled && hasBikeDetails) ? resolvedBikeReq : null;
 
   const ticketTemplateUrl =
     data.ticketTemplateUrl ||
