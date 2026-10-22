@@ -41,14 +41,7 @@ export const addToCart = async ({ userId, product, quantity = 1, options = {} })
     createdAt: serverTimestamp(),
   });
 
-  // Store in user/userId/cart (and users/userId/cart)
-  await db()
-    .collection("user")
-    .doc(uid)
-    .collection("cart")
-    .doc(id)
-    .set(cartPayload, { merge: true });
-
+  // Store in users/userId/cart
   await db()
     .collection("users")
     .doc(uid)
@@ -67,22 +60,11 @@ export const updateCartQuantity = async (cartItemId, quantity, userId) => {
   };
 
   await db()
-    .collection("user")
-    .doc(uid)
-    .collection("cart")
-    .doc(cartItemId)
-    .set(updateData, { merge: true });
-
-  await db()
     .collection("users")
     .doc(uid)
     .collection("cart")
     .doc(cartItemId)
     .set(updateData, { merge: true });
-
-  try {
-    await db().collection(COLLECTIONS.cart).doc(cartItemId).delete();
-  } catch (e) {}
 };
 
 export const removeCartItem = async (cartItemId, userId) => {
@@ -90,22 +72,11 @@ export const removeCartItem = async (cartItemId, userId) => {
   if (!uid || !cartItemId) return;
 
   await db()
-    .collection("user")
-    .doc(uid)
-    .collection("cart")
-    .doc(cartItemId)
-    .delete();
-
-  await db()
     .collection("users")
     .doc(uid)
     .collection("cart")
     .doc(cartItemId)
     .delete();
-
-  try {
-    await db().collection(COLLECTIONS.cart).doc(cartItemId).delete();
-  } catch (e) {}
 };
 
 export const placeOrder = async ({ user, profile, cartItems, shipping }) => {
@@ -231,11 +202,7 @@ export const placeOrder = async ({ user, profile, cartItems, shipping }) => {
   const batch = db().batch();
   cartItems.forEach((item) => {
     if (item.id) {
-      batch.delete(db().collection("user").doc(user.uid).collection("cart").doc(item.id));
       batch.delete(db().collection("users").doc(user.uid).collection("cart").doc(item.id));
-      try {
-        batch.delete(db().collection(COLLECTIONS.cart).doc(item.id));
-      } catch (e) {}
     }
   });
   await batch.commit();
@@ -260,14 +227,7 @@ export const saveWishlistItem = async ({ userId, product }) => {
     createdAt: serverTimestamp(),
   });
 
-  // Store in user/userId/wishlist (and users/userId/wishlist)
-  await db()
-    .collection("user")
-    .doc(uid)
-    .collection("wishlist")
-    .doc(docId)
-    .set(wishlistData, { merge: true });
-
+  // Store in users/userId/wishlist
   await db()
     .collection("users")
     .doc(uid)
@@ -283,23 +243,11 @@ export const removeWishlistItem = async ({ userId, productId, docId }) => {
   if (!targetId) return;
 
   await db()
-    .collection("user")
-    .doc(uid)
-    .collection("wishlist")
-    .doc(targetId)
-    .delete();
-
-  await db()
     .collection("users")
     .doc(uid)
     .collection("wishlist")
     .doc(targetId)
     .delete();
-
-  try {
-    await db().collection(COLLECTIONS.wishlist).doc(targetId).delete();
-    await db().collection(COLLECTIONS.wishlist).doc(`${uid}_${targetId}`).delete();
-  } catch (e) {}
 };
 
 export const saveFavoriteEvent = async ({ userId, event }) => {
@@ -339,57 +287,13 @@ export const saveFavoriteEvent = async ({ userId, event }) => {
     updatedAt: serverTimestamp(),
   });
 
-  // Save in users > docID > bookmark and saved-events and wishlist
+  // Canonical single source of truth for user saved event bookmarks: users/{userId}/bookmark
   await db()
     .collection(COLLECTIONS.users || "users")
     .doc(userId)
     .collection("bookmark")
     .doc(eventId)
     .set(bookmarkData, { merge: true });
-
-  await db()
-    .collection("users")
-    .doc(userId)
-    .collection("saved-events")
-    .doc(eventId)
-    .set(bookmarkData, { merge: true });
-
-  await db()
-    .collection("user")
-    .doc(userId)
-    .collection("saved-events")
-    .doc(eventId)
-    .set(bookmarkData, { merge: true });
-
-  await db()
-    .collection("user")
-    .doc(userId)
-    .collection("wishlist")
-    .doc(eventId)
-    .set({
-      id: eventId,
-      userId,
-      type: "event",
-      eventId,
-      eventSnapshot: bookmarkData,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    }, { merge: true });
-
-  await db()
-    .collection("users")
-    .doc(userId)
-    .collection("wishlist")
-    .doc(eventId)
-    .set({
-      id: eventId,
-      userId,
-      type: "event",
-      eventId,
-      eventSnapshot: bookmarkData,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    }, { merge: true });
 };
 
 export const removeFavoriteEvent = async ({ userId, eventId }) => {
@@ -407,20 +311,6 @@ export const removeFavoriteEvent = async ({ userId, eventId }) => {
     .collection("users")
     .doc(userId)
     .collection("saved-events")
-    .doc(eventId)
-    .delete();
-
-  await db()
-    .collection("user")
-    .doc(userId)
-    .collection("saved-events")
-    .doc(eventId)
-    .delete();
-
-  await db()
-    .collection("user")
-    .doc(userId)
-    .collection("wishlist")
     .doc(eventId)
     .delete();
 
@@ -538,6 +428,15 @@ export const bookEvent = async ({
         name: profile?.fullName || profile?.name || profile?.displayName || user?.fullName || user?.displayName || "",
         phone: profile?.phone || profile?.phoneNumber || user?.phone || user?.phoneNumber || "",
       },
+      name: profile?.fullName || profile?.name || profile?.displayName || user?.fullName || user?.displayName || bookingContact?.fullName || bookingContact?.name || "",
+      email: user?.email || profile?.email || bookingContact?.email || "",
+      phone: profile?.phone || profile?.phoneNumber || user?.phone || user?.phoneNumber || bookingContact?.phone || "",
+      participantName: profile?.fullName || profile?.name || profile?.displayName || user?.fullName || user?.displayName || bookingContact?.fullName || bookingContact?.name || "",
+      participantEmail: user?.email || profile?.email || bookingContact?.email || "",
+      participantPhone: profile?.phone || profile?.phoneNumber || user?.phone || user?.phoneNumber || bookingContact?.phone || "",
+      customerName: profile?.fullName || profile?.name || profile?.displayName || user?.fullName || user?.displayName || bookingContact?.fullName || bookingContact?.name || "",
+      attendanceStatus: "Not Checked In",
+      ticketNumber: `NX-${bookingId}`,
       status: "pending",
       approvalStatus: "pending",
       qrTicket: `NX-${bookingId}`,
@@ -588,24 +487,15 @@ export const bookEvent = async ({
       updatedAt: serverTimestamp(),
     });
 
-    // 1. Root booking collections (both singular 'booking' and plural 'bookings')
-    const rootBookingSingularRef = db().collection("booking").doc(bookingRef.id);
+    // 1. Root bookings collection (canonical plural 'bookings' only)
     transaction.set(bookingRef, payload);
-    transaction.set(rootBookingSingularRef, payload);
 
-    // 2. User joined-event, my-events, and saved-events subcollections
-    const userMyEventsRef = db().collection("users").doc(user.uid).collection("my-events").doc(eventId || bookingRef.id);
-    const userSingularMyEventsRef = db().collection("user").doc(user.uid).collection("my-events").doc(eventId || bookingRef.id);
-    const userSavedEventsRef = db().collection("users").doc(user.uid).collection("saved-events").doc(eventId || bookingRef.id);
-    const userSingularSavedEventsRef = db().collection("user").doc(user.uid).collection("saved-events").doc(eventId || bookingRef.id);
+    // 2. (Optimized) Canonical root bookings collection holds all event bookings. Redundant events/{eventId}/booking sub-collection omitted.
 
+    // 3. User joined-event subcollection (canonical 'users' only)
     transaction.set(userJoinedEventRef, joinedEventData, { merge: true });
-    transaction.set(userMyEventsRef, joinedEventData, { merge: true });
-    transaction.set(userSingularMyEventsRef, joinedEventData, { merge: true });
-    transaction.set(userSavedEventsRef, joinedEventData, { merge: true });
-    transaction.set(userSingularSavedEventsRef, joinedEventData, { merge: true });
 
-    // 3. Super-admin advance payment record in 'payment' and 'payments'
+    // 4. Advance payment record in 'payments' (canonical plural 'payments' only)
     const advanceEventPayment = compact({
       id: bookingRef.id,
       paymentId: payment?.paymentId || payment?.razorpayPaymentId || `pay_evt_${bookingId}`,
@@ -613,6 +503,7 @@ export const bookEvent = async ({
       razorpayOrderId: payment?.razorpayOrderId || "",
       razorpaySignature: payment?.razorpaySignature || "",
       bookingId,
+
       bookingDocId: bookingRef.id,
       eventId,
       eventTitle: eventSnapshot.title || eventSnapshot.name || "Motorcycle Event",
@@ -633,10 +524,9 @@ export const bookEvent = async ({
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
-    transaction.set(db().collection("payment").doc(bookingRef.id), advanceEventPayment);
     transaction.set(db().collection("payments").doc(bookingRef.id), advanceEventPayment);
 
-    // 4. Basic user transaction in 'user/userId/transactions' and 'users/userId/transactions'
+    // 5. Basic user transaction in 'users/userId/transactions'
     const basicEventTx = compact({
       id: bookingRef.id,
       transactionId: payment?.paymentId || payment?.razorpayPaymentId || `TXN-EVT-${bookingId}`,
@@ -657,8 +547,6 @@ export const bookEvent = async ({
       updatedAt: serverTimestamp(),
     });
     transaction.set(db().collection("users").doc(user.uid).collection("transactions").doc(bookingRef.id), basicEventTx);
-    transaction.set(db().collection("user").doc(user.uid).collection("transactions").doc(bookingRef.id), basicEventTx);
-    transaction.set(db().collection("users").doc(user.uid).collection("wallet_transactions").doc(bookingRef.id), basicEventTx);
 
     transaction.set(registrationRef, compact({
       registrationId: registrationRef.id,
@@ -730,8 +618,8 @@ export const submitReview = async ({ productId, productName, vendorId, user, pro
     console.warn("Could not verify purchase history:", err);
   }
 
-  // Create review doc under user/userid/reviews (and users/userid/reviews)
-  const userReviewDoc = db().collection("user").doc(user.uid).collection("reviews").doc();
+  // Create review doc under users/userid/reviews
+  const userReviewDoc = db().collection("users").doc(user.uid).collection("reviews").doc();
   const reviewId = userReviewDoc.id;
 
   const payload = compact({
@@ -755,22 +643,8 @@ export const submitReview = async ({ productId, productName, vendorId, user, pro
     updatedAt: serverTimestamp(),
   });
 
-  // Store in user/userId/reviews, users/userId/reviews, and user/userId/review
+  // Store in users/userId/reviews
   await userReviewDoc.set(payload);
-
-  await db()
-    .collection("users")
-    .doc(user.uid)
-    .collection("reviews")
-    .doc(reviewId)
-    .set(payload, { merge: true });
-
-  await db()
-    .collection("user")
-    .doc(user.uid)
-    .collection("review")
-    .doc(reviewId)
-    .set(payload, { merge: true });
 
   // Recalculate average rating & review count for the product across collectionGroup("reviews")
   try {
@@ -827,10 +701,6 @@ export const markReviewHelpful = async (reviewId, userId) => {
   const uid = userId || auth().currentUser?.uid;
 
   if (uid) {
-    await db().collection("user").doc(uid).collection("reviews").doc(reviewId).set(
-      { helpfulCount: increment(1), updatedAt: serverTimestamp() },
-      { merge: true }
-    );
     await db().collection("users").doc(uid).collection("reviews").doc(reviewId).set(
       { helpfulCount: increment(1), updatedAt: serverTimestamp() },
       { merge: true }

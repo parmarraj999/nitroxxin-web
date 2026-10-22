@@ -136,22 +136,7 @@ export const AddOrderToFirestore = async ({
     const newOrderRef = database.collection(COLLECTIONS.orders || "orders").doc();
     batch.set(newOrderRef, { id: newOrderRef.id, ...orderData });
 
-    // 3. Add to user-specific subcollection users/{userId}/order and user/{userId}/order
-    const userOrderRef = database
-      .collection("users")
-      .doc(userId)
-      .collection("order")
-      .doc(newOrderRef.id);
-    batch.set(userOrderRef, { id: newOrderRef.id, ...orderData });
-
-    const userSingularOrderRef = database
-      .collection("user")
-      .doc(userId)
-      .collection("order")
-      .doc(newOrderRef.id);
-    batch.set(userSingularOrderRef, { id: newOrderRef.id, ...orderData });
-
-    // Also plural users/{userId}/orders for backwards compatibility
+    // 3. Add to user-specific subcollection users/{userId}/orders
     const userPluralOrdersRef = database
       .collection("users")
       .doc(userId)
@@ -159,7 +144,7 @@ export const AddOrderToFirestore = async ({
       .doc(newOrderRef.id);
     batch.set(userPluralOrdersRef, { id: newOrderRef.id, ...orderData });
 
-    // 4. Add to vendor-specific collection: vendor/{vendorId}/order and vendors/{vendorId}/orders
+    // 4. Add to vendor-specific collection: vendors/{vendorId}/orders
     for (const [vId, vData] of Object.entries(vendorMap)) {
       const vendorOrderData = {
         ...orderData,
@@ -173,39 +158,15 @@ export const AddOrderToFirestore = async ({
         vendorTotal: vData.totalAmount,
       };
 
-      // Exact path requested: vendor/{vendorId}/order/{orderId}
-      const vendorSingleRef = database
-        .collection("vendor")
-        .doc(vId)
-        .collection("order")
-        .doc(newOrderRef.id);
-      batch.set(vendorSingleRef, vendorOrderData);
-
-      // Plural standard path: vendors/{vendorId}/orders/{orderId}
       const vendorsPluralRef = database
         .collection("vendors")
         .doc(vId)
         .collection("orders")
         .doc(newOrderRef.id);
       batch.set(vendorsPluralRef, vendorOrderData);
-
-      // Also vendor/{vendorId}/orders and vendors/{vendorId}/order for full compatibility
-      const vendorPluralRef = database
-        .collection("vendor")
-        .doc(vId)
-        .collection("orders")
-        .doc(newOrderRef.id);
-      batch.set(vendorPluralRef, vendorOrderData);
-
-      const vendorsSingleRef = database
-        .collection("vendors")
-        .doc(vId)
-        .collection("order")
-        .doc(newOrderRef.id);
-      batch.set(vendorsSingleRef, vendorOrderData);
     }
 
-    // 5. Advance order payment detail in payment & payments collection for super-admin
+    // 5. Advance order payment record in 'payments' collection
     const advancePaymentData = {
       id: newOrderRef.id,
       orderDocId: newOrderRef.id,
@@ -236,10 +197,9 @@ export const AddOrderToFirestore = async ({
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
-    batch.set(database.collection("payment").doc(newOrderRef.id), advancePaymentData);
     batch.set(database.collection("payments").doc(newOrderRef.id), advancePaymentData);
 
-    // 6. Basic order payment detail in user/userId/transactions and users/userId/transactions
+    // 6. User transaction in users/userId/transactions
     const basicTransactionData = {
       id: newOrderRef.id,
       transactionId: paymentDetails.razorpay_payment_id || `TXN-${orderNumber}`,
@@ -263,23 +223,11 @@ export const AddOrderToFirestore = async ({
       database.collection("users").doc(userId).collection("transactions").doc(newOrderRef.id),
       basicTransactionData
     );
-    batch.set(
-      database.collection("user").doc(userId).collection("transactions").doc(newOrderRef.id),
-      basicTransactionData
-    );
-    batch.set(
-      database.collection("users").doc(userId).collection("wallet_transactions").doc(newOrderRef.id),
-      basicTransactionData
-    );
 
-    // 6. Clear cart items for this user from user/userId/cart
+    // 7. Clear cart items for this user from users/userId/cart
     cartItems.forEach((item) => {
       if (item.id) {
-        batch.delete(database.collection("user").doc(userId).collection("cart").doc(item.id));
         batch.delete(database.collection("users").doc(userId).collection("cart").doc(item.id));
-        try {
-          batch.delete(database.collection(COLLECTIONS.cart || "cart").doc(item.id));
-        } catch (e) {}
       }
     });
 

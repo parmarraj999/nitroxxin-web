@@ -999,8 +999,8 @@ function TicketSuccessModal({
             </div>
 
             {/* SIDE NOTCHES AT THE FOLD LINE */}
-            <div className="ticket-edge-notch notch-left" aria-hidden="true" />
-            <div className="ticket-edge-notch notch-right" aria-hidden="true" />
+            {/* <div className="ticket-edge-notch notch-left" aria-hidden="true" /> */}
+            {/* <div className="ticket-edge-notch notch-right" aria-hidden="true" /> */}
 
             {/* TOP SECTION (ABOVE DASHED LINE): NITROXX TICKETS LOGO */}
             <div className="ticket-top-stub-area">

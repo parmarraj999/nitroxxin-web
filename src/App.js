@@ -51,6 +51,7 @@ import PrivacyPolicy from './pages/Privacy/PrivacyPolicy';
 import ScreenLoader from './components/ScreenLoader/ScreenLoader';
 
 import AuthModalContainer from './components/AuthModal/AuthModalContainer';
+import ScrollToTop from './components/common/ScrollToTop';
 
 const Navigation = () => {
   const location = useLocation();
@@ -190,6 +191,7 @@ function App() {
             <BikeBrandsProvider>
               <ForYouProvider>
                 <Router>
+                  <ScrollToTop />
                   <AuthProvider>
                     <AppShell />
                   </AuthProvider>

@@ -34,11 +34,11 @@ function Foryou() {
             <ShopByCategory />
             <div className='foryou-section-image'>
                 <img
-                    src={'./assets/images/for-you-bottom.png'}
+                    src={'./assets/images/app-soon-banner.png'}
                     alt="Nitroxx Promotions"
                     loading="lazy"
                     decoding="async"
-                    style={{ width: '94%', height: '85vh', objectFit: 'cover' }}
+                    style={{ aspectRatio:16/9 }}
                 />
             </div>
            
