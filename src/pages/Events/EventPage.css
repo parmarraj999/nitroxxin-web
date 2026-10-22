@@ -214,17 +214,16 @@ BAR (heading + search side by side) ===== */
 }
 
 .ep-featured__date-line {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 16px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.6);
   margin-bottom: 16px;
   line-height: 1.3;
-  letter-spacing: -0.15px;
+  /* letter-spacing: -0.15px; */
+  text-transform: uppercase;
 }
 
 .ep-featured__title {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   font-weight: 800;
   font-size: 42px;
   line-height: 1.16;
@@ -240,7 +239,9 @@ BAR (heading + search side by side) ===== */
 }
 
 .ep-featured__location-line {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 5px;
   font-size: 21px;
   font-weight: 600;
   color: rgba(105, 105, 105, 0.92);
@@ -250,7 +251,6 @@ BAR (heading + search side by side) ===== */
 }
 
 .ep-featured__price-line {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 17px;
   font-weight: 700;
   color: #ffffff;
