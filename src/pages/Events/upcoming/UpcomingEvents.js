@@ -461,7 +461,14 @@ export default function UpcomingEvents() {
 
         {/* Live Search Bar */}
         <div className="up-search-bar-row">
-          <form className="up-search-form" onSubmit={handleSearchSubmit}>
+          <form
+            className="up-search-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              window.dispatchEvent(new CustomEvent('openEventSearch', { detail: { query: searchInput } }));
+            }}
+            onClick={() => window.dispatchEvent(new CustomEvent('openEventSearch', { detail: { query: searchInput } }))}
+          >
             <span className="up-search-icon">
               <SearchIcon color="#9ca3af" />
             </span>
@@ -471,7 +478,9 @@ export default function UpcomingEvents() {
               type="text"
               placeholder="Search upcoming rides, track days, organizers..."
               value={searchInput}
-              onChange={(e) => handleSearchChange(e.target.value)}
+              readOnly
+              onClick={() => window.dispatchEvent(new CustomEvent('openEventSearch', { detail: { query: searchInput } }))}
+              onFocus={() => window.dispatchEvent(new CustomEvent('openEventSearch', { detail: { query: searchInput } }))}
             />
             {searchInput && (
               <button

@@ -5,6 +5,7 @@ import { useCollection } from "../../../hooks/useFirestore";
 import { useEventsContext } from "../../../context/EventsContext";
 import { COLLECTIONS } from "../../../services/firebase";
 import { toDate } from "../../../utils/dataFormatters";
+import { getTicketQrUrl } from "../../../utils/ticketSecurity";
 
 // Helper to extract detailed date & time information from various date formats
 function extractDateInfo(item) {
@@ -824,26 +825,99 @@ export default function JoinedEvents() {
                 </div>
 
                 {/* QR Code and Pass Verification */}
-                <div className="nx-ticket-qr-section">
-                  <div className="nx-ticket-qr-box">
-                    <svg width="84" height="84" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="1.5">
-                      <rect x="3" y="3" width="7" height="7" />
-                      <rect x="14" y="3" width="7" height="7" />
-                      <rect x="3" y="14" width="7" height="7" />
-                      <rect x="15" y="15" width="2" height="2" fill="#f97316" />
-                      <rect x="18" y="18" width="2" height="2" fill="#f97316" />
-                      <rect x="14" y="18" width="2" height="2" fill="#f97316" />
-                      <rect x="18" y="14" width="2" height="2" fill="#f97316" />
-                      <rect x="6" y="6" width="1" height="1" fill="#f97316" />
-                      <rect x="17" y="6" width="1" height="1" fill="#f97316" />
-                      <rect x="6" y="17" width="1" height="1" fill="#f97316" />
-                    </svg>
-                  </div>
-                  <div className="nx-ticket-qr-meta">
-                    <strong>Pass Verified • {selectedTicket.ticketsCount} {selectedTicket.ticketsCount === 1 ? "Rider" : "Riders"}</strong>
-                    <p>Show this digital QR pass at the briefing checkpoint on arrival.</p>
-                  </div>
-                </div>
+                {(() => {
+                  const ticketCode =
+                    selectedTicket.rawItem?.ticketCode ||
+                    selectedTicket.rawItem?.ticketNumber ||
+                    selectedTicket.ticketCode ||
+                    selectedTicket.ticketNumber ||
+                    (selectedTicket.bookingId ? `NTX-${selectedTicket.bookingId}` : "NTX-PASS");
+                  const qrPayload =
+                    selectedTicket.rawItem?.qrPayload ||
+                    JSON.stringify({
+                      ticketCode,
+                      bookingId: selectedTicket.rawItem?.bookingRefId || selectedTicket.bookingId || selectedTicket.id,
+                      eventId: selectedTicket.eventId || '',
+                      attendeeEmail: selectedTicket.rawItem?.email || selectedTicket.rawItem?.participantEmail || user?.email || '',
+                      signature: selectedTicket.rawItem?.signature || 'ntx_verified_pass',
+                    });
+                  const qrUrl = getTicketQrUrl(qrPayload);
+
+                  return (
+                    <div className="nx-ticket-qr-section" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
+                      <div
+                        className="nx-ticket-qr-box"
+                        style={{
+                          background: '#ffffff',
+                          padding: '12px',
+                          borderRadius: '14px',
+                          boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          minWidth: '240px',
+                          minHeight: '240px',
+                        }}
+                      >
+                        <img
+                          src={qrUrl}
+                          alt="Scan ticket pass QR code for check-in"
+                          style={{
+                            width: '216px',
+                            height: '216px',
+                            display: 'block',
+                            imageRendering: 'pixelated',
+                          }}
+                        />
+                      </div>
+
+                      {/* Manual Code Fallback */}
+                      <div
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.08)',
+                          border: '1px solid rgba(255, 255, 255, 0.15)',
+                          borderRadius: '10px',
+                          padding: '8px 16px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                        }}
+                      >
+                        <span style={{ fontSize: '12px', color: '#94a3b8' }}>Gate Code:</span>
+                        <strong style={{ fontFamily: 'monospace', fontSize: '15px', color: '#ffffff', letterSpacing: '0.8px' }}>
+                          {ticketCode}
+                        </strong>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (navigator?.clipboard?.writeText) {
+                              navigator.clipboard.writeText(ticketCode);
+                              setShowToast(`Copied code: ${ticketCode}`);
+                              setTimeout(() => setShowToast(''), 3000);
+                            }
+                          }}
+                          style={{
+                            background: '#f97316',
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: '6px',
+                            padding: '3px 8px',
+                            fontSize: '11px',
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Copy
+                        </button>
+                      </div>
+
+                      <div className="nx-ticket-qr-meta" style={{ textAlign: 'center' }}>
+                        <strong>Pass Verified • {selectedTicket.ticketsCount} {selectedTicket.ticketsCount === 1 ? "Rider" : "Riders"}</strong>
+                        <p style={{ margin: '4px 0 0 0', fontSize: '12.5px', color: '#94a3b8' }}>Show this digital QR pass at the briefing checkpoint on arrival.</p>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>

@@ -1,5 +1,6 @@
 import { COLLECTIONS, auth, db, increment, serverTimestamp } from "./firebase";
 import { normalizeEvent, normalizeProduct } from "./normalizers";
+import { generateTicketCode, generateTicketSignature } from "../utils/ticketSecurity";
 
 const DEFAULT_VENDOR_ID = "nitroxx-default-vendor";
 
@@ -388,6 +389,31 @@ export const bookEvent = async ({
   const registrationRef = db().collection("eventRegistrations").doc(`${eventId}_${user.uid}_${bookingRef.id}`);
   const userJoinedEventRef = db().collection(COLLECTIONS.users || "users").doc(user.uid).collection("joined-event").doc(eventId || bookingRef.id);
 
+  const userPhoneForTicket =
+    bookingContact?.phone ||
+    profile?.phone ||
+    user?.phone ||
+    user?.phoneNumber ||
+    (attendees && attendees[0]?.phone) ||
+    '';
+  const attendeeEmailForTicket =
+    user?.email || profile?.email || bookingContact?.email || (attendees && attendees[0]?.email) || '';
+
+  const ticketCode = generateTicketCode(userPhoneForTicket);
+  const signature = await generateTicketSignature(
+    ticketCode,
+    bookingRef.id,
+    eventId,
+    attendeeEmailForTicket
+  );
+  const qrPayload = JSON.stringify({
+    ticketCode,
+    bookingId: bookingRef.id,
+    eventId,
+    attendeeEmail: attendeeEmailForTicket,
+    signature,
+  });
+
   await db().runTransaction(async (transaction) => {
     const eventRef = db().collection(COLLECTIONS.events).doc(eventId);
     const eventDoc = eventId ? await transaction.get(eventRef) : null;
@@ -400,6 +426,7 @@ export const bookEvent = async ({
 
     const payload = compact({
       bookingId,
+      bookingDocId: bookingRef.id,
       userId: user.uid,
       hostId,
       organizerId: hostId,
@@ -420,6 +447,10 @@ export const bookEvent = async ({
       paymentStatus: "paid",
       paymentMethod: "online",
       eventId,
+      ticketCode,
+      ticketNumber: ticketCode,
+      qrPayload,
+      signature,
       ticketTemplateUrl: eventSnapshot.ticketTemplateUrl || event?.ticketTemplateUrl || "",
       eventSnapshot: JSON.parse(JSON.stringify(eventSnapshot)),
       attendee: {
@@ -436,10 +467,10 @@ export const bookEvent = async ({
       participantPhone: profile?.phone || profile?.phoneNumber || user?.phone || user?.phoneNumber || bookingContact?.phone || "",
       customerName: profile?.fullName || profile?.name || profile?.displayName || user?.fullName || user?.displayName || bookingContact?.fullName || bookingContact?.name || "",
       attendanceStatus: "Not Checked In",
-      ticketNumber: `NX-${bookingId}`,
+      gateStatus: "Pending",
       status: "pending",
       approvalStatus: "pending",
-      qrTicket: `NX-${bookingId}`,
+      qrTicket: ticketCode,
       statusHistory: [{ status: "pending", at: new Date().toISOString(), note: "Booking created" }],
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -453,6 +484,10 @@ export const bookEvent = async ({
       userId: user.uid,
       title: eventSnapshot.title || eventSnapshot.name || "",
       name: eventSnapshot.name || eventSnapshot.title || "",
+      ticketCode,
+      ticketNumber: ticketCode,
+      qrPayload,
+      signature,
       ticketTemplateUrl: eventSnapshot.ticketTemplateUrl || event?.ticketTemplateUrl || "",
       banner: eventSnapshot.banner || eventSnapshot.bannerImage || eventSnapshot.image || (eventSnapshot.images && eventSnapshot.images[0]) || "",
       bannerImage: eventSnapshot.bannerImage || eventSnapshot.banner || eventSnapshot.image || "",
@@ -477,9 +512,11 @@ export const bookEvent = async ({
       bookingContact,
       emergencyContact,
       status: "pending",
+      gateStatus: "Pending",
+      attendanceStatus: "Not Checked In",
       paymentStatus: "paid",
       paymentMethod: "online",
-      qrTicket: `NX-${bookingId}`,
+      qrTicket: ticketCode,
       eventSnapshot: JSON.parse(JSON.stringify(eventSnapshot)),
       data: eventSnapshot,
       joinedAt: serverTimestamp(),
@@ -503,8 +540,9 @@ export const bookEvent = async ({
       razorpayOrderId: payment?.razorpayOrderId || "",
       razorpaySignature: payment?.razorpaySignature || "",
       bookingId,
-
       bookingDocId: bookingRef.id,
+      ticketCode,
+      ticketNumber: ticketCode,
       eventId,
       eventTitle: eventSnapshot.title || eventSnapshot.name || "Motorcycle Event",
       userId: user.uid,
@@ -532,6 +570,8 @@ export const bookEvent = async ({
       transactionId: payment?.paymentId || payment?.razorpayPaymentId || `TXN-EVT-${bookingId}`,
       bookingId,
       bookingDocId: bookingRef.id,
+      ticketCode,
+      ticketNumber: ticketCode,
       eventId,
       title: `Event Pass - ${eventSnapshot.title || eventSnapshot.name || "Nitroxx Event"}`,
       category: "event",
@@ -551,6 +591,7 @@ export const bookEvent = async ({
     transaction.set(registrationRef, compact({
       registrationId: registrationRef.id,
       bookingId,
+      bookingDocId: bookingRef.id,
       eventId,
       userId: user.uid,
       hostId,
@@ -561,7 +602,11 @@ export const bookEvent = async ({
       registrationDate: serverTimestamp(),
       status: "Pending",
       attendanceStatus: "Not Checked In",
-      ticketNumber: payload.qrTicket,
+      gateStatus: "Pending",
+      ticketCode,
+      ticketNumber: ticketCode,
+      qrPayload,
+      signature,
       ticketPrice: total,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -582,6 +627,7 @@ export const bookEvent = async ({
         body: `${payload.attendee.name || "Customer"} booked ${eventSnapshot.title}.`,
         bookingId: bookingRef.id,
         publicBookingId: bookingId,
+        ticketCode,
         eventId,
         read: false,
         isRead: false,
@@ -591,7 +637,14 @@ export const bookEvent = async ({
     }
   });
 
-  return { id: bookingRef.id, bookingId };
+  return {
+    id: bookingRef.id,
+    bookingId,
+    ticketCode,
+    ticketNumber: ticketCode,
+    qrPayload,
+    signature,
+  };
 };
 
 export const submitReview = async ({ productId, productName, vendorId, user, profile, rating, title, review, images = [] }) => {

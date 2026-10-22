@@ -23,6 +23,7 @@ import { bookEvent } from '../../../services/commerceService';
 import { useAuth } from '../../../context/AuthContext';
 import { useAuthModal } from '../../../components/AuthModal/useAuthModal';
 import { formatCategoryValue, getCategoryDetails } from '../eventCategoryConfig';
+import { getTicketQrUrl } from '../../../utils/ticketSecurity';
 
 const STEPS = [
   { id: 1, label: 'Tickets', icon: FaTicketAlt },
@@ -941,18 +942,24 @@ function TicketSuccessModal({
         background: 'linear-gradient(160deg, #b388ff 0%, #80d8ff 35%, #ff80ab 70%, #ffd180 100%)',
       };
 
-  const ticketId = booking?.bookingId ? `NX-${booking.bookingId}` : `NX-${Date.now().toString(36).toUpperCase()}`;
+  // Primary single-use ticketCode
+  const ticketId =
+    booking?.ticketCode ||
+    booking?.ticketNumber ||
+    (booking?.bookingId ? `NTX-${booking.bookingId}` : `NTX-${Date.now().toString(36).toUpperCase()}`);
 
   // Unique QR check-in payload
-  const qrCheckInPayload = JSON.stringify({
-    ticket: ticketId,
-    event: event?.id || '',
-    attendee: booking?.attendee?.name || 'Rider',
-    seats: qty,
-    verified: true,
-  });
+  const qrCheckInPayload =
+    booking?.qrPayload ||
+    JSON.stringify({
+      ticketCode: ticketId,
+      bookingId: booking?.bookingRefId || booking?.id || booking?.bookingId || '',
+      eventId: event?.id || '',
+      attendeeEmail: booking?.attendee?.email || '',
+      signature: booking?.signature || '',
+    });
 
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrCheckInPayload)}&color=000000&margin=0`;
+  const qrUrl = getTicketQrUrl(qrCheckInPayload);
 
   const handlePrint = () => {
     window.print();
@@ -997,10 +1004,6 @@ function TicketSuccessModal({
                 <span key={i} className="scallop-cutout-bite" />
               ))}
             </div>
-
-            {/* SIDE NOTCHES AT THE FOLD LINE */}
-            {/* <div className="ticket-edge-notch notch-left" aria-hidden="true" /> */}
-            {/* <div className="ticket-edge-notch notch-right" aria-hidden="true" /> */}
 
             {/* TOP SECTION (ABOVE DASHED LINE): NITROXX TICKETS LOGO */}
             <div className="ticket-top-stub-area">
@@ -1048,19 +1051,98 @@ function TicketSuccessModal({
 
                 <div className="ticket-qr-frame">
                   {qrLoaded ? (
-                    <img
-                      src={qrUrl}
-                      alt="Scan ticket pass QR code for check-in"
-                      className="ticket-rendered-qr-img"
-                      onError={() => setQrLoaded(false)}
-                    />
+                    <div
+                      className="ticket-qr-white-card"
+                      style={{
+                        background: '#ffffff',
+                        padding: '12px',
+                        borderRadius: '12px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.25)',
+                        minWidth: '240px',
+                        minHeight: '240px',
+                        boxSizing: 'border-box',
+                      }}
+                    >
+                      <img
+                        src={qrUrl}
+                        alt="Scan ticket pass QR code for check-in"
+                        className="ticket-rendered-qr-img"
+                        style={{
+                          width: '216px',
+                          height: '216px',
+                          display: 'block',
+                          imageRendering: 'pixelated',
+                        }}
+                        onError={() => setQrLoaded(false)}
+                      />
+                    </div>
                   ) : (
-                    <div className="ticket-qr-fallback-box">
+                    <div
+                      className="ticket-qr-fallback-box"
+                      style={{
+                        background: '#ffffff',
+                        padding: '24px 16px',
+                        borderRadius: '12px',
+                        minWidth: '240px',
+                        minHeight: '240px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                      }}
+                    >
                       <FaTicketAlt size={48} color="#000000" />
-                      <span className="ticket-pass-id-fallback">{ticketId}</span>
+                      <span className="ticket-pass-id-fallback" style={{ color: '#000000', fontWeight: '800' }}>
+                        {ticketId}
+                      </span>
                     </div>
                   )}
                 </div>
+              </div>
+
+              {/* Fallback Single-Use Ticket Code for Manual Typing */}
+              <div
+                className="ticket-code-manual-fallback"
+                style={{
+                  marginTop: '12px',
+                  padding: '8px 14px',
+                  background: 'rgba(255, 255, 255, 0.95)',
+                  borderRadius: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '12px',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+                }}
+              >
+                <div style={{ textAlign: 'left' }}>
+                  <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', display: 'block' }}>
+                    Gate Code (Single-Use)
+                  </span>
+                  <strong style={{ fontFamily: 'monospace', fontSize: '15px', color: '#0f172a', letterSpacing: '0.8px' }}>
+                    {ticketId}
+                  </strong>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCopyId}
+                  style={{
+                    background: '#0f172a',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '6px 12px',
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {copied ? '✓ Copied' : 'Copy'}
+                </button>
               </div>
             </div>
 
@@ -1155,6 +1237,7 @@ export default function EventBooking() {
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponError, setCouponError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [isGeneratingTicket, setIsGeneratingTicket] = useState(false);
   const [bookingConfirmation, setBookingConfirmation] = useState(null);
   const [error, setError] = useState('');
   const [bookingForSelf, setBookingForSelf] = useState(false);
@@ -1463,6 +1546,7 @@ export default function EventBooking() {
 
     const executeBooking = async (paymentDetails = {}) => {
       setSubmitting(true);
+      setIsGeneratingTicket(true);
       try {
         const bookingResult = await bookEvent({
           user,
@@ -1497,9 +1581,14 @@ export default function EventBooking() {
           notes: preferences.notes,
         });
         setSubmitting(false);
+        setIsGeneratingTicket(false);
         setBookingConfirmation({
           bookingId: bookingResult?.bookingId || `BKG-${Date.now().toString(36).toUpperCase()}`,
           bookingRefId: bookingResult?.id || '',
+          ticketCode: bookingResult?.ticketCode || '',
+          ticketNumber: bookingResult?.ticketCode || '',
+          qrPayload: bookingResult?.qrPayload || '',
+          signature: bookingResult?.signature || '',
           totalTickets,
           total: summary.total,
           event,
@@ -1509,6 +1598,7 @@ export default function EventBooking() {
       } catch (err) {
         setError(err.message || 'Booking failed. Please try again.');
         setSubmitting(false);
+        setIsGeneratingTicket(false);
       }
     };
 
@@ -1662,6 +1752,26 @@ export default function EventBooking() {
           />
         </div>
       </div>
+
+      {isGeneratingTicket && (
+        <div className="eb-ticket-generating-overlay" role="dialog" aria-modal="true">
+          <div className="eb-ticket-generating-card">
+            <div className="eb-ticket-generating-spinner-wrap">
+              <div className="eb-ticket-generating-ring" />
+              <div className="eb-ticket-generating-icon">
+                <FaTicketAlt />
+              </div>
+            </div>
+            <h3>Securing Your Official Pass...</h3>
+            <p>Minting single-use cryptographic QR code and registering entry with Nitroxx Gateways.</p>
+            <div className="eb-ticket-generating-steps">
+              <div className="eb-generating-step done">✓ Payment verified</div>
+              <div className="eb-generating-step active">⏳ Generating single-use cryptographic token</div>
+              <div className="eb-generating-step">○ Registering pass with Gate Scanner</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {bookingConfirmation && (
         <TicketSuccessModal

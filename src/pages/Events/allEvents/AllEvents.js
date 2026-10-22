@@ -501,17 +501,26 @@ export default function AllEvents() {
 
         {/* Working Search Bar Component */}
         <div className="allev-search-section">
-          <form className="allev-search-bar" onSubmit={handleSearchSubmit}>
+          <form
+            className="allev-search-bar"
+            onSubmit={(e) => {
+              e.preventDefault();
+              window.dispatchEvent(new CustomEvent('openEventSearch', { detail: { query: searchInput } }));
+            }}
+            onClick={() => window.dispatchEvent(new CustomEvent('openEventSearch', { detail: { query: searchInput } }))}
+          >
             <span className="allev-search-bar__icon">
               <SearchIcon color="#7c3aed" size={22} />
             </span>
             <input
               ref={searchInputRef}
-              type="search"
+              type="text"
               className="allev-search-bar__input"
               placeholder="Search by event name, city, venue, organizer, ride type..."
               value={searchInput}
-              onChange={(e) => handleSearchChange(e.target.value)}
+              readOnly
+              onClick={() => window.dispatchEvent(new CustomEvent('openEventSearch', { detail: { query: searchInput } }))}
+              onFocus={() => window.dispatchEvent(new CustomEvent('openEventSearch', { detail: { query: searchInput } }))}
             />
             {searchInput && (
               <button

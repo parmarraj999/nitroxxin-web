@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import { useCollection } from "../../../hooks/useFirestore";
 import { COLLECTIONS } from "../../../services/firebase";
+import { getTicketQrUrl } from "../../../utils/ticketSecurity";
 
 export default function MyTickets() {
   const { user } = useAuth();
@@ -85,6 +86,23 @@ export default function MyTickets() {
             const time = t.time || event.timeText || "02:00 PM";
             const count = t.tickets || (t.totalTickets ? `x${t.totalTickets}` : "x1");
 
+            const ticketCode =
+              t.ticketCode ||
+              t.ticketNumber ||
+              (t.bookingId ? `NTX-${t.bookingId}` : `NTX-${String(t.id || idx).slice(0, 6).toUpperCase()}`);
+
+            const qrPayload =
+              t.qrPayload ||
+              JSON.stringify({
+                ticketCode,
+                bookingId: t.bookingRefId || t.bookingId || t.id || '',
+                eventId: t.eventId || event?.id || '',
+                attendeeEmail: t.email || t.participantEmail || user?.email || '',
+                signature: t.signature || 'ntx_verified_pass',
+              });
+
+            const qrUrl = getTicketQrUrl(qrPayload);
+
             return (
               <div className={`nx-stamp-ticket ${isHolo ? "theme-holo" : "theme-amber"}`} key={t.id || idx}>
                 {/* Top Scalloped Perforations */}
@@ -127,61 +145,51 @@ export default function MyTickets() {
                 {/* Perforated Dashed Line Divider */}
                 <div className="nx-stamp-dashed-divider" />
 
-                {/* Lower Ticket Section: QR Code or Barcode */}
+                {/* Lower Ticket Section: High-Contrast QR Code */}
                 <div className="nx-stamp-lower">
-                  {isHolo ? (
-                    <div className="nx-stamp-qr-wrap">
-                      <span className="nx-stamp-qr-vertical-text">
-                        SCAN THIS QR WHEN ENTER
-                      </span>
-                      <div className="nx-stamp-qr-code">
-                        <svg width="150" height="150" viewBox="0 0 24 24" fill="#000000">
-                          <path d="M2 2h8v8H2zM4 4v4h4V4zm10-2h8v8h-8zM16 4v4h4V4zm-14 10h8v8H2zm2 2v4h4v-4zm11-2h2v2h-2zm4 0h2v2h-2zm-4 4h2v2h-2zm4 0h2v2h-2zm-2 2h2v2h-2zm-6-4h2v2h-2zm0 4h2v2h-2zm4-6h2v2h-2z" />
-                        </svg>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="nx-stamp-barcode-wrap">
-                      <div className="nx-stamp-barcode-lines">
-                        {/* Realistic barcode stripes */}
-                        <div className="b-bar b-w2" />
-                        <div className="b-bar b-w1" />
-                        <div className="b-bar b-w3" />
-                        <div className="b-bar b-w1" />
-                        <div className="b-bar b-w4" />
-                        <div className="b-bar b-w2" />
-                        <div className="b-bar b-w1" />
-                        <div className="b-bar b-w3" />
-                        <div className="b-bar b-w2" />
-                        <div className="b-bar b-w4" />
-                        <div className="b-bar b-w1" />
-                        <div className="b-bar b-w2" />
-                        <div className="b-bar b-w3" />
-                        <div className="b-bar b-w1" />
-                        <div className="b-bar b-w2" />
-                        <div className="b-bar b-w4" />
-                        <div className="b-bar b-w2" />
-                        <div className="b-bar b-w3" />
-                        <div className="b-bar b-w1" />
-                        <div className="b-bar b-w2" />
-                        <div className="b-bar b-w4" />
-                        <div className="b-bar b-w1" />
-                        <div className="b-bar b-w3" />
-                        <div className="b-bar b-w2" />
-                        <div className="b-bar b-w1" />
-                        <div className="b-bar b-w3" />
-                        <div className="b-bar b-w4" />
-                        <div className="b-bar b-w2" />
-                        <div className="b-bar b-w1" />
-                        <div className="b-bar b-w2" />
-                        <div className="b-bar b-w3" />
-                        <div className="b-bar b-w4" />
-                      </div>
-                      <span className="nx-stamp-barcode-number">
-                        098234 819203 194827
+                  <div className="nx-stamp-qr-wrap">
+                    <span className="nx-stamp-qr-vertical-text">
+                      SCAN THIS QR WHEN ENTER
+                    </span>
+                    <div
+                      className="nx-stamp-qr-code"
+                      style={{
+                        background: '#ffffff',
+                        padding: '10px',
+                        borderRadius: '12px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        minWidth: '240px',
+                        minHeight: '240px',
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
+                      }}
+                    >
+                      <img
+                        src={qrUrl}
+                        alt={`QR Code for Ticket ${ticketCode}`}
+                        style={{
+                          width: '210px',
+                          height: '210px',
+                          display: 'block',
+                          imageRendering: 'pixelated',
+                        }}
+                      />
+                      <span
+                        style={{
+                          marginTop: '6px',
+                          fontSize: '11px',
+                          fontWeight: '800',
+                          fontFamily: 'monospace',
+                          color: '#0f172a',
+                          letterSpacing: '0.8px',
+                        }}
+                      >
+                        {ticketCode}
                       </span>
                     </div>
-                  )}
+                  </div>
                 </div>
 
                 {/* Bottom Scalloped Perforations */}

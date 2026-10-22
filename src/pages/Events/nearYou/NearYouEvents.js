@@ -503,7 +503,14 @@ export default function NearYouEvents() {
 
         {/* Search Bar Row */}
         <div className="ny-search-bar-row">
-          <form className="ny-search-form" onSubmit={handleSearchSubmit}>
+          <form
+            className="ny-search-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              window.dispatchEvent(new CustomEvent('openEventSearch', { detail: { query: searchInput } }));
+            }}
+            onClick={() => window.dispatchEvent(new CustomEvent('openEventSearch', { detail: { query: searchInput } }))}
+          >
             <span className="ny-search-icon">
               <SearchIcon color="#9ca3af" />
             </span>
@@ -513,7 +520,9 @@ export default function NearYouEvents() {
               type="text"
               placeholder={`Search events in ${selectedCity || "your city"}...`}
               value={searchInput}
-              onChange={(e) => handleSearchChange(e.target.value)}
+              readOnly
+              onClick={() => window.dispatchEvent(new CustomEvent('openEventSearch', { detail: { query: searchInput } }))}
+              onFocus={() => window.dispatchEvent(new CustomEvent('openEventSearch', { detail: { query: searchInput } }))}
             />
             {searchInput && (
               <button

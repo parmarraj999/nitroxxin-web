@@ -5,6 +5,7 @@ import { useAuthModal } from '../../AuthModal/useAuthModal';
 import { useAuth } from '../../../context/AuthContext';
 import { useEventsContext } from '../../../context/EventsContext';
 import BecomePartner from '../../Partner/BecomePartner';
+import EventSearchModal from '../../EventSearchModal/EventSearchModal';
 
 const DEFAULT_EVENT_CATEGORIES = [
     { id: 'night-rides', label: 'Night Rides' },
@@ -24,19 +25,34 @@ const Navbar = () => {
     const searchParams = useMemo(() => new URLSearchParams(search), [search]);
     const currentCategory = searchParams.get('category');
     const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
+    const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
 
     useEffect(() => {
         setSearchQuery(searchParams.get('q') || '');
     }, [searchParams]);
 
+    useEffect(() => {
+        const handleOpenEventSearch = (e) => {
+            if (e.detail?.query) {
+                setSearchQuery(e.detail.query);
+            }
+            setIsSearchModalOpen(true);
+        };
+        window.addEventListener('openEventSearch', handleOpenEventSearch);
+        return () => window.removeEventListener('openEventSearch', handleOpenEventSearch);
+    }, []);
+
+    const handleOpenSearchModal = (e) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        setIsSearchModalOpen(true);
+    };
+
     const handleSearchSubmit = (e) => {
         if (e) e.preventDefault();
-        const term = searchQuery.trim();
-        if (term) {
-            navigate(`/events/all?search=${encodeURIComponent(term)}`);
-        } else {
-            navigate('/events/all');
-        }
+        setIsSearchModalOpen(true);
     };
 
     const eventCategories = useMemo(() => {
@@ -103,8 +119,20 @@ const Navbar = () => {
                     <BecomePartner theme="dark" />
 
                     {/* Desktop Search Bar (Marketplace Navbar Style) */}
-                    <form className="navbar-search-bar" onSubmit={handleSearchSubmit} role="search">
-                        <button type="submit" className="navbar-search-bar__btn" aria-label="Search events" title="Search events">
+                    <div
+                        className="navbar-search-bar"
+                        onClick={handleOpenSearchModal}
+                        role="button"
+                        tabIndex={0}
+                        title="Search events"
+                    >
+                        <button
+                            type="button"
+                            className="navbar-search-bar__btn"
+                            aria-label="Search events"
+                            title="Search events"
+                            onClick={handleOpenSearchModal}
+                        >
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="navbar-search-bar__icon">
                                 <circle cx="11" cy="11" r="8" />
                                 <path d="m21 21-4.34-4.34" />
@@ -115,7 +143,9 @@ const Navbar = () => {
                             className="navbar-search-bar__input"
                             placeholder="Search events, rides, meetups..."
                             value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onFocus={handleOpenSearchModal}
+                            onClick={handleOpenSearchModal}
+                            readOnly
                             autoComplete="off"
                             spellCheck="false"
                         />
@@ -123,7 +153,10 @@ const Navbar = () => {
                             <button
                                 type="button"
                                 className="navbar-search-bar__clear"
-                                onClick={() => setSearchQuery('')}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSearchQuery('');
+                                }}
                                 aria-label="Clear search"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -132,15 +165,21 @@ const Navbar = () => {
                                 </svg>
                             </button>
                         )}
-                    </form>
+                    </div>
 
                     {/* Mobile Search Icon (only shown on mobile screens) */}
-                    <Link to="/events/search" className="navbar-search-mobile" aria-label="Search events">
+                    <button
+                        type="button"
+                        className="navbar-search-mobile"
+                        aria-label="Search events"
+                        title="Search events"
+                        onClick={handleOpenSearchModal}
+                    >
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="navbar-search-mobile__icon">
                             <circle cx="11" cy="11" r="8" />
                             <path d="m21 21-4.34-4.34" />
                         </svg>
-                    </Link>
+                    </button>
                     {
                         isAuthenticated ? "" :
                             <button type="button" className="navbar-login" onClick={isAuthenticated ? logout : openLogin}>
@@ -156,6 +195,13 @@ const Navbar = () => {
                     }
                 </div>
             </div>
+
+            {/* Event Search Popup Modal */}
+            <EventSearchModal
+                isOpen={isSearchModalOpen}
+                onClose={() => setIsSearchModalOpen(false)}
+                initialQuery={searchQuery}
+            />
         </nav>
     );
 };

@@ -1478,5 +1478,120 @@
   }
 }
 
+/* =========================================================================
+   TICKET GENERATING LOADING OVERLAY (POST-PAYMENT SECURE PASS MINTING)
+   ========================================================================= */
+.eb-ticket-generating-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999999;
+  background: rgba(10, 12, 16, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.eb-ticket-generating-card {
+  width: 100%;
+  max-width: 440px;
+  background: #14171f;
+  background: linear-gradient(180deg, #181d26 0%, #12151c 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 32px 28px;
+  text-align: center;
+  color: #ffffff;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.eb-ticket-generating-spinner-wrap {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  margin: 0 auto 20px auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.eb-ticket-generating-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 4px solid rgba(249, 115, 22, 0.15);
+  border-top-color: #f97316;
+  border-right-color: #6366f1;
+  animation: ebSpinRing 1s linear infinite;
+}
+
+.eb-ticket-generating-icon {
+  font-size: 28px;
+  color: #f97316;
+  animation: ebPulseIcon 1.8s ease-in-out infinite;
+}
+
+.eb-ticket-generating-card h3 {
+  margin: 0 0 8px 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.eb-ticket-generating-card p {
+  margin: 0 0 24px 0;
+  font-size: 13.5px;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+.eb-ticket-generating-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 14px 18px;
+  font-size: 13.5px;
+}
+
+.eb-generating-step.done {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.eb-generating-step.active {
+  color: #f97316;
+  font-weight: 600;
+  animation: ebPulseIcon 1.5s infinite;
+}
+
+.eb-generating-step {
+  color: #64748b;
+}
+
+@keyframes ebSpinRing {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ebPulseIcon {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.75;
+    transform: scale(0.96);
+  }
+}
+
+
 
 
