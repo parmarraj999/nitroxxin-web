@@ -157,13 +157,6 @@ export default function AllEvents() {
     setSearchParams(params, { replace: true });
   };
 
-  // Search Submit / Real-time handler
-  const handleSearchSubmit = (e) => {
-    if (e) e.preventDefault();
-    setQuery(searchInput);
-    updateUrl({ q: searchInput });
-  };
-
   const handleSearchChange = (val) => {
     setSearchInput(val);
     setQuery(val);

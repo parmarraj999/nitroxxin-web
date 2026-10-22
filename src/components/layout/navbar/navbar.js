@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import './navbar.css';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuthModal } from '../../AuthModal/useAuthModal';
 import { useAuth } from '../../../context/AuthContext';
 import { useEventsContext } from '../../../context/EventsContext';
@@ -17,7 +17,6 @@ const DEFAULT_EVENT_CATEGORIES = [
 
 const Navbar = () => {
     const { pathname, search } = useLocation();
-    const navigate = useNavigate();
     const { openLogin } = useAuthModal();
     const { isAuthenticated, logout } = useAuth();
     const { categories: rawCategories = [] } = useEventsContext();
@@ -47,11 +46,6 @@ const Navbar = () => {
             e.preventDefault();
             e.stopPropagation();
         }
-        setIsSearchModalOpen(true);
-    };
-
-    const handleSearchSubmit = (e) => {
-        if (e) e.preventDefault();
         setIsSearchModalOpen(true);
     };
 

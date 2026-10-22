@@ -174,18 +174,6 @@ export default function NearYouEvents() {
     updateUrl({ city });
   };
 
-  const handleSearchSubmit = (e) => {
-    if (e) e.preventDefault();
-    setQuery(searchInput);
-    updateUrl({ q: searchInput });
-  };
-
-  const handleSearchChange = (val) => {
-    setSearchInput(val);
-    setQuery(val);
-    updateUrl({ q: val });
-  };
-
   const handleClearSearch = () => {
     setSearchInput("");
     setQuery("");

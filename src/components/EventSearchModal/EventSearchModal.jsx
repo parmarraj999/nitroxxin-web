@@ -147,7 +147,6 @@ export default function EventSearchModal({
 
   const [query, setQuery] = useState(initialQuery);
   const [activeFilter, setActiveFilter] = useState(initialCategory);
-  const [city, setCity] = useState(() => localStorage.getItem("selectedCity") || "Sector 3A");
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
 
   const [recentSearches, setRecentSearches] = useState(() => {
@@ -176,10 +175,6 @@ export default function EventSearchModal({
           inputRef.current.focus();
         }
       }, 50);
-
-      // Read city
-      const savedCity = localStorage.getItem("selectedCity");
-      if (savedCity) setCity(savedCity);
 
       return () => {
         clearTimeout(timer);
@@ -386,23 +381,6 @@ export default function EventSearchModal({
 
     return list;
   }, [allEventsPool, activeFilter, query]);
-
-  // Trending events (displayed when search input is empty)
-  const trendingEvents = useMemo(() => {
-    let list = allEventsPool;
-    if (activeFilter !== "All") {
-      list = list.filter((item) => {
-        if (activeFilter === "Free Entry") {
-          return item.price === 0 || String(item.priceText || "").toLowerCase().includes("free");
-        }
-        return (
-          item.categoryTab === activeFilter ||
-          String(item.type).toLowerCase() === activeFilter.toLowerCase()
-        );
-      });
-    }
-    return list.slice(0, 10);
-  }, [allEventsPool, activeFilter]);
 
   const handleSelectEvent = (event) => {
     saveRecentSearch(event.title);
