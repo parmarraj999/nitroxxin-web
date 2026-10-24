@@ -80,10 +80,10 @@ export default function MyTickets() {
             const theme = t.theme || (idx % 2 === 0 ? "holographic" : "amber");
             const isHolo = theme === "holographic";
 
-            const title = t.title || event.title || event.name || "IT COMES WITH IT MIC MCCLURE";
-            const venue = t.venue || t.location || event.location || event.venue || "Gateway of India, Colaba";
-            const date = t.date || t.dates || event.dateText || "08/12";
-            const time = t.time || event.timeText || "02:00 PM";
+            const title = t.title || t.eventTitle || event.title || event.name || "Nitroxx Event";
+            const venue = t.venue || t.location || event.venue || event.location || "Designated Venue";
+            const date = t.dateText || t.date || t.dates || event.dateText || "Date TBA";
+            const time = t.time || event.timeText || "";
             const count = t.tickets || (t.totalTickets ? `x${t.totalTickets}` : "x1");
 
             const ticketCode =

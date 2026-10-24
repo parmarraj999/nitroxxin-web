@@ -9,8 +9,8 @@ function RideCard({ booking }) {
   const event = booking.eventSnapshot || booking.data || booking || {};
   return (
     <article className="ride-card">
-      {event.image || event.banner ? (
-        <img src={event.image || event.banner} alt={event.title || event.name || "Event"} className="ride-card__image" />
+      {event.bannerImage || event.banner || event.image ? (
+        <img src={event.bannerImage || event.banner || event.image} alt={event.title || event.name || "Event"} className="ride-card__image" />
       ) : (
         <div className="ride-card__image ride-card__image-empty">No image</div>
       )}

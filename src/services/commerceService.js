@@ -444,13 +444,19 @@ export const bookEvent = async ({
       throw new Error("This event does not have enough tickets available.");
     }
 
-    // 1. Root bookings collection with merged ticketCode, consolidated attendees array, and no duplicate fields
+    // 1. Root bookings collection with essential event metadata only (no full eventSnapshot)
     const payload = compact({
       bookingId,
       bookingDocId: bookingRef.id,
       userId: user.uid,
       hostId,
       eventId,
+      eventTitle: eventSnapshot.title || eventSnapshot.name || "Nitroxx Motorsports Event",
+      title: eventSnapshot.title || eventSnapshot.name || "Nitroxx Motorsports Event",
+      // bannerImage: eventSnapshot.bannerImage || eventSnapshot.banner || eventSnapshot.image || (eventSnapshot.images && eventSnapshot.images[0]) || "",
+      dateText: eventSnapshot.dateText || eventSnapshot.dateTimeText || eventSnapshot.date || eventSnapshot.dates || "",
+      venue: eventSnapshot.venue || eventSnapshot.location || eventSnapshot.address || "",
+      city: eventSnapshot.city || "",
       ticketCode,
       qrPayload,
       signature,
@@ -475,12 +481,11 @@ export const bookEvent = async ({
       gateStatus: "Pending",
       statusHistory: [{ status: "pending", at: new Date().toISOString(), note: "Booking created" }],
       ticketTemplateUrl: eventSnapshot.ticketTemplateUrl || event?.ticketTemplateUrl || "",
-      eventSnapshot: JSON.parse(JSON.stringify(eventSnapshot)),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
 
-    // 2. User joined-event subcollection with deduplicated fields
+    // 2. User joined-event subcollection with essential metadata only
     const joinedEventData = compact({
       id: eventId || bookingRef.id,
       eventId,
@@ -488,9 +493,10 @@ export const bookEvent = async ({
       bookingRefId: bookingRef.id,
       userId: user.uid,
       title: eventSnapshot.title || eventSnapshot.name || "",
-      banner: eventSnapshot.banner || eventSnapshot.bannerImage || eventSnapshot.image || (eventSnapshot.images && eventSnapshot.images[0]) || "",
+      bannerImage: eventSnapshot.bannerImage || eventSnapshot.banner || eventSnapshot.image || (eventSnapshot.images && eventSnapshot.images[0]) || "",
       dateText: eventSnapshot.dateText || eventSnapshot.dateTimeText || eventSnapshot.date || eventSnapshot.dates || "",
       venue: eventSnapshot.venue || eventSnapshot.location || eventSnapshot.address || "",
+      city: eventSnapshot.city || "",
       price: eventSnapshot.price ?? 0,
       total,
       totalTickets,
@@ -509,7 +515,6 @@ export const bookEvent = async ({
       attendanceStatus: "Not Checked In",
       paymentStatus: "paid",
       paymentMethod: payment?.method || "online",
-      eventSnapshot: JSON.parse(JSON.stringify(eventSnapshot)),
       joinedAt: serverTimestamp(),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),

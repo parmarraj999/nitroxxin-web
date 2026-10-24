@@ -798,7 +798,7 @@ export default function JoinedEvents() {
             <div className="nx-ticket-pass-body">
               {/* Event Header Banner */}
               <div className="nx-ticket-pass-banner">
-                <img src={selectedTicket.banner} alt={selectedTicket.title} />
+                <img src={selectedTicket.bannerImage || selectedTicket.banner} alt={selectedTicket.title} />
                 <div className="nx-ticket-pass-badge">{selectedTicket.category || "Ride Pass"}</div>
               </div>
 
