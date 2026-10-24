@@ -1,0 +1,359 @@
+/* ==========================================================================
+   IMAGE ADJUST MODAL - NITROXX STYLING
+   ========================================================================== */
+
+.nx-adjust-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: nxAdjustFadeIn 0.2s ease-out;
+}
+
+@keyframes nxAdjustFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.nx-adjust-modal {
+  width: 100%;
+  max-width: 440px;
+  background: #0d1117;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 22px 24px 20px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(59, 130, 246, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  box-sizing: border-box;
+  animation: nxAdjustSlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes nxAdjustSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ── Header ── */
+.nx-adjust-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  padding-bottom: 14px;
+}
+
+.nx-adjust-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nx-adjust-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.2px;
+}
+
+.nx-adjust-close-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+  transition: color 0.18s ease, transform 0.18s ease;
+}
+
+.nx-adjust-close-btn:hover {
+  color: #ffffff;
+  transform: scale(1.15);
+}
+
+/* ── Viewport & Canvas ── */
+.nx-adjust-viewport-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.nx-adjust-viewport {
+  position: relative;
+  width: 300px;
+  height: 300px;
+  background: #05070a;
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+}
+
+.nx-adjust-viewport:active {
+  cursor: grabbing;
+}
+
+.nx-adjust-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+
+/* ── Circular Crop Mask Overlay ── */
+.nx-adjust-crop-mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  border-radius: 50%;
+  box-shadow: 0 0 0 9999px rgba(8, 11, 15, 0.82);
+  border: 2.5px solid #3b82f6;
+  box-sizing: border-box;
+}
+
+/* Subtle 3x3 alignment grid */
+.nx-adjust-grid {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.nx-adjust-grid-line {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.12);
+  pointer-events: none;
+}
+
+.nx-grid-v1 {
+  left: 33.33%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+}
+
+.nx-grid-v2 {
+  left: 66.66%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+}
+
+.nx-grid-h1 {
+  top: 33.33%;
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+
+.nx-grid-h2 {
+  top: 66.66%;
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+
+.nx-adjust-loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(13, 17, 23, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.nx-adjust-hint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.45);
+  text-align: center;
+}
+
+/* ── Zoom Slider & Controls ── */
+.nx-adjust-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+
+.nx-adjust-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nx-adjust-tool-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #161b22;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.nx-adjust-tool-btn:hover:not(:disabled) {
+  background: #21262d;
+  border-color: #3b82f6;
+  color: #60a5fa;
+}
+
+.nx-adjust-tool-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.nx-adjust-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 6px;
+  outline: none;
+  cursor: pointer;
+}
+
+.nx-adjust-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.6);
+  border: 2px solid #ffffff;
+  transition: transform 0.15s ease;
+}
+
+.nx-adjust-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.nx-adjust-zoom-val {
+  font-size: 12px;
+  font-weight: 600;
+  color: #60a5fa;
+  min-width: 40px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.nx-adjust-actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 10px;
+}
+
+.nx-adjust-secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #161b22;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.nx-adjust-secondary-btn:hover {
+  background: #21262d;
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ── Footer ── */
+.nx-adjust-footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nx-adjust-btn-cancel {
+  flex: 1;
+  padding: 12px 16px;
+  background: #161b22;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.nx-adjust-btn-cancel:hover {
+  background: #21262d;
+  color: #ffffff;
+}
+
+.nx-adjust-btn-apply {
+  flex: 1.5;
+  padding: 12px 18px;
+  background: #2563eb;
+  border: none;
+  border-radius: 12px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.4);
+  transition: all 0.18s ease;
+}
+
+.nx-adjust-btn-apply:hover:not(:disabled) {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.55);
+}
+
+.nx-adjust-btn-apply:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

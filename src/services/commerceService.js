@@ -428,7 +428,6 @@ export const bookEvent = async ({
     age: att.age || "",
     gender: att.gender || "",
     idType: att.idType || "Aadhaar",
-    idLast4: att.idLast4 || "",
     joinAs: att.joinAs || (idx === 0 ? (joinAs || "biker") : "pillion"),
     ticketTier: att.ticketTier || (ticketPlan?.tiers && ticketPlan.tiers[idx]?.name) || "",
     ticketTierKey: att.ticketTierKey || (ticketPlan?.tiers && ticketPlan.tiers[idx]?.key) || "",

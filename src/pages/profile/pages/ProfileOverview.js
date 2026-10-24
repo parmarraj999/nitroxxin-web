@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../../context/AuthContext";
+import ImageAdjustModal from "../components/ImageAdjustModal";
 import "./ProfileOverview.css";
 
 export default function ProfileOverview() {
@@ -22,6 +23,20 @@ export default function ProfileOverview() {
   const [errorMessage, setErrorMessage] = useState("");
   const [showLicensePreview, setShowLicensePreview] = useState(false);
 
+  // Avatar adjustment modal state
+  const [adjustModalOpen, setAdjustModalOpen] = useState(false);
+  const [imageToAdjust, setImageToAdjust] = useState("");
+  const [avatarPreview, setAvatarPreview] = useState("");
+  const [pendingAvatarBlob, setPendingAvatarBlob] = useState(null);
+
+  // License preview & pending state
+  const [licensePreview, setLicensePreview] = useState("");
+  const [pendingLicenseFile, setPendingLicenseFile] = useState(null);
+
+  // Ref flag to ensure we only auto-populate form once from Firestore,
+  // preventing background updates (like photo upload snapshots) from wiping active typing!
+  const isFormInitializedRef = useRef(false);
+
   // Profile Form state matching screenshot fields
   const [form, setForm] = useState({
     username: "",
@@ -32,35 +47,73 @@ export default function ProfileOverview() {
     emergencyNumber: "",
   });
 
-  // Sync state whenever profile/user updates
+  // Sync state whenever profile/user initially loads
   useEffect(() => {
-    const rawUsername =
-      profile?.username ||
-      (user?.phone || user?.phoneNumber
-        ? `user_${(user.phone || user.phoneNumber).slice(-4)}`
-        : user?.uid
-        ? `user_${user.uid.slice(0, 5)}`
-        : user?.email
-        ? user.email.split("@")[0]
-        : "");
+    if (!profile && !user) return;
 
-    const formattedUsername = rawUsername ? (rawUsername.startsWith("@") ? rawUsername : `@${rawUsername}`) : "";
+    // Only populate initial fields if user hasn't already begun modifying or form wasn't initialized yet
+    if (!isFormInitializedRef.current) {
+      const rawUsername =
+        profile?.username ||
+        (user?.phone || user?.phoneNumber
+          ? `user_${(user.phone || user.phoneNumber).slice(-4)}`
+          : user?.uid
+          ? `user_${user.uid.slice(0, 5)}`
+          : user?.email
+          ? user.email.split("@")[0]
+          : "");
 
-    setForm({
-      username: formattedUsername,
-      name:
-        profile?.fullName ||
-        profile?.name ||
-        profile?.displayName ||
-        user?.fullName ||
-        user?.displayName ||
-        "",
-      phone: profile?.phone || profile?.phoneNumber || user?.phone || user?.phoneNumber || "",
-      email: profile?.email || user?.email || "",
-      drivingLicense: profile?.drivingLicense || "",
-      emergencyNumber: profile?.emergencyNumber || "",
-    });
+      const formattedUsername = rawUsername
+        ? rawUsername.startsWith("@")
+          ? rawUsername
+          : `@${rawUsername}`
+        : "";
+
+      setForm({
+        username: formattedUsername,
+        name:
+          profile?.fullName ||
+          profile?.name ||
+          profile?.displayName ||
+          user?.fullName ||
+          user?.displayName ||
+          "",
+        phone:
+          profile?.phone ||
+          profile?.phoneNumber ||
+          user?.phone ||
+          user?.phoneNumber ||
+          "",
+        email: profile?.email || user?.email || "",
+        drivingLicense: profile?.drivingLicense || "",
+        emergencyNumber: profile?.emergencyNumber || "",
+      });
+
+      isFormInitializedRef.current = true;
+    }
   }, [profile, user]);
+
+  // Sync avatar preview if remote profile has a photo and no pending local override
+  useEffect(() => {
+    const remotePhoto =
+      profile?.profilePhoto ||
+      profile?.photoURL ||
+      user?.profilePhoto ||
+      user?.photoURL ||
+      "";
+    if (remotePhoto && !avatarPreview && !pendingAvatarBlob) {
+      setAvatarPreview(remotePhoto);
+    }
+  }, [profile, user, avatarPreview, pendingAvatarBlob]);
+
+  // Sync license preview if remote profile has license document
+  useEffect(() => {
+    const remoteLicense =
+      profile?.drivingLicenseImage || profile?.drivingLicensePhoto || "";
+    if (remoteLicense && !licensePreview && !pendingLicenseFile) {
+      setLicensePreview(remoteLicense);
+    }
+  }, [profile, licensePreview, pendingLicenseFile]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -69,20 +122,89 @@ export default function ProfileOverview() {
     setErrorMessage("");
   };
 
-  // Handle avatar photo selection and upload
-  const handlePhotoSelect = async (e) => {
+  // Handle avatar file selection: open Image Adjuster Modal
+  const handlePhotoSelect = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setIsUploadingPhoto(true);
+    // Clear input value so picking the same file again triggers onChange
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+
     setErrorMessage("");
+
+    // Read to Data URL for interactive canvas cropping
+    const reader = new FileReader();
+    reader.onload = () => {
+      setImageToAdjust(reader.result);
+      setAdjustModalOpen(true);
+    };
+    reader.onerror = (readErr) => {
+      console.error("Error reading photo file:", readErr);
+      setErrorMessage("Could not read selected image file.");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Open adjuster on currently set photo
+  const handleOpenAdjustExisting = () => {
+    const photoToAdjust =
+      avatarPreview ||
+      profile?.profilePhoto ||
+      profile?.photoURL ||
+      user?.profilePhoto ||
+      user?.photoURL;
+    if (!photoToAdjust) {
+      fileInputRef.current?.click();
+      return;
+    }
+    setImageToAdjust(photoToAdjust);
+    setAdjustModalOpen(true);
+  };
+
+  // Apply crop from ImageAdjustModal
+  const handleApplyCroppedAvatar = async (croppedBlob, croppedDataUrl) => {
+    setAdjustModalOpen(false);
+
+    if (croppedDataUrl) {
+      setAvatarPreview(croppedDataUrl);
+    }
+
+    if (croppedBlob) {
+      setPendingAvatarBlob(croppedBlob);
+
+      // Attempt immediate background upload without wiping form details
+      setIsUploadingPhoto(true);
+      setErrorMessage("");
+      try {
+        const photoFile = new File([croppedBlob], `avatar_${Date.now()}.jpg`, {
+          type: "image/jpeg",
+        });
+        const uploadedUrl = await uploadProfilePhoto(photoFile);
+        if (uploadedUrl) {
+          setAvatarPreview(uploadedUrl);
+        }
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 2500);
+      } catch (err) {
+        console.warn("Direct upload had an issue; preview is preserved and will save with details:", err);
+      } finally {
+        setIsUploadingPhoto(false);
+      }
+    }
+  };
+
+  // Remove avatar photo
+  const handleRemoveAvatar = async () => {
+    if (!window.confirm("Remove your profile photo?")) return;
+    setAvatarPreview("");
+    setPendingAvatarBlob(null);
     try {
-      await uploadProfilePhoto(file);
+      await updateProfile({ profilePhoto: "" });
     } catch (err) {
-      console.error("Photo upload error:", err);
-      setErrorMessage(err.message || "Failed to upload photo. Please try again.");
-    } finally {
-      setIsUploadingPhoto(false);
+      console.error("Failed to remove profile photo:", err);
+      setErrorMessage("Could not remove photo.");
     }
   };
 
@@ -91,13 +213,23 @@ export default function ProfileOverview() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (licenseFileInputRef.current) {
+      licenseFileInputRef.current.value = "";
+    }
+
+    const localUrl = URL.createObjectURL(file);
+    setLicensePreview(localUrl);
+    setPendingLicenseFile(file);
+
     setIsUploadingLicense(true);
     setErrorMessage("");
     try {
-      await uploadUserDrivingLicense(file);
+      const downloadURL = await uploadUserDrivingLicense(file);
+      if (downloadURL) {
+        setLicensePreview(downloadURL);
+      }
     } catch (err) {
-      console.error("License photo upload error:", err);
-      setErrorMessage(err.message || "Failed to upload license photo. Please try again.");
+      console.warn("Direct license upload warning, preserved locally:", err);
     } finally {
       setIsUploadingLicense(false);
     }
@@ -108,6 +240,8 @@ export default function ProfileOverview() {
     e.preventDefault();
     if (!window.confirm("Remove your attached driving license document?")) return;
 
+    setLicensePreview("");
+    setPendingLicenseFile(null);
     try {
       await removeUserDrivingLicense();
     } catch (err) {
@@ -130,6 +264,33 @@ export default function ProfileOverview() {
       const trimmedLicense = form.drivingLicense.trim().toUpperCase();
       const trimmedEmergency = form.emergencyNumber.trim();
 
+      // If there is a pending avatar blob that hasn't finished uploading
+      let finalAvatarUrl = avatarPreview;
+      if (pendingAvatarBlob) {
+        try {
+          const photoFile = new File([pendingAvatarBlob], `avatar_${Date.now()}.jpg`, {
+            type: "image/jpeg",
+          });
+          const uploaded = await uploadProfilePhoto(photoFile);
+          if (uploaded) finalAvatarUrl = uploaded;
+          setPendingAvatarBlob(null);
+        } catch (upErr) {
+          console.warn("Avatar save fallback:", upErr);
+        }
+      }
+
+      // If there is a pending license file
+      let finalLicenseUrl = licensePreview;
+      if (pendingLicenseFile) {
+        try {
+          const uploadedLic = await uploadUserDrivingLicense(pendingLicenseFile);
+          if (uploadedLic) finalLicenseUrl = uploadedLic;
+          setPendingLicenseFile(null);
+        } catch (licErr) {
+          console.warn("License save fallback:", licErr);
+        }
+      }
+
       await updateProfile({
         fullName: trimmedName,
         name: trimmedName,
@@ -140,6 +301,8 @@ export default function ProfileOverview() {
         email: trimmedEmail,
         drivingLicense: trimmedLicense,
         emergencyNumber: trimmedEmergency,
+        ...(finalAvatarUrl ? { profilePhoto: finalAvatarUrl } : {}),
+        ...(finalLicenseUrl ? { drivingLicenseImage: finalLicenseUrl } : {}),
         isProfileComplete: Boolean(
           trimmedName && trimmedPhone && trimmedEmail && trimmedLicense
         ),
@@ -155,8 +318,15 @@ export default function ProfileOverview() {
     }
   };
 
-  const currentPhoto = profile?.profilePhoto || profile?.photoURL || user?.profilePhoto || user?.photoURL;
+  const currentPhoto =
+    avatarPreview ||
+    profile?.profilePhoto ||
+    profile?.photoURL ||
+    user?.profilePhoto ||
+    user?.photoURL;
+
   const currentLicenseImage =
+    licensePreview ||
     profile?.drivingLicenseImage ||
     profile?.drivingLicensePhoto ||
     null;
@@ -181,7 +351,7 @@ export default function ProfileOverview() {
         onChange={handleLicenseSelect}
       />
 
-      {/* Top Header matching Screenshot 1 */}
+      {/* Top Header */}
       <div className="nx-details-header">
         <h1 className="nx-details-title">Your Details</h1>
         <button
@@ -226,7 +396,7 @@ export default function ProfileOverview() {
               <div
                 className="nx-details-avatar-ring"
                 onClick={() => fileInputRef.current?.click()}
-                title="Change profile picture"
+                title="Change or upload profile picture"
               >
                 {currentPhoto ? (
                   <img src={currentPhoto} alt="Profile" className="nx-details-avatar-img" />
@@ -248,12 +418,59 @@ export default function ProfileOverview() {
                     e.stopPropagation();
                     fileInputRef.current?.click();
                   }}
+                  title="Upload / Change photo"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 20h9" />
                     <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
                   </svg>
                 </button>
+              </div>
+
+              {/* Action Buttons for Avatar: Change, Adjust, Remove */}
+              <div className="nx-details-avatar-actions">
+                <button
+                  type="button"
+                  className="nx-details-btn-pill"
+                  onClick={() => fileInputRef.current?.click()}
+                  title="Choose a new photo file"
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                    <circle cx="12" cy="13" r="4" />
+                  </svg>
+                  {currentPhoto ? "Change" : "Upload"}
+                </button>
+
+                {currentPhoto && (
+                  <button
+                    type="button"
+                    className="nx-details-btn-pill nx-details-btn-adjust"
+                    onClick={handleOpenAdjustExisting}
+                    title="Adjust zoom, crop, and framing"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M6 2v14a2 2 0 0 0 2 2h14" />
+                      <path d="M18 22V8a2 2 0 0 0-2-2H2" />
+                    </svg>
+                    Adjust
+                  </button>
+                )}
+
+                {currentPhoto && (
+                  <button
+                    type="button"
+                    className="nx-details-btn-pill nx-details-btn-remove"
+                    onClick={handleRemoveAvatar}
+                    title="Remove profile picture"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    </svg>
+                    Remove
+                  </button>
+                )}
               </div>
 
               {isUploadingPhoto && (
@@ -441,7 +658,16 @@ export default function ProfileOverview() {
         </div>
       </form>
 
-      {/* Full Screen Image Lightbox Preview */}
+      {/* Image Adjuster Modal */}
+      <ImageAdjustModal
+        isOpen={adjustModalOpen}
+        imageSrc={imageToAdjust}
+        onApply={handleApplyCroppedAvatar}
+        onCancel={() => setAdjustModalOpen(false)}
+        title="Adjust Profile Photo"
+      />
+
+      {/* Full Screen Image Lightbox Preview for License Document */}
       {showLicensePreview && (
         <div
           className="profile-modal-backdrop"

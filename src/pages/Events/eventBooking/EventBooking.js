@@ -41,6 +41,21 @@ const STEPS = [
 
 
 
+/**
+ * Validates motorcycle / vehicle registration number against Indian RTO standards:
+ * - Standard state series: 2-letter State code + 1-2 digit RTO + optional 1-3 series letters + 1-4 digit number
+ *   (e.g. MH 02 AB 1234, DL 01 1234, DL 1C A 1234, KA 05 MB 9876, HR 26 DQ 5551)
+ * - Bharat (BH) series: 2-digit year + BH + 1-4 digit number + 1-2 letters
+ *   (e.g. 22 BH 1234 AA)
+ */
+export const isValidRegistrationNumber = (reg) => {
+  if (!reg || typeof reg !== 'string') return false;
+  const clean = reg.replace(/[\s.-]/g, '').toUpperCase();
+  const standardPattern = /^[A-Z]{2}[0-9]{1,2}[A-Z]{0,3}[0-9]{1,4}$/;
+  const bhSeriesPattern = /^[0-9]{2}BH[0-9]{1,4}[A-Z]{1,2}$/;
+  return (standardPattern.test(clean) || bhSeriesPattern.test(clean)) && clean.length >= 6 && clean.length <= 12;
+};
+
 const makeAttendee = (index = 0) => ({
   name: '',
   phone: '',
@@ -48,7 +63,6 @@ const makeAttendee = (index = 0) => ({
   age: '',
   gender: '',
   idType: 'Aadhaar',
-  idLast4: '',
   joinAs: index === 0 ? 'biker' : 'pillion',
 });
 
@@ -359,16 +373,6 @@ function AttendeesStep({ totalTickets, attendees, updateAttendee, contact, setCo
                     <option>Prefer not to say</option>
                   </select>
                 </Field>
-                <Field label="ID last 4 digits">
-                  <input value={attendee.idLast4} onChange={(e) => updateAttendee(index, 'idLast4', e.target.value)} placeholder="1234" />
-                </Field>
-                <Field label="Join as">
-                  <select value={attendee.joinAs || (index === 0 ? 'biker' : 'pillion')} onChange={(e) => updateAttendee(index, 'joinAs', e.target.value)}>
-                    <option value="biker">Biker / Rider</option>
-                    <option value="pillion">Pillion Rider</option>
-                    <option value="spectator">Spectator / Enthusiast</option>
-                  </select>
-                </Field>
               </div>
             </article>
           );
@@ -420,7 +424,7 @@ function RideSetupStep({
           <p className="eb-kicker">Ride setup</p>
           <h2>{joinAs === 'biker' ? 'Vehicle setup' : 'Rider preferences'}</h2>
         </div>
-        <span>This helps Nitroxx plan parking, marshals, and rider grouping.</span>
+        <span>This helps Nitroxx plan marshals, ride safety, and rider grouping.</span>
       </div>
 
       {/* ── Case 1: Event has Bike Requirements ── */}
@@ -610,8 +614,13 @@ function RideSetupStep({
             <input
               value={bike.registration}
               onChange={(e) => setBike({ ...bike, registration: e.target.value.toUpperCase() })}
-              placeholder="DL 01 XX 0000"
+              placeholder="e.g. MH 02 AB 1234"
             />
+            {bike.registration && !isValidRegistrationNumber(bike.registration) && (
+              <span style={{ color: '#f87171', fontSize: '11px', marginTop: '4px', display: 'block' }}>
+                Enter valid number plate (e.g. MH 02 AB 1234 or 22 BH 1234 AA)
+              </span>
+            )}
           </Field>
           <Field label="Riding experience">
             <select
@@ -632,16 +641,6 @@ function RideSetupStep({
               <option>Relaxed</option>
               <option>Balanced</option>
               <option>Sport</option>
-            </select>
-          </Field>
-          <Field label="Parking need">
-            <select
-              value={preferences.parking}
-              onChange={(e) => setPreferences({ ...preferences, parking: e.target.value })}
-            >
-              <option>Bike parking</option>
-              <option>Car parking</option>
-              <option>No parking required</option>
             </select>
           </Field>
         </div>
@@ -1310,7 +1309,6 @@ export default function EventBooking() {
       age: profile?.age || profile?.dateOfBirth || '',
       gender: profile?.gender || '',
       idType: profile?.idType || 'Aadhaar',
-      idLast4: profile?.idLast4 || '',
     };
 
     setContact((prev) => ({
@@ -1368,7 +1366,6 @@ export default function EventBooking() {
             age: first.age || profile?.age || profile?.dateOfBirth || '',
             gender: first.gender || profile?.gender || '',
             idType: first.idType || profile?.idType || 'Aadhaar',
-            idLast4: first.idLast4 || profile?.idLast4 || '',
           },
           ...current.slice(1),
         ];
@@ -1506,6 +1503,10 @@ export default function EventBooking() {
     if (step === 3 && joinAs !== 'pillion') {
       if (!bike.brand || !bike.model || !bike.registration) {
         return 'Please enter your bike brand, model, and registration number.';
+      }
+
+      if (!isValidRegistrationNumber(bike.registration)) {
+        return 'Please enter a valid motorcycle registration number (e.g. MH 02 AB 1234 or 22 BH 1234 AA).';
       }
 
       const bikeReq = resolveBikeRequirements(event);

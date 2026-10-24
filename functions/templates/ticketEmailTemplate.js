@@ -183,7 +183,7 @@ function renderTicketEmailHtml(ticket, downloadUrl) {
             </tr>
             <tr>
               <td align="center" style="padding-top: 14px;">
-                <a href="mailto:support@nitroxx.com?subject=Inquiry%20for%20Booking%20${encodeURIComponent(ticket.ticketCode)}" class="btn-full" style="display: inline-block; background-color: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.15); color: #cbd5e1; text-decoration: none; font-size: 13.5px; font-weight: 600; padding: 11px 26px; border-radius: 10px;">
+                <a href="mailto:support@nitroxx.in?subject=Inquiry%20for%20Booking%20${encodeURIComponent(ticket.ticketCode)}" class="btn-full" style="display: inline-block; background-color: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.15); color: #cbd5e1; text-decoration: none; font-size: 13.5px; font-weight: 600; padding: 11px 26px; border-radius: 10px;">
                   &#x1F4AC; Contact Support &amp; Organizer
                 </a>
               </td>

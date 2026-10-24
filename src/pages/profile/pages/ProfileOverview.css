@@ -148,6 +148,61 @@
   background: #1d4ed8;
 }
 
+.nx-details-avatar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.nx-details-btn-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #151921;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.nx-details-btn-pill:hover {
+  background: #202733;
+  border-color: #3b82f6;
+  color: #60a5fa;
+  transform: translateY(-1px);
+}
+
+.nx-details-btn-adjust {
+  border-color: rgba(59, 130, 246, 0.4);
+  color: #60a5fa;
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.nx-details-btn-adjust:hover {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: #3b82f6;
+  color: #93c5fd;
+}
+
+.nx-details-btn-remove {
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.06);
+}
+
+.nx-details-btn-remove:hover {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: #ef4444;
+  color: #fca5a5;
+}
+
 .nx-details-uploading-tag {
   font-size: 12px;
   color: #60a5fa;

@@ -294,7 +294,23 @@ export const FirebaseAuthProvider = ({ children }) => {
       await updateProfile({ profilePhoto: photoURL });
       return photoURL;
     } catch (err) {
-      console.error("Upload photo error:", err);
+      console.warn("Storage upload failed, attempting fallback to data URL:", err);
+      if (file && file.size < 600 * 1024) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = async () => {
+            try {
+              const dataUrl = reader.result;
+              await updateProfile({ profilePhoto: dataUrl });
+              resolve(dataUrl);
+            } catch (upErr) {
+              reject(err);
+            }
+          };
+          reader.onerror = () => reject(err);
+          reader.readAsDataURL(file);
+        });
+      }
       throw err;
     }
   }, [user, updateProfile]);
@@ -308,7 +324,23 @@ export const FirebaseAuthProvider = ({ children }) => {
       });
       return downloadURL;
     } catch (err) {
-      console.error("Upload driving license error:", err);
+      console.warn("Storage license upload failed, attempting fallback to data URL:", err);
+      if (file && file.size < 600 * 1024) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = async () => {
+            try {
+              const dataUrl = reader.result;
+              await updateProfile({ drivingLicenseImage: dataUrl });
+              resolve(dataUrl);
+            } catch (upErr) {
+              reject(err);
+            }
+          };
+          reader.onerror = () => reject(err);
+          reader.readAsDataURL(file);
+        });
+      }
       throw err;
     }
   }, [user, updateProfile]);
