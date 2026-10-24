@@ -56,7 +56,13 @@ async function sendTicketEmail(ticket, pdfBuffer, downloadUrl) {
       const response = await resend.emails.send(mailOptions);
       if (response.error) {
         logger.error(`Resend API returned error for ${ticket.attendeeEmail}:`, response.error);
-        throw new Error(`Resend error: ${response.error.message || JSON.stringify(response.error)}`);
+        const rawMsg = response.error.message || JSON.stringify(response.error);
+        if (rawMsg.includes('only send testing emails to your own email address')) {
+          throw new Error(
+            `Resend Sandbox Limit: onboarding@resend.dev can only send to account owner's email. Verify domain at resend.com or use account email.`
+          );
+        }
+        throw new Error(`Resend error: ${rawMsg}`);
       }
       logger.info(`Email successfully sent! Resend Message ID: ${response.data?.id}`);
       return {

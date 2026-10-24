@@ -5,24 +5,43 @@ const defaultBucketName =
   process.env.FIREBASE_STORAGE_BUCKET ||
   'nitroxxin-web.firebasestorage.app';
 
-// Initialize Firebase Admin SDK idempotently
-if (!admin.apps.length) {
-  admin.initializeApp({
-    storageBucket: defaultBucketName,
-  });
+let _db = null;
+let _bucket = null;
+
+function getDb() {
+  if (!admin.apps.length) {
+    admin.initializeApp({ storageBucket: defaultBucketName });
+  }
+  if (!_db) {
+    _db = admin.firestore();
+  }
+  return _db;
 }
 
-const db = admin.firestore();
-const storage = admin.storage();
-const bucket = storage.bucket(defaultBucketName);
-const FieldValue = admin.firestore.FieldValue;
-const Timestamp = admin.firestore.Timestamp;
+function getBucket() {
+  if (!admin.apps.length) {
+    admin.initializeApp({ storageBucket: defaultBucketName });
+  }
+  if (!_bucket) {
+    _bucket = admin.storage().bucket(defaultBucketName);
+  }
+  return _bucket;
+}
 
 module.exports = {
   admin,
-  db,
-  storage,
-  bucket,
-  FieldValue,
-  Timestamp,
+  get db() {
+    return getDb();
+  },
+  get storage() {
+    if (!admin.apps.length) {
+      admin.initializeApp({ storageBucket: defaultBucketName });
+    }
+    return admin.storage();
+  },
+  get bucket() {
+    return getBucket();
+  },
+  FieldValue: admin.firestore.FieldValue,
+  Timestamp: admin.firestore.Timestamp,
 };

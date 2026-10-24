@@ -55,6 +55,7 @@ function formatCurrency(amount, currency = 'INR') {
 function getAttendeeName(booking) {
   if (!booking) return 'Valued Racer';
   const name =
+    booking.attendees?.[0]?.name ||
     booking.bookingContact?.name ||
     booking.bookingContact?.fullName ||
     booking.attendee?.name ||
@@ -71,6 +72,7 @@ function getAttendeeName(booking) {
 function getAttendeeEmail(booking) {
   if (!booking) return null;
   const email =
+    booking.attendees?.[0]?.email ||
     booking.bookingContact?.email ||
     booking.attendee?.email ||
     booking.email ||
@@ -100,6 +102,8 @@ function getTicketCode(booking, bookingId) {
 function getTicketTier(booking) {
   if (!booking) return 'Confirmed Entry Pass';
   const tier =
+    booking.attendees?.[0]?.ticketTier ||
+    booking.attendees?.[0]?.joinAs ||
     booking.tierName ||
     booking.packageName ||
     booking.ticketType ||

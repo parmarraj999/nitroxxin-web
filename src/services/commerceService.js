@@ -414,6 +414,26 @@ export const bookEvent = async ({
     signature,
   });
 
+  const sanitizedAttendees = (attendees && attendees.length > 0 ? attendees : [
+    {
+      name: profile?.fullName || profile?.name || user?.fullName || user?.displayName || bookingContact?.name || "Racer",
+      email: attendeeEmailForTicket,
+      phone: userPhoneForTicket,
+      joinAs: joinAs || "biker",
+    }
+  ]).map((att, idx) => ({
+    name: att.name || (idx === 0 ? (profile?.fullName || user?.fullName || bookingContact?.name || "") : ""),
+    email: att.email || (idx === 0 ? attendeeEmailForTicket : ""),
+    phone: att.phone || (idx === 0 ? userPhoneForTicket : ""),
+    age: att.age || "",
+    gender: att.gender || "",
+    idType: att.idType || "Aadhaar",
+    idLast4: att.idLast4 || "",
+    joinAs: att.joinAs || (idx === 0 ? (joinAs || "biker") : "pillion"),
+    ticketTier: att.ticketTier || (ticketPlan?.tiers && ticketPlan.tiers[idx]?.name) || "",
+    ticketTierKey: att.ticketTierKey || (ticketPlan?.tiers && ticketPlan.tiers[idx]?.key) || "",
+  }));
+
   await db().runTransaction(async (transaction) => {
     const eventRef = db().collection(COLLECTIONS.events).doc(eventId);
     const eventDoc = eventId ? await transaction.get(eventRef) : null;
@@ -424,58 +444,43 @@ export const bookEvent = async ({
       throw new Error("This event does not have enough tickets available.");
     }
 
+    // 1. Root bookings collection with merged ticketCode, consolidated attendees array, and no duplicate fields
     const payload = compact({
       bookingId,
       bookingDocId: bookingRef.id,
       userId: user.uid,
       hostId,
-      organizerId: hostId,
+      eventId,
+      ticketCode,
+      qrPayload,
+      signature,
+      total,
+      totalTickets,
       attendeeCounts,
-      attendees,
+      attendees: sanitizedAttendees,
+      bookingContact,
+      emergencyContact,
       bikeDetails,
-      joinAs,
       ticketPlan,
       addOns,
       fees,
-      bookingContact,
-      emergencyContact,
       preferences,
       payment,
       notes,
-      total,
-      totalTickets,
       paymentStatus: "paid",
-      paymentMethod: "online",
-      eventId,
-      ticketCode,
-      ticketNumber: ticketCode,
-      qrPayload,
-      signature,
-      ticketTemplateUrl: eventSnapshot.ticketTemplateUrl || event?.ticketTemplateUrl || "",
-      eventSnapshot: JSON.parse(JSON.stringify(eventSnapshot)),
-      attendee: {
-        uid: user?.uid || "",
-        email: user?.email || "",
-        name: profile?.fullName || profile?.name || profile?.displayName || user?.fullName || user?.displayName || "",
-        phone: profile?.phone || profile?.phoneNumber || user?.phone || user?.phoneNumber || "",
-      },
-      name: profile?.fullName || profile?.name || profile?.displayName || user?.fullName || user?.displayName || bookingContact?.fullName || bookingContact?.name || "",
-      email: user?.email || profile?.email || bookingContact?.email || "",
-      phone: profile?.phone || profile?.phoneNumber || user?.phone || user?.phoneNumber || bookingContact?.phone || "",
-      participantName: profile?.fullName || profile?.name || profile?.displayName || user?.fullName || user?.displayName || bookingContact?.fullName || bookingContact?.name || "",
-      participantEmail: user?.email || profile?.email || bookingContact?.email || "",
-      participantPhone: profile?.phone || profile?.phoneNumber || user?.phone || user?.phoneNumber || bookingContact?.phone || "",
-      customerName: profile?.fullName || profile?.name || profile?.displayName || user?.fullName || user?.displayName || bookingContact?.fullName || bookingContact?.name || "",
-      attendanceStatus: "Not Checked In",
-      gateStatus: "Pending",
+      paymentMethod: payment?.method || "online",
       status: "pending",
       approvalStatus: "pending",
-      qrTicket: ticketCode,
+      attendanceStatus: "Not Checked In",
+      gateStatus: "Pending",
       statusHistory: [{ status: "pending", at: new Date().toISOString(), note: "Booking created" }],
+      ticketTemplateUrl: eventSnapshot.ticketTemplateUrl || event?.ticketTemplateUrl || "",
+      eventSnapshot: JSON.parse(JSON.stringify(eventSnapshot)),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
 
+    // 2. User joined-event subcollection with deduplicated fields
     const joinedEventData = compact({
       id: eventId || bookingRef.id,
       eventId,
@@ -483,42 +488,28 @@ export const bookEvent = async ({
       bookingRefId: bookingRef.id,
       userId: user.uid,
       title: eventSnapshot.title || eventSnapshot.name || "",
-      name: eventSnapshot.name || eventSnapshot.title || "",
+      banner: eventSnapshot.banner || eventSnapshot.bannerImage || eventSnapshot.image || (eventSnapshot.images && eventSnapshot.images[0]) || "",
+      dateText: eventSnapshot.dateText || eventSnapshot.dateTimeText || eventSnapshot.date || eventSnapshot.dates || "",
+      venue: eventSnapshot.venue || eventSnapshot.location || eventSnapshot.address || "",
+      price: eventSnapshot.price ?? 0,
+      total,
+      totalTickets,
       ticketCode,
-      ticketNumber: ticketCode,
       qrPayload,
       signature,
       ticketTemplateUrl: eventSnapshot.ticketTemplateUrl || event?.ticketTemplateUrl || "",
-      banner: eventSnapshot.banner || eventSnapshot.bannerImage || eventSnapshot.image || (eventSnapshot.images && eventSnapshot.images[0]) || "",
-      bannerImage: eventSnapshot.bannerImage || eventSnapshot.banner || eventSnapshot.image || "",
-      image: eventSnapshot.image || eventSnapshot.bannerImage || eventSnapshot.banner || "",
-      dates: eventSnapshot.dates || eventSnapshot.dateText || eventSnapshot.date || eventSnapshot.dateTimeText || eventSnapshot.startDate || "",
-      date: eventSnapshot.date || eventSnapshot.dateText || eventSnapshot.dateTimeText || "",
-      dateText: eventSnapshot.dateText || eventSnapshot.dateTimeText || "",
-      time: eventSnapshot.time || eventSnapshot.timeText || "",
-      dateTimeText: eventSnapshot.dateTimeText || eventSnapshot.dateText || "",
-      location: eventSnapshot.location || eventSnapshot.venue || eventSnapshot.address || "",
-      venue: eventSnapshot.venue || eventSnapshot.location || "",
-      price: eventSnapshot.price ?? 0,
-      prices: eventSnapshot.prices || eventSnapshot.priceText || (eventSnapshot.price !== undefined ? eventSnapshot.price : "Free"),
-      total,
-      totalTickets,
-      attendeeCounts,
-      attendees,
-      bikeDetails,
-      joinAs,
-      ticketPlan,
-      addOns,
+      attendees: sanitizedAttendees,
       bookingContact,
       emergencyContact,
+      bikeDetails,
+      ticketPlan,
+      addOns,
       status: "pending",
       gateStatus: "Pending",
       attendanceStatus: "Not Checked In",
       paymentStatus: "paid",
-      paymentMethod: "online",
-      qrTicket: ticketCode,
+      paymentMethod: payment?.method || "online",
       eventSnapshot: JSON.parse(JSON.stringify(eventSnapshot)),
-      data: eventSnapshot,
       joinedAt: serverTimestamp(),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -527,12 +518,10 @@ export const bookEvent = async ({
     // 1. Root bookings collection (canonical plural 'bookings' only)
     transaction.set(bookingRef, payload);
 
-    // 2. (Optimized) Canonical root bookings collection holds all event bookings. Redundant events/{eventId}/booking sub-collection omitted.
-
-    // 3. User joined-event subcollection (canonical 'users' only)
+    // 2. User joined-event subcollection (canonical 'users' only)
     transaction.set(userJoinedEventRef, joinedEventData, { merge: true });
 
-    // 4. Advance payment record in 'payments' (canonical plural 'payments' only)
+    // 3. Advance payment record in 'payments'
     const advanceEventPayment = compact({
       id: bookingRef.id,
       paymentId: payment?.paymentId || payment?.razorpayPaymentId || `pay_evt_${bookingId}`,
@@ -542,20 +531,22 @@ export const bookEvent = async ({
       bookingId,
       bookingDocId: bookingRef.id,
       ticketCode,
-      ticketNumber: ticketCode,
       eventId,
       eventTitle: eventSnapshot.title || eventSnapshot.name || "Motorcycle Event",
       userId: user.uid,
-      customer: payload.attendee,
+      customer: {
+        name: bookingContact?.name || sanitizedAttendees[0]?.name || "",
+        email: bookingContact?.email || sanitizedAttendees[0]?.email || "",
+        phone: bookingContact?.phone || sanitizedAttendees[0]?.phone || "",
+      },
       amount: total,
       currency: "INR",
       status: "captured",
       paymentStatus: "paid",
       paymentMethod: payment?.method || "Razorpay Online",
-      paymentMode: payment?.method || "Prepaid (Razorpay)",
       totalTickets,
       ticketPlan,
-      attendees,
+      attendees: sanitizedAttendees,
       bikeDetails,
       type: "event_booking",
       source: "nitroxxin-web",
@@ -564,14 +555,13 @@ export const bookEvent = async ({
     });
     transaction.set(db().collection("payments").doc(bookingRef.id), advanceEventPayment);
 
-    // 5. Basic user transaction in 'users/userId/transactions'
+    // 4. Basic user transaction in 'users/userId/transactions'
     const basicEventTx = compact({
       id: bookingRef.id,
       transactionId: payment?.paymentId || payment?.razorpayPaymentId || `TXN-EVT-${bookingId}`,
       bookingId,
       bookingDocId: bookingRef.id,
       ticketCode,
-      ticketNumber: ticketCode,
       eventId,
       title: `Event Pass - ${eventSnapshot.title || eventSnapshot.name || "Nitroxx Event"}`,
       category: "event",
@@ -588,6 +578,7 @@ export const bookEvent = async ({
     });
     transaction.set(db().collection("users").doc(user.uid).collection("transactions").doc(bookingRef.id), basicEventTx);
 
+    // 5. Host & Gate scanner registration record in 'eventRegistrations'
     transaction.set(registrationRef, compact({
       registrationId: registrationRef.id,
       bookingId,
@@ -595,22 +586,20 @@ export const bookEvent = async ({
       eventId,
       userId: user.uid,
       hostId,
-      participant: payload.attendee,
-      participantName: payload.attendee.name,
-      participantEmail: payload.attendee.email,
-      participantPhone: payload.attendee.phone,
+      attendees: sanitizedAttendees,
+      primaryContact: bookingContact,
       registrationDate: serverTimestamp(),
       status: "Pending",
       attendanceStatus: "Not Checked In",
       gateStatus: "Pending",
       ticketCode,
-      ticketNumber: ticketCode,
       qrPayload,
       signature,
       ticketPrice: total,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     }));
+
     if (eventId) {
       transaction.set(eventRef, {
         registeredCount: increment(totalTickets),
@@ -618,13 +607,14 @@ export const bookEvent = async ({
         updatedAt: serverTimestamp(),
       }, { merge: true });
     }
+
     if (hostId) {
       transaction.set(db().collection(COLLECTIONS.notifications).doc(), {
         vendorId: hostId,
         userId: hostId,
         type: "booking-created",
         title: "New event booking",
-        body: `${payload.attendee.name || "Customer"} booked ${eventSnapshot.title}.`,
+        body: `${sanitizedAttendees[0]?.name || bookingContact?.name || "Customer"} booked ${eventSnapshot.title}.`,
         bookingId: bookingRef.id,
         publicBookingId: bookingId,
         ticketCode,

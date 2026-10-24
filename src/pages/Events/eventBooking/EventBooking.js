@@ -42,13 +42,14 @@ const STEPS = [
 
 
 const makeAttendee = (index = 0) => ({
-  name: index === 0 ? '' : '',
+  name: '',
   phone: '',
   email: '',
   age: '',
   gender: '',
   idType: 'Aadhaar',
   idLast4: '',
+  joinAs: index === 0 ? 'biker' : 'pillion',
 });
 
 const extractCleanPhone = (sourcePhone) => {
@@ -360,6 +361,13 @@ function AttendeesStep({ totalTickets, attendees, updateAttendee, contact, setCo
                 </Field>
                 <Field label="ID last 4 digits">
                   <input value={attendee.idLast4} onChange={(e) => updateAttendee(index, 'idLast4', e.target.value)} placeholder="1234" />
+                </Field>
+                <Field label="Join as">
+                  <select value={attendee.joinAs || (index === 0 ? 'biker' : 'pillion')} onChange={(e) => updateAttendee(index, 'joinAs', e.target.value)}>
+                    <option value="biker">Biker / Rider</option>
+                    <option value="pillion">Pillion Rider</option>
+                    <option value="spectator">Spectator / Enthusiast</option>
+                  </select>
                 </Field>
               </div>
             </article>
@@ -1548,6 +1556,29 @@ export default function EventBooking() {
       setSubmitting(true);
       setIsGeneratingTicket(true);
       try {
+        const attendeeTiers = [];
+        tiers.forEach((tier) => {
+          const count = Number(counts[tier.key] || 0);
+          for (let i = 0; i < count; i++) {
+            attendeeTiers.push(tier);
+          }
+        });
+
+        const preparedAttendees = attendees.slice(0, totalTickets).map((item, idx) => {
+          const tier = attendeeTiers[idx] || tiers[0] || {};
+          const tierType = (tier.ticketFor || tier.name || '').toLowerCase();
+          const autoJoinAs = (tierType.includes('pillion') || tierType.includes('passenger'))
+            ? 'pillion'
+            : (tierType.includes('spectator') ? 'spectator' : 'biker');
+
+          return {
+            ...item,
+            joinAs: item.joinAs || (idx === 0 ? joinAs : autoJoinAs),
+            ticketTier: tier.name || 'General Pass',
+            ticketTierKey: tier.key || '',
+          };
+        });
+
         const bookingResult = await bookEvent({
           user,
           profile,
@@ -1558,7 +1589,7 @@ export default function EventBooking() {
             pets: 0,
             bags: 0,
           },
-          attendees: attendees.slice(0, totalTickets),
+          attendees: preparedAttendees,
           bikeDetails: [{ ...bike, joinAs }],
           joinAs,
           total: summary.total,
@@ -1586,12 +1617,12 @@ export default function EventBooking() {
           bookingId: bookingResult?.bookingId || `BKG-${Date.now().toString(36).toUpperCase()}`,
           bookingRefId: bookingResult?.id || '',
           ticketCode: bookingResult?.ticketCode || '',
-          ticketNumber: bookingResult?.ticketCode || '',
           qrPayload: bookingResult?.qrPayload || '',
           signature: bookingResult?.signature || '',
           totalTickets,
           total: summary.total,
           event,
+          attendees: preparedAttendees,
           attendee: contact,
           bike,
         });

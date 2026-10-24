@@ -97,7 +97,7 @@ export default function MyTickets() {
                 ticketCode,
                 bookingId: t.bookingRefId || t.bookingId || t.id || '',
                 eventId: t.eventId || event?.id || '',
-                attendeeEmail: t.email || t.participantEmail || user?.email || '',
+                attendeeEmail: t.attendees?.[0]?.email || t.bookingContact?.email || t.email || t.participantEmail || user?.email || '',
                 signature: t.signature || 'ntx_verified_pass',
               });
 

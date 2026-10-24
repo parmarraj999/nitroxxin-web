@@ -838,7 +838,7 @@ export default function JoinedEvents() {
                       ticketCode,
                       bookingId: selectedTicket.rawItem?.bookingRefId || selectedTicket.bookingId || selectedTicket.id,
                       eventId: selectedTicket.eventId || '',
-                      attendeeEmail: selectedTicket.rawItem?.email || selectedTicket.rawItem?.participantEmail || user?.email || '',
+                      attendeeEmail: selectedTicket.rawItem?.attendees?.[0]?.email || selectedTicket.rawItem?.bookingContact?.email || selectedTicket.rawItem?.email || selectedTicket.rawItem?.participantEmail || user?.email || '',
                       signature: selectedTicket.rawItem?.signature || 'ntx_verified_pass',
                     });
                   const qrUrl = getTicketQrUrl(qrPayload);
