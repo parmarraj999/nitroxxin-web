@@ -414,6 +414,15 @@ export const bookEvent = async ({
     signature,
   });
 
+  const userProfilePhoto =
+    profile?.profilePhoto ||
+    profile?.photoURL ||
+    profile?.avatar ||
+    user?.photoURL ||
+    user?.profilePhoto ||
+    user?.userPhoto ||
+    "";
+
   const sanitizedAttendees = (attendees && attendees.length > 0 ? attendees : [
     {
       name: profile?.fullName || profile?.name || user?.fullName || user?.displayName || bookingContact?.name || "Racer",
@@ -431,6 +440,8 @@ export const bookEvent = async ({
     joinAs: att.joinAs || (idx === 0 ? (joinAs || "biker") : "pillion"),
     ticketTier: att.ticketTier || (ticketPlan?.tiers && ticketPlan.tiers[idx]?.name) || "",
     ticketTierKey: att.ticketTierKey || (ticketPlan?.tiers && ticketPlan.tiers[idx]?.key) || "",
+    userPhoto: (idx === 0 ? userProfilePhoto : "") || att.userPhoto || att.photoURL || att.avatar || "",
+    photoURL: (idx === 0 ? userProfilePhoto : "") || att.photoURL || att.userPhoto || att.avatar || "",
   }));
 
   await db().runTransaction(async (transaction) => {
@@ -450,6 +461,11 @@ export const bookEvent = async ({
       userId: user.uid,
       hostId,
       eventId,
+      userPhoto: userProfilePhoto,
+      photoURL: userProfilePhoto,
+      participantPhoto: userProfilePhoto,
+      avatar: userProfilePhoto,
+      customerPhoto: userProfilePhoto,
       eventTitle: eventSnapshot.title || eventSnapshot.name || "Nitroxx Motorsports Event",
       title: eventSnapshot.title || eventSnapshot.name || "Nitroxx Motorsports Event",
       bannerImage: eventSnapshot.bannerImage || eventSnapshot.banner || eventSnapshot.image || (eventSnapshot.images && eventSnapshot.images[0]) || "",
@@ -491,6 +507,9 @@ export const bookEvent = async ({
       bookingId,
       bookingRefId: bookingRef.id,
       userId: user.uid,
+      userPhoto: userProfilePhoto,
+      photoURL: userProfilePhoto,
+      avatar: userProfilePhoto,
       title: eventSnapshot.title || eventSnapshot.name || "",
       bannerImage: eventSnapshot.bannerImage || eventSnapshot.banner || eventSnapshot.image || (eventSnapshot.images && eventSnapshot.images[0]) || "",
       dateText: eventSnapshot.dateText || eventSnapshot.dateTimeText || eventSnapshot.date || eventSnapshot.dates || "",
@@ -542,6 +561,9 @@ export const bookEvent = async ({
         name: bookingContact?.name || sanitizedAttendees[0]?.name || "",
         email: bookingContact?.email || sanitizedAttendees[0]?.email || "",
         phone: bookingContact?.phone || sanitizedAttendees[0]?.phone || "",
+        userPhoto: userProfilePhoto,
+        photoURL: userProfilePhoto,
+        avatar: userProfilePhoto,
       },
       amount: total,
       currency: "INR",
@@ -590,6 +612,22 @@ export const bookEvent = async ({
       eventId,
       userId: user.uid,
       hostId,
+      participantName: bookingContact?.name || sanitizedAttendees[0]?.name || profile?.fullName || user?.fullName || "",
+      participantEmail: attendeeEmailForTicket,
+      participantPhone: userPhoneForTicket,
+      participantPhoto: userProfilePhoto,
+      userPhoto: userProfilePhoto,
+      photoURL: userProfilePhoto,
+      avatar: userProfilePhoto,
+      participant: {
+        fullName: bookingContact?.name || sanitizedAttendees[0]?.name || profile?.fullName || user?.fullName || "",
+        name: bookingContact?.name || sanitizedAttendees[0]?.name || profile?.fullName || user?.fullName || "",
+        email: attendeeEmailForTicket,
+        phone: userPhoneForTicket,
+        photoURL: userProfilePhoto,
+        userPhoto: userProfilePhoto,
+        avatar: userProfilePhoto,
+      },
       attendees: sanitizedAttendees,
       primaryContact: bookingContact,
       registrationDate: serverTimestamp(),

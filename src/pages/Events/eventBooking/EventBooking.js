@@ -1232,7 +1232,6 @@ export default function EventBooking() {
   const [preferences, setPreferences] = useState({
     experience: 'Intermediate',
     pace: 'Balanced',
-    parking: 'Bike parking',
     notes: '',
     helmetConfirmed: false,
     termsAccepted: false,
@@ -1625,6 +1624,7 @@ export default function EventBooking() {
           event,
           attendees: preparedAttendees,
           attendee: contact,
+          userPhoto: profile?.profilePhoto || profile?.photoURL || user?.photoURL || user?.profilePhoto || '',
           bike,
         });
       } catch (err) {
