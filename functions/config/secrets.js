@@ -11,7 +11,7 @@ const RESEND_API_KEY = defineSecret('RESEND_API_KEY');
  * Optional custom sender email address.
  * Set via Firebase CLI:
  *   firebase functions:secrets:set SENDER_EMAIL
- * Defaults to: "Nitroxx Events <onboarding@resend.dev>" or verified domain
+ * Defaults to: "Nitroxx Events <tickets@nitroxx.in>"
  */
 const SENDER_EMAIL = defineSecret('SENDER_EMAIL');
 

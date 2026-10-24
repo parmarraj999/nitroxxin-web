@@ -18,10 +18,23 @@ async function sendTicketEmail(ticket, pdfBuffer, downloadUrl) {
     throw new Error('Resend API key missing from Firebase Secret Manager');
   }
 
-  // Sender email config: fallback to Resend verified onboarding domain if custom domain is not set
-  const fromEmail =
-    process.env.SENDER_EMAIL ||
-    'Nitroxx Events <onboarding@resend.dev>';
+  // Resolve verified sender email for nitroxx.in
+  let fromEmail = 'Nitroxx Events <tickets@nitroxx.in>';
+  const configured = (process.env.SENDER_EMAIL || '').trim();
+
+  if (configured) {
+    // If configured with an unverified public webmail domain (like @gmail.com), fall back to verified nitroxx.in
+    if (/@(gmail|googlemail|yahoo|outlook|hotmail|icloud)\.com/i.test(configured)) {
+      logger.warn(
+        `[Sender Guard] Configured SENDER_EMAIL (${configured}) is an unverified public webmail domain. Using verified domain: tickets@nitroxx.in`
+      );
+      fromEmail = 'Nitroxx Events <tickets@nitroxx.in>';
+    } else if (configured.includes('<') && configured.includes('>')) {
+      fromEmail = configured;
+    } else {
+      fromEmail = `Nitroxx Events <${configured}>`;
+    }
+  }
 
   const resend = new Resend(apiKey.trim());
   const htmlBody = renderTicketEmailHtml(ticket, downloadUrl);
@@ -29,6 +42,7 @@ async function sendTicketEmail(ticket, pdfBuffer, downloadUrl) {
   const mailOptions = {
     from: fromEmail,
     to: [ticket.attendeeEmail],
+    replyTo: 'Nitroxx Support <support@nitroxx.in>',
     subject: '🎟️ Your Nitroxx Ticket is Confirmed!',
     html: htmlBody,
     attachments: [
@@ -42,8 +56,8 @@ async function sendTicketEmail(ticket, pdfBuffer, downloadUrl) {
     },
     tags: [
       { name: 'category', value: 'ticket_confirmation' },
-      { name: 'event_id', value: ticket.eventId },
-      { name: 'booking_id', value: ticket.bookingId },
+      { name: 'event_id', value: String(ticket.eventId || '') },
+      { name: 'booking_id', value: String(ticket.bookingId) },
     ],
   };
 
@@ -60,6 +74,11 @@ async function sendTicketEmail(ticket, pdfBuffer, downloadUrl) {
         if (rawMsg.includes('only send testing emails to your own email address')) {
           throw new Error(
             `Resend Sandbox Limit: onboarding@resend.dev can only send to account owner's email. Verify domain at resend.com or use account email.`
+          );
+        }
+        if (rawMsg.includes('not verified')) {
+          throw new Error(
+            `Resend Domain Error: ${rawMsg}. Ensure DNS records for nitroxx.in are active at resend.com/domains.`
           );
         }
         throw new Error(`Resend error: ${rawMsg}`);

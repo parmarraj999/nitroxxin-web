@@ -453,7 +453,7 @@ export const bookEvent = async ({
       eventId,
       eventTitle: eventSnapshot.title || eventSnapshot.name || "Nitroxx Motorsports Event",
       title: eventSnapshot.title || eventSnapshot.name || "Nitroxx Motorsports Event",
-      // bannerImage: eventSnapshot.bannerImage || eventSnapshot.banner || eventSnapshot.image || (eventSnapshot.images && eventSnapshot.images[0]) || "",
+      bannerImage: eventSnapshot.bannerImage || eventSnapshot.banner || eventSnapshot.image || (eventSnapshot.images && eventSnapshot.images[0]) || "",
       dateText: eventSnapshot.dateText || eventSnapshot.dateTimeText || eventSnapshot.date || eventSnapshot.dates || "",
       venue: eventSnapshot.venue || eventSnapshot.location || eventSnapshot.address || "",
       city: eventSnapshot.city || "",

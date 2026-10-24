@@ -213,7 +213,7 @@ function renderTicketEmailHtml(ticket, downloadUrl) {
             <span style="color: #334155;">&bull;</span>
             <a href="https://twitter.com" target="_blank" style="color: #f97316; font-size: 12.5px; font-weight: 700; margin: 0 10px; text-decoration: none;">X (Twitter)</a>
             <span style="color: #334155;">&bull;</span>
-            <a href="https://nitroxx.com" target="_blank" style="color: #f97316; font-size: 12.5px; font-weight: 700; margin: 0 10px; text-decoration: none;">Website</a>
+            <a href="https://nitroxx.in" target="_blank" style="color: #f97316; font-size: 12.5px; font-weight: 700; margin: 0 10px; text-decoration: none;">Website</a>
           </div>
           <p style="margin: 0; font-size: 11px; color: #475569; line-height: 1.5;">
             &copy; ${new Date().getFullYear()} Nitroxx Motorsports. All rights reserved.<br>
