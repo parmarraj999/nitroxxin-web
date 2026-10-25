@@ -17,7 +17,8 @@
    ========================================================= */
 
 .ep-top-nav {
-  position: sticky;
+  position: fixed;
+  z-index: 999;
   top: 0;
   left: 0;
   width: 100%;
@@ -149,6 +150,7 @@
   padding: 32px 48px;
   position: relative;
   z-index: 1;
+  margin-top: 4rem;
 }
 
 /* Breadcrumbs */
@@ -182,7 +184,7 @@
 
 /* Hero */
 .up-hero {
-  margin-bottom: 32px;
+  margin-bottom: 22px;
 }
 
 .up-hero__badge {
@@ -202,7 +204,7 @@
 
 .up-hero__title {
   font-size: 38px;
-  font-weight: 900;
+  font-weight: 600;
   color: #ffffff;
   margin: 0 0 12px 0;
   letter-spacing: -0.6px;
@@ -279,8 +281,8 @@
 
 .ep-filters {
   display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
+  gap: 10px;
+  flex-wrap: nowrap;
   margin-bottom: 24px;
   align-items: center;
 }
@@ -423,7 +425,7 @@
 }
 
 .up-results-title {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 500;
   color: #ffffff;
   margin: 0;

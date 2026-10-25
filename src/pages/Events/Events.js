@@ -145,7 +145,15 @@ export function EventCard({ event, isBookmarked: propIsBookmarked, onToggleBookm
   };
 
   const image = event.bannerImage || event.banner || event.image;
-  const priceDisplay = event.priceText || (event.price === 0 ? "Free" : event.price ? `₹${event.price}` : "Free");
+  const priceDisplay = useMemo(() => {
+    if (event.price === 0) return "Free";
+    const pt = event.priceText;
+    if (!pt) return event.price ? `₹${event.price}` : "Free";
+    const str = String(pt).trim();
+    if (str.toLowerCase() === "free" || str === "₹0" || str === "0") return "Free";
+    const clean = str.replace(/^starts\s+from\s+/i, "").trim();
+    return clean || "Free";
+  }, [event.price, event.priceText]);
   const locationDisplay = event.venue || event.location || event.city || event.address || "";
 
   // Dynamic throttled count matching the UI: "16k+ are Throttled!"
@@ -1015,6 +1023,35 @@ export default function Events() {
                       </div>
                     ))}
                   </div>
+
+                  {heroEvents.length > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        className="ep-featured__mobile-slider-btn prev"
+                        aria-label="Previous slide"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          prev();
+                        }}
+                      >
+                        <ChevronLeft />
+                      </button>
+                      <button
+                        type="button"
+                        className="ep-featured__mobile-slider-btn next"
+                        aria-label="Next slide"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          next();
+                        }}
+                      >
+                        <ChevronRight />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -1094,21 +1131,19 @@ export default function Events() {
                   </span>
                 </h2>
               </Link>
-              <p className="ep-upcoming-header__subtitle">Latest upcoming events listed here</p>
+              {/* <p className="ep-upcoming-header__subtitle">Latest upcoming events listed here</p> */}
             </div>
-
-
-
+            
             {upcomingEventsList.length > 0 ? (
               <div className="ep-upcoming-carousel-wrap">
-                <button
+                {/* <button
                   type="button"
                   className="ep-upcoming-arrow prev"
                   onClick={() => scrollUpcoming("left")}
                   aria-label="Previous upcoming events"
                 >
                   <ChevronLeft />
-                </button>
+                </button> */}
 
                 <div className="ep-upcoming-track" ref={upcomingTrackRef}>
                   {upcomingEventsList.map((event) => (
@@ -1122,14 +1157,14 @@ export default function Events() {
                   ))}
                 </div>
 
-                <button
+                {/* <button
                   type="button"
                   className="ep-upcoming-arrow next"
                   onClick={() => scrollUpcoming("right")}
                   aria-label="Next upcoming events"
                 >
                   <ChevronRight />
-                </button>
+                </button> */}
               </div>
             ) : (
               <EmptyState
@@ -1169,7 +1204,7 @@ export default function Events() {
           <div className="ep-section">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.8rem", flexWrap: "wrap", gap: "0.5rem" }}>
               <p className="ep-section__title" style={{ margin: 0 }}>All Events</p>
-              <Link
+              {/* <Link
                 to="/events/all"
                 style={{
                   display: "inline-flex",
@@ -1188,7 +1223,7 @@ export default function Events() {
               >
                 <span>View Full Page</span>
                 <span style={{ fontSize: "1.05rem", lineHeight: 1 }}>→</span>
-              </Link>
+              </Link> */}
             </div>
             <div className="ep-filters">
               <button className="ep-filter-btn" onClick={() => setIsFilterDrawerOpen(true)}><SlidersIcon /> Filters</button>

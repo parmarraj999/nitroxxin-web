@@ -71,6 +71,8 @@ const Navbar = () => {
         isEventDetailPage ||
         pathname.includes('/accessories') ||
         pathname.includes('/shop') ||
+        pathname.includes('/events/upcoming') ||
+        pathname.includes('/events/near-you') ||
         pathname.includes('/category') ||
         pathname.includes('/profile') ||
         pathname.includes('/product') ||

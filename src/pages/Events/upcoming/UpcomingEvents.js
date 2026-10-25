@@ -441,10 +441,7 @@ export default function UpcomingEvents() {
 
         {/* Hero Banner */}
         <div className="up-hero">
-          <h1 className="up-hero__title">Upcoming Motorcycle Events</h1>
-          <p className="up-hero__subtitle">
-            Stay ahead with latest upcoming motorcycle rides, track clinics, weekend tours & rallies happening across India.
-          </p>
+          <h1 className="up-hero__title">Upcoming Events</h1>
         </div>
 
         {/* Live Search Bar */}
@@ -623,7 +620,7 @@ export default function UpcomingEvents() {
 
         {/* Results Header */}
         <div className="up-results-header">
-          <h2 className="up-results-title">Upcoming Schedule</h2>
+          <h2 className="up-results-title">Events</h2>
           <span className="up-results-count">
             {filteredEvents.length} {filteredEvents.length === 1 ? "event" : "events"} listed
           </span>
