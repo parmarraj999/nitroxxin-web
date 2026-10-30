@@ -1,10 +1,18 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import { useCollection } from "../../../hooks/useFirestore";
 import { COLLECTIONS } from "../../../services/firebase";
+import { getOrdersByPaymentId, getOrdersByOrderId } from "../../../payments/placeOrder";
 
 export default function MyOrders() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+
+  // Search parameters support: ?payment_id=... or ?orderId=...
+  const paymentIdParam = searchParams.get("payment_id") || searchParams.get("paymentId");
+  const orderIdParam = searchParams.get("orderId") || searchParams.get("orderID");
+
   const [searchInput, setSearchInput] = useState("");
   const [committedSearch, setCommittedSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
@@ -12,51 +20,224 @@ export default function MyOrders() {
   // Modals state
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [trackingOrder, setTrackingOrder] = useState(null);
+  const [activeTrackPkgIdx, setActiveTrackPkgIdx] = useState(0);
+
   const [reviewOrder, setReviewOrder] = useState(null);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
 
-  // 1. Fetch from exact requested path: users/{userId}/order
+  // Directly fetched orders when queried by payment_id or orderId param
+  const [directFetchedOrders, setDirectFetchedOrders] = useState([]);
+  const [hasAutoOpened, setHasAutoOpened] = useState(false);
+
+  // 1. Fetch from users/{userId}/order
   const { data: userOrderData, loading: loadingUserOrder } = useCollection(
     user?.uid ? `users/${user.uid}/order` : null
   );
 
-  // 2. Also fetch from user/{userId}/order (singular collection "user")
+  // 2. Fetch from user/{userId}/order (singular collection "user")
   const { data: userSingularOrderData } = useCollection(
     user?.uid ? `user/${user.uid}/order` : null
   );
 
-  // 3. Also fetch from users/{userId}/orders (plural) and global orders collection
+  // 3. Fetch from users/{userId}/orders (plural)
   const { data: userPluralOrdersData } = useCollection(
     user?.uid ? `users/${user.uid}/orders` : null
   );
 
+  // 4. Fetch from global orders collection
   const { data: globalOrdersData, loading: loadingGlobal } = useCollection(COLLECTIONS.orders, {
     where: user?.uid ? [["userId", "==", user.uid]] : [["userId", "==", "NO_USER"]],
-    limit: 50,
+    limit: 60,
   });
 
   const loading = loadingUserOrder && loadingGlobal;
 
-  const combinedRawOrders = useMemo(() => {
-    const map = new Map();
+  // Handle URL query parameters (?payment_id=... or ?orderId=...)
+  useEffect(() => {
+    if (paymentIdParam) {
+      setSearchInput(paymentIdParam);
+      setCommittedSearch(paymentIdParam);
+      getOrdersByPaymentId(paymentIdParam).then((res) => {
+        if (res && res.length > 0) {
+          setDirectFetchedOrders(res);
+        }
+      });
+    } else if (orderIdParam) {
+      setSearchInput(orderIdParam);
+      setCommittedSearch(orderIdParam);
+      getOrdersByOrderId(orderIdParam).then((res) => {
+        if (res && res.length > 0) {
+          setDirectFetchedOrders(res);
+        }
+      });
+    }
+  }, [paymentIdParam, orderIdParam]);
+
+  // Combine and deduplicate raw Firestore documents
+  const allRawDocs = useMemo(() => {
+    const docMap = new Map();
     const addAll = (list) => {
-      (list || []).forEach((ord) => {
-        const key = ord.orderId || ord.orderNumber || ord.id;
-        if (key && !map.has(key)) {
-          map.set(key, ord);
+      (list || []).forEach((doc) => {
+        const key =
+          doc?.id ||
+          doc?.orderDocId ||
+          (doc?.vendorOrderId ? `${doc.paymentId || doc.payment_id}_${doc.vendorOrderId}` : null);
+        if (key && !docMap.has(key)) {
+          docMap.set(key, doc);
         }
       });
     };
 
-    // Prioritize user/userId/order
     addAll(userOrderData);
     addAll(userSingularOrderData);
     addAll(userPluralOrdersData);
     addAll(globalOrdersData);
+    addAll(directFetchedOrders);
 
-    return Array.from(map.values()).sort((a, b) => {
+    return Array.from(docMap.values());
+  }, [userOrderData, userSingularOrderData, userPluralOrdersData, globalOrdersData, directFetchedOrders]);
+
+  /**
+   * Group raw orders by payment_id (or paymentId, orderId, orderID)
+   * so that multiple vendor documents from a single checkout are consolidated
+   * into one unified order with separate vendor packages.
+   */
+  const parsedFirestoreOrders = useMemo(() => {
+    const groupsMap = new Map();
+
+    allRawDocs.forEach((doc) => {
+      // Grouping key: shared paymentId/payment_id, or whole orderId/orderID, or doc.id
+      const groupKey =
+        doc.payment_id ||
+        doc.paymentId ||
+        doc.orderID ||
+        doc.orderId ||
+        doc.orderNumber ||
+        doc.id;
+
+      if (!groupsMap.has(groupKey)) {
+        groupsMap.set(groupKey, []);
+      }
+      groupsMap.get(groupKey).push(doc);
+    });
+
+    const list = Array.from(groupsMap.entries()).map(([groupKey, docs]) => {
+      const primary = docs[0] || {};
+
+      // Whole Order ID: format NTX123456789ORD
+      const wholeOrderId =
+        primary.orderID ||
+        primary.orderId ||
+        (primary.orderNumber?.startsWith("NTX") ? primary.orderNumber : null) ||
+        primary.orderNumber ||
+        `OD${String(groupKey).slice(-16).toUpperCase()}`;
+
+      const paymentId = primary.payment_id || primary.paymentId || "";
+
+      // Parse individual vendor packages
+      const vendorPackages = docs.map((doc) => {
+        const rawStatus = String(doc.status || doc.orderStatus || "confirmed").toLowerCase();
+        let status = "confirmed";
+        let statusMessage =
+          doc.statusMessage || `Your items are confirmed with ${doc.vendorName || "vendor"}.`;
+        if (rawStatus.includes("cancel")) {
+          status = "cancelled";
+          statusMessage = "Order package was cancelled.";
+        } else if (rawStatus.includes("ship")) {
+          status = "shipping";
+          statusMessage = "Package is in transit with courier partner.";
+        } else if (rawStatus.includes("deliver")) {
+          status = "delivered";
+          statusMessage = "Package has been delivered.";
+        }
+
+        const items = (doc.items || []).map((it) => ({
+          name: it.name || it.productSnapshot?.name || "Motorcycle Gear",
+          specs:
+            it.specs ||
+            (it.options?.size || it.options?.color
+              ? `Size: ${it.options?.size || "Standard"} • Color: ${it.options?.color || "Standard"}`
+              : `Color: ${it.color || "Standard"} • Size: ${it.size || "Standard"}`),
+          image:
+            it.image ||
+            it.productSnapshot?.image ||
+            "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=400&q=80",
+          price: Number(it.price || it.unitPrice || 0),
+          quantity: Number(it.quantity || 1),
+        }));
+
+        const packageSubtotal =
+          Number(doc.vendorTotal ?? doc.totalAmount ?? doc.total ?? doc.subtotal ?? doc.price) ||
+          items.reduce((sum, it) => sum + it.price * it.quantity, 0);
+
+        // Vendor Order ID: format ODR123456VNTX
+        const vendorOrderId =
+          doc.vendorOrderId ||
+          (doc.orderNumber && doc.orderNumber !== wholeOrderId ? doc.orderNumber : null) ||
+          doc.id;
+
+        return {
+          id: doc.id,
+          vendorId: doc.vendorId || "nitroxx-default-vendor",
+          vendorName: doc.vendorName || "Nitroxx Partner",
+          vendorOrderId: vendorOrderId,
+          status,
+          statusMessage,
+          subtotal: packageSubtotal,
+          items:
+            items.length > 0
+              ? items
+              : [
+                  {
+                    name: doc.itemName || "Motorcycle Accessory",
+                    specs: "Standard",
+                    image:
+                      doc.image ||
+                      "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=400&q=80",
+                    price: packageSubtotal,
+                    quantity: 1,
+                  },
+                ],
+          rawDoc: doc,
+        };
+      });
+
+      // Flatten items across packages
+      const allItems = vendorPackages.flatMap((pkg) => pkg.items);
+      const firstItem = allItems[0] || {
+        name: primary.itemName || "Motorcycle Accessory",
+        specs: "Standard",
+        image:
+          primary.image ||
+          "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=400&q=80",
+        price: 0,
+        quantity: 1,
+      };
+
+      // Grand Total: check overallOrderTotal or sum package subtotals
+      const grandTotal =
+        Number(primary.overallOrderTotal) ||
+        vendorPackages.reduce((sum, pkg) => sum + pkg.subtotal, 0);
+
+      // Overall status resolution across packages
+      const allDelivered = vendorPackages.every((p) => p.status === "delivered");
+      const allCancelled = vendorPackages.every((p) => p.status === "cancelled");
+      const anyShipping = vendorPackages.some((p) => p.status === "shipping");
+      const overallStatus = allDelivered
+        ? "delivered"
+        : allCancelled
+        ? "cancelled"
+        : anyShipping
+        ? "shipping"
+        : "confirmed";
+
+      const overallStatusMessage =
+        vendorPackages.length > 1
+          ? `${vendorPackages.length} packages processed from ${vendorPackages.length} vendors.`
+          : vendorPackages[0]?.statusMessage || primary.statusMessage || "Your order has been confirmed.";
+
       const getMillis = (v) =>
         v?.toDate
           ? v.toDate().getTime()
@@ -65,77 +246,90 @@ export default function MyOrders() {
           : v?.seconds
           ? v.seconds * 1000
           : Number(v) || 0;
-      return getMillis(b.createdAt) - getMillis(a.createdAt);
-    });
-  }, [userOrderData, userSingularOrderData, userPluralOrdersData, globalOrdersData]);
 
-  const parsedFirestoreOrders = useMemo(() => {
-    return combinedRawOrders.map((ord) => {
-      const rawStatus = String(ord.status || ord.orderStatus || "confirmed").toLowerCase();
-      let status = "confirmed";
-      let statusMessage = ord.statusMessage || "Your order has been confirmed.";
-      if (rawStatus.includes("cancel")) {
-        status = "cancelled";
-        statusMessage = "Your order was cancelled as per your request.";
-      } else if (rawStatus.includes("ship")) {
-        status = "shipping";
-        statusMessage = "Your item is on its way with courier partner.";
-      } else if (rawStatus.includes("deliver")) {
-        status = "delivered";
-        statusMessage = "Your item has been delivered.";
-      }
-
-      const items = (ord.items || []).map((it) => ({
-        name: it.productSnapshot?.name || it.name || "Motorcycle Gear",
-        specs: it.specs || `Color: ${it.color || "Standard"}  •  Size: ${it.size || "Standard"}`,
-        image:
-          it.productSnapshot?.image ||
-          it.image ||
-          "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=400&q=80",
-        price: it.price || 0,
-        quantity: it.quantity || 1,
-      }));
-
-      const firstItem = items[0] || {
-        name: ord.itemName || "Motorcycle Accessory",
-        specs: "Color: Default",
-        image: ord.image || "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=400&q=80",
-        price: ord.totalAmount || ord.total || 999,
-      };
-
-      const dateText = ord.dateText
-        ? ord.dateText
-        : ord.createdAt?.toDate
-        ? ord.createdAt.toDate().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-        : "Recent Order";
+      const createdAtMillis = Math.max(...docs.map((d) => getMillis(d.createdAt)));
+      const dateText =
+        createdAtMillis > 0
+          ? new Date(createdAtMillis).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })
+          : primary.dateText || "Recent Order";
 
       const deliveryAddress =
-        ord.deliveryAddress ||
-        (ord.shippingAddress?.street
-          ? `${ord.shippingAddress.street}, ${ord.shippingAddress.city}`
-          : ord.shipping?.address
-          ? `${ord.shipping.address}, ${ord.shipping.city || ""}`
+        primary.deliveryAddress ||
+        (primary.shippingAddress?.street
+          ? `${primary.shippingAddress.street}, ${primary.shippingAddress.city}`
+          : primary.shipping?.address
+          ? `${primary.shipping.address}, ${primary.shipping.city || ""}`
           : "Delivery address on file");
 
+      const paymentMode = primary.paymentMode || primary.paymentMethod || "Prepaid (Razorpay)";
+
+      const vendorNames = vendorPackages.map((p) => p.vendorName);
+      const vendorOrderIds = vendorPackages.map((p) => p.vendorOrderId);
+
+      // Card titles & specs
+      const cardTitle =
+        allItems.length > 1
+          ? `${firstItem.name} + ${allItems.length - 1} more item${allItems.length - 1 > 1 ? "s" : ""}`
+          : firstItem.name;
+
+      const cardSpecs =
+        vendorPackages.length > 1
+          ? `Vendors: ${vendorNames.join(", ")}`
+          : firstItem.specs;
+
       return {
-        id: ord.id,
-        orderNumber: ord.orderNumber || ord.orderId || `OD${(ord.id || "43726610447").slice(-16).toUpperCase()}`,
-        itemName: ord.itemName || firstItem.name,
-        specs: firstItem.specs,
-        image: ord.image || firstItem.image,
-        price: ord.price || ord.totalAmount || ord.total || ord.amount || firstItem.price,
-        status,
+        id: groupKey,
+        orderId: wholeOrderId,
+        orderID: wholeOrderId,
+        orderNumber: wholeOrderId,
+        paymentId,
+        payment_id: paymentId,
+        status: overallStatus,
+        statusMessage: overallStatusMessage,
         dateText,
-        statusMessage,
-        itemCount: ord.itemCount || items.reduce((acc, it) => acc + (it.quantity || 1), 0) || 1,
+        createdAtMillis,
         deliveryAddress,
-        paymentMode: ord.paymentMode || ord.paymentMethod || "Prepaid (Razorpay)",
-        items: items.length > 0 ? items : [firstItem],
+        paymentMode,
+        price: grandTotal,
+        totalAmount: grandTotal,
+        items: allItems,
+        itemCount: allItems.reduce((acc, it) => acc + (it.quantity || 1), 0),
+        firstItem,
+        cardTitle,
+        cardSpecs,
+        image: primary.image || firstItem.image,
+        vendorPackages,
+        vendorPackagesCount: vendorPackages.length,
+        vendorNames,
+        vendorOrderIds,
+        sharedNote: primary.sharedNote || null,
       };
     });
-  }, [combinedRawOrders]);
 
-  const allOrders = parsedFirestoreOrders;
+    return list.sort((a, b) => b.createdAtMillis - a.createdAtMillis);
+  }, [allRawDocs]);
+
+  // Auto-open order if matching payment_id or orderId URL parameter is provided
+  useEffect(() => {
+    if (!hasAutoOpened && (paymentIdParam || orderIdParam) && parsedFirestoreOrders.length > 0) {
+      const match = parsedFirestoreOrders.find(
+        (o) =>
+          (paymentIdParam && (o.paymentId === paymentIdParam || o.payment_id === paymentIdParam)) ||
+          (orderIdParam &&
+            (o.orderId === orderIdParam ||
+              o.orderID === orderIdParam ||
+              o.vendorOrderIds?.includes(orderIdParam)))
+      );
+      if (match) {
+        setSelectedOrder(match);
+        setHasAutoOpened(true);
+      }
+    }
+  }, [paymentIdParam, orderIdParam, parsedFirestoreOrders, hasAutoOpened]);
 
   // Search trigger
   const handleSearchSubmit = (e) => {
@@ -144,24 +338,42 @@ export default function MyOrders() {
   };
 
   const filteredOrders = useMemo(() => {
-    return allOrders.filter((ord) => {
+    return parsedFirestoreOrders.filter((ord) => {
       // Filter tab
       if (activeFilter === "delivered" && ord.status !== "delivered") return false;
-      if (activeFilter === "shipping" && ord.status !== "shipping" && ord.status !== "confirmed") return false;
+      if (activeFilter === "shipping" && ord.status !== "shipping" && ord.status !== "confirmed")
+        return false;
       if (activeFilter === "cancelled" && ord.status !== "cancelled") return false;
 
-      // Committed search filter
+      // Committed search filter: check orderId, paymentId, vendorOrderId, vendor names, and item names
       if (committedSearch.trim()) {
         const q = committedSearch.toLowerCase();
-        const matchNum = ord.orderNumber.toLowerCase().includes(q);
-        const matchName = ord.itemName.toLowerCase().includes(q);
-        const matchSpecs = (ord.specs || "").toLowerCase().includes(q);
-        if (!matchNum && !matchName && !matchSpecs) return false;
+        const matchOrderNum =
+          ord.orderNumber?.toLowerCase().includes(q) || ord.orderId?.toLowerCase().includes(q);
+        const matchPaymentId =
+          ord.paymentId?.toLowerCase().includes(q) || ord.payment_id?.toLowerCase().includes(q);
+        const matchVendorOrderId = ord.vendorOrderIds?.some((vid) =>
+          vid?.toLowerCase().includes(q)
+        );
+        const matchVendorName = ord.vendorNames?.some((vn) => vn?.toLowerCase().includes(q));
+        const matchItemName = ord.items?.some((it) => it.name?.toLowerCase().includes(q));
+        const matchSpecs = ord.items?.some((it) => (it.specs || "").toLowerCase().includes(q));
+
+        if (
+          !matchOrderNum &&
+          !matchPaymentId &&
+          !matchVendorOrderId &&
+          !matchVendorName &&
+          !matchItemName &&
+          !matchSpecs
+        ) {
+          return false;
+        }
       }
 
       return true;
     });
-  }, [allOrders, activeFilter, committedSearch]);
+  }, [parsedFirestoreOrders, activeFilter, committedSearch]);
 
   const handleOpenReview = (ord) => {
     setReviewOrder(ord);
@@ -179,21 +391,35 @@ export default function MyOrders() {
     }, 1800);
   };
 
+  const handleOpenTracking = (ord) => {
+    setTrackingOrder(ord);
+    setActiveTrackPkgIdx(0);
+  };
+
   return (
     <div className="nx-orders-page-wrap">
-      {/* Search Header Row matching reference screenshot with input + blue button */}
+      {/* Search Header Row with input + blue button */}
       <form className="nx-orders-search-form" onSubmit={handleSearchSubmit}>
         <div className="nx-orders-search-input-wrap">
           <input
             type="search"
-            placeholder="Search your orders here"
+            placeholder="Search by Order ID (NTX...), Vendor Order ID (ODR...), Payment ID (pay_...), or Product"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             className="nx-orders-search-input-field"
           />
         </div>
         <button type="submit" className="nx-orders-search-action-btn">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
@@ -208,7 +434,7 @@ export default function MyOrders() {
           className={`nx-orders-chip ${activeFilter === "all" ? "is-active" : ""}`}
           onClick={() => setActiveFilter("all")}
         >
-          All Orders ({allOrders.length})
+          All Orders ({parsedFirestoreOrders.length})
         </button>
         <button
           type="button"
@@ -265,7 +491,7 @@ export default function MyOrders() {
 
             return (
               <div className="nx-order-horizontal-card" key={ord.id}>
-                {/* Optional Alert pill banner like Screenshot */}
+                {/* Optional Alert pill banner */}
                 {ord.sharedNote && (
                   <div className="nx-order-shared-banner">
                     <span className="nx-order-shared-icon">👥</span>
@@ -276,18 +502,50 @@ export default function MyOrders() {
                 <div className="nx-order-horizontal-content">
                   {/* Column 1: Product Thumbnail */}
                   <div className="nx-order-thumb-column">
-                    <div className="nx-order-thumb-wrapper">
-                      <img src={ord.image} alt={ord.itemName} className="nx-order-thumb-img" />
+                    <div className="nx-order-thumb-wrapper" style={{ position: "relative" }}>
+                      <img src={ord.image} alt={ord.cardTitle} className="nx-order-thumb-img" />
+                      {ord.vendorPackagesCount > 1 && (
+                        <span
+                          style={{
+                            position: "absolute",
+                            bottom: "4px",
+                            right: "4px",
+                            background: "rgba(0,0,0,0.85)",
+                            color: "#38bdf8",
+                            fontSize: "10px",
+                            fontWeight: 700,
+                            padding: "1px 5px",
+                            borderRadius: "4px",
+                            border: "1px solid rgba(56,189,248,0.3)",
+                          }}
+                        >
+                          {ord.vendorPackagesCount} pkgs
+                        </span>
+                      )}
                     </div>
                   </div>
 
                   {/* Column 2: Product Name & Specs */}
                   <div className="nx-order-info-column">
-                    <h3 className="nx-order-item-title" title={ord.itemName}>
-                      {ord.itemName}
+                    <h3 className="nx-order-item-title" title={ord.cardTitle}>
+                      {ord.cardTitle}
                     </h3>
-                    <p className="nx-order-item-specs">{ord.specs}</p>
-                    <span className="nx-order-id-tag">Order #{ord.orderNumber}</span>
+                    <p className="nx-order-item-specs">{ord.cardSpecs}</p>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        flexWrap: "wrap",
+                        gap: "6px",
+                      }}
+                    >
+                      <span className="nx-order-id-tag">Order #{ord.orderId}</span>
+                      {ord.vendorPackagesCount > 1 && (
+                        <span className="nx-order-vendor-tag">
+                          📦 {ord.vendorPackagesCount} Vendor Packages
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Column 3: Price */}
@@ -320,7 +578,18 @@ export default function MyOrders() {
                     {/* Status Subtitle */}
                     <p className="nx-order-status-subtext">{ord.statusMessage}</p>
 
-                    {/* Rate & Review link like Screenshot */}
+                    {/* If multi-vendor, show mini status badges for each vendor package */}
+                    {ord.vendorPackagesCount > 1 && (
+                      <div className="nx-order-packages-mini-pills">
+                        {ord.vendorPackages.map((pkg) => (
+                          <span key={pkg.vendorOrderId} className="nx-mini-pkg-pill">
+                            <strong>{pkg.vendorName}:</strong> {pkg.status}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Rate & Review link */}
                     {isDelivered && (
                       <button
                         type="button"
@@ -339,7 +608,16 @@ export default function MyOrders() {
                         className="nx-order-detail-btn"
                         onClick={() => setSelectedOrder(ord)}
                       >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
                           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                           <polyline points="14 2 14 8 20 8" />
                           <line x1="16" y1="13" x2="8" y2="13" />
@@ -352,9 +630,18 @@ export default function MyOrders() {
                         <button
                           type="button"
                           className="nx-order-track-btn"
-                          onClick={() => setTrackingOrder(ord)}
+                          onClick={() => handleOpenTracking(ord)}
                         >
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
                             <line x1="7" y1="17" x2="17" y2="7" />
                             <polyline points="7 7 17 7 17 17" />
                           </svg>
@@ -387,9 +674,9 @@ export default function MyOrders() {
 
             <div className="nx-review-modal-body">
               <div className="nx-review-product-preview">
-                <img src={reviewOrder.image} alt={reviewOrder.itemName} />
+                <img src={reviewOrder.image} alt={reviewOrder.cardTitle} />
                 <div>
-                  <h5>{reviewOrder.itemName}</h5>
+                  <h5>{reviewOrder.cardTitle}</h5>
                   <span>₹{reviewOrder.price?.toLocaleString("en-IN")}</span>
                 </div>
               </div>
@@ -409,7 +696,9 @@ export default function MyOrders() {
                         <button
                           type="button"
                           key={star}
-                          className={`nx-review-star-btn ${star <= reviewRating ? "is-selected" : ""}`}
+                          className={`nx-review-star-btn ${
+                            star <= reviewRating ? "is-selected" : ""
+                          }`}
                           onClick={() => setReviewRating(star)}
                         >
                           ★
@@ -455,12 +744,29 @@ export default function MyOrders() {
         </div>
       )}
 
-      {/* View Details Modal */}
+      {/* View Details Modal with Multi-Vendor Package Breakdown */}
       {selectedOrder && (
         <div className="profile-modal-backdrop" onClick={() => setSelectedOrder(null)}>
-          <div className="profile-modal nx-order-details-modal" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="profile-modal nx-order-details-modal"
+            style={{ maxWidth: "680px" }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="profile-modal-header">
-              <h3>Order Details: #{selectedOrder.orderNumber}</h3>
+              <div>
+                <h3 style={{ margin: 0 }}>Order Details</h3>
+                <span
+                  style={{
+                    fontSize: "12px",
+                    color: "#94a3b8",
+                    fontFamily: "monospace",
+                    display: "block",
+                    marginTop: "4px",
+                  }}
+                >
+                  Whole Order ID: #{selectedOrder.orderId}
+                </span>
+              </div>
               <button
                 type="button"
                 className="profile-modal-close"
@@ -469,12 +775,29 @@ export default function MyOrders() {
                 &times;
               </button>
             </div>
+
             <div className="nx-order-modal-body">
-              <div className="nx-order-modal-meta">
+              {/* Meta Grid */}
+              <div
+                className="nx-order-modal-meta"
+                style={{ gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))" }}
+              >
                 <div>
                   <span className="nx-modal-label">Status:</span>
                   <strong className={`nx-modal-status status-${selectedOrder.status}`}>
                     {selectedOrder.status.toUpperCase()}
+                  </strong>
+                </div>
+                <div>
+                  <span className="nx-modal-label">Payment ID:</span>
+                  <strong
+                    style={{
+                      fontFamily: "monospace",
+                      fontSize: "12px",
+                      wordBreak: "break-all",
+                    }}
+                  >
+                    {selectedOrder.payment_id || selectedOrder.paymentId || "Online (Prepaid)"}
                   </strong>
                 </div>
                 <div>
@@ -487,28 +810,75 @@ export default function MyOrders() {
                 </div>
               </div>
 
+              {/* Delivery Address */}
               <div className="nx-modal-address-box">
                 <span className="nx-modal-label">Delivery Address:</span>
                 <p>{selectedOrder.deliveryAddress}</p>
               </div>
 
-              <h4 className="nx-modal-items-heading">Items in this Order ({selectedOrder.items.length})</h4>
-              <div className="nx-modal-items-list">
-                {selectedOrder.items.map((item, idx) => (
-                  <div className="nx-modal-item-row" key={idx}>
-                    <img src={item.image} alt={item.name} className="nx-modal-item-img" />
-                    <div className="nx-modal-item-info">
-                      <h5>{item.name}</h5>
-                      <span className="nx-modal-item-specs">{item.specs}</span>
-                      <strong className="nx-modal-item-price">₹{item.price.toLocaleString("en-IN")}</strong>
+              {/* Packages breakdown per vendor */}
+              <div style={{ marginTop: "6px" }}>
+                <h4 className="nx-modal-items-heading">
+                  Packages by Vendor ({selectedOrder.vendorPackages.length})
+                </h4>
+                <div className="nx-modal-vendor-packages-list">
+                  {selectedOrder.vendorPackages.map((pkg) => (
+                    <div className="nx-modal-vendor-package-card" key={pkg.vendorOrderId}>
+                      <div className="nx-modal-pkg-header">
+                        <div className="nx-modal-pkg-vendor-info">
+                          <span className="nx-modal-pkg-vendor-badge">Vendor</span>
+                          <strong className="nx-modal-pkg-vendor-name">{pkg.vendorName}</strong>
+                          <span className="nx-modal-pkg-suborder-id">
+                            Package ID: {pkg.vendorOrderId}
+                          </span>
+                        </div>
+                        <span className={`nx-modal-status status-${pkg.status}`}>
+                          {pkg.status.toUpperCase()}
+                        </span>
+                      </div>
+
+                      <div className="nx-modal-items-list">
+                        {pkg.items.map((item, idx) => (
+                          <div className="nx-modal-item-row" key={idx}>
+                            <img
+                              src={item.image}
+                              alt={item.name}
+                              className="nx-modal-item-img"
+                            />
+                            <div className="nx-modal-item-info">
+                              <h5>{item.name}</h5>
+                              <span className="nx-modal-item-specs">{item.specs}</span>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                  marginTop: "4px",
+                                }}
+                              >
+                                <span className="nx-modal-item-qty">Qty: {item.quantity}</span>
+                                <strong className="nx-modal-item-price">
+                                  ₹{item.price?.toLocaleString("en-IN")}
+                                </strong>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="nx-modal-pkg-footer">
+                        <span>Vendor Package Subtotal:</span>
+                        <strong>₹{pkg.subtotal?.toLocaleString("en-IN")}</strong>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
 
+              {/* Total Row */}
               <div className="nx-modal-total-row">
-                <span>Total Amount Paid</span>
-                <strong>₹{selectedOrder.price.toLocaleString("en-IN")}</strong>
+                <span>Total Amount Paid (All Packages)</span>
+                <strong>₹{selectedOrder.price?.toLocaleString("en-IN")}</strong>
               </div>
             </div>
           </div>
@@ -518,9 +888,26 @@ export default function MyOrders() {
       {/* Track Order Timeline Modal */}
       {trackingOrder && (
         <div className="profile-modal-backdrop" onClick={() => setTrackingOrder(null)}>
-          <div className="profile-modal" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="profile-modal"
+            style={{ maxWidth: "580px" }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="profile-modal-header">
-              <h3>Shipment Tracking: #{trackingOrder.orderNumber}</h3>
+              <div>
+                <h3 style={{ margin: 0 }}>Shipment Tracking</h3>
+                <span
+                  style={{
+                    fontSize: "12px",
+                    color: "#94a3b8",
+                    fontFamily: "monospace",
+                    display: "block",
+                    marginTop: "4px",
+                  }}
+                >
+                  Order #{trackingOrder.orderId}
+                </span>
+              </div>
               <button
                 type="button"
                 className="profile-modal-close"
@@ -529,36 +916,76 @@ export default function MyOrders() {
                 &times;
               </button>
             </div>
-            <div className="nx-tracking-timeline">
-              <div className="nx-track-step is-done">
-                <div className="nx-track-node" />
-                <div className="nx-track-content">
-                  <h5>Order Confirmed</h5>
-                  <p>Order #{trackingOrder.orderNumber} verified and processed</p>
-                </div>
+
+            {/* If multi-package, render vendor package tabs */}
+            {trackingOrder.vendorPackagesCount > 1 && (
+              <div className="nx-tracking-pkg-tabs">
+                {trackingOrder.vendorPackages.map((pkg, idx) => (
+                  <button
+                    type="button"
+                    key={pkg.vendorOrderId}
+                    className={`nx-tracking-pkg-tab ${
+                      activeTrackPkgIdx === idx ? "is-active" : ""
+                    }`}
+                    onClick={() => setActiveTrackPkgIdx(idx)}
+                  >
+                    <span>{pkg.vendorName}</span>
+                    <span className="nx-tracking-pkg-tab-badge">{pkg.vendorOrderId}</span>
+                  </button>
+                ))}
               </div>
-              <div className="nx-track-step is-done">
-                <div className="nx-track-node" />
-                <div className="nx-track-content">
-                  <h5>Packed & Inspected</h5>
-                  <p>Quality inspection passed and sealed in courier package</p>
+            )}
+
+            {(() => {
+              const currentPkg =
+                trackingOrder.vendorPackages[activeTrackPkgIdx] ||
+                trackingOrder.vendorPackages[0] ||
+                trackingOrder;
+              const pkgStatus = currentPkg.status || trackingOrder.status;
+              const pkgOrderId = currentPkg.vendorOrderId || trackingOrder.orderId;
+
+              return (
+                <div className="nx-tracking-timeline">
+                  <div className="nx-track-step is-done">
+                    <div className="nx-track-node" />
+                    <div className="nx-track-content">
+                      <h5>Package Confirmed</h5>
+                      <p>
+                        Package #{pkgOrderId} verified and processed by{" "}
+                        {currentPkg.vendorName || "vendor"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="nx-track-step is-done">
+                    <div className="nx-track-node" />
+                    <div className="nx-track-content">
+                      <h5>Packed & Inspected</h5>
+                      <p>Quality check passed and sealed for shipment</p>
+                    </div>
+                  </div>
+                  <div
+                    className={`nx-track-step ${
+                      pkgStatus === "shipping" || pkgStatus === "delivered" ? "is-done" : ""
+                    }`}
+                  >
+                    <div className="nx-track-node" />
+                    <div className="nx-track-content">
+                      <h5>In Transit (BlueDart Express)</h5>
+                      <p>
+                        Tracking ID: BD9827361928IN • Estimated Delivery: {trackingOrder.dateText}
+                      </p>
+                    </div>
+                  </div>
+                  <div className={`nx-track-step ${pkgStatus === "delivered" ? "is-done" : ""}`}>
+                    <div className="nx-track-node" />
+                    <div className="nx-track-content">
+                      <h5>Delivered</h5>
+                      <p>Package delivered to {trackingOrder.deliveryAddress || "recipient address"}</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className={`nx-track-step ${trackingOrder.status === "shipping" || trackingOrder.status === "delivered" ? "is-done" : ""}`}>
-                <div className="nx-track-node" />
-                <div className="nx-track-content">
-                  <h5>In Transit (BlueDart Express)</h5>
-                  <p>Tracking ID: BD9827361928IN • Estimated Delivery: {trackingOrder.dateText}</p>
-                </div>
-              </div>
-              <div className={`nx-track-step ${trackingOrder.status === "delivered" ? "is-done" : ""}`}>
-                <div className="nx-track-node" />
-                <div className="nx-track-content">
-                  <h5>Delivered</h5>
-                  <p>Package delivered to recipient address</p>
-                </div>
-              </div>
-            </div>
+              );
+            })()}
           </div>
         </div>
       )}

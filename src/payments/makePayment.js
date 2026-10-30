@@ -78,7 +78,8 @@ export const makePayment = async ({
             setLoading(false);
             onSuccess(orderResult);
             if (navigate) {
-              navigate("/profile/orders");
+              const payId = orderResult?.paymentId || orderResult?.payment_id || response?.razorpay_payment_id;
+              navigate(payId ? `/profile/orders?payment_id=${payId}` : "/profile/orders");
             }
           } else {
             setLoading(false);

@@ -1,6 +1,7 @@
 import { COLLECTIONS, auth, db, increment, serverTimestamp } from "./firebase";
 import { normalizeEvent, normalizeProduct } from "./normalizers";
 import { generateTicketCode, generateTicketSignature } from "../utils/ticketSecurity";
+import { generateWholeOrderId, generateVendorOrderId } from "../payments/placeOrder";
 
 const DEFAULT_VENDOR_ID = "nitroxx-default-vendor";
 
@@ -80,9 +81,14 @@ export const removeCartItem = async (cartItemId, userId) => {
     .delete();
 };
 
-export const placeOrder = async ({ user, profile, cartItems, shipping }) => {
+export const placeOrder = async ({ user, profile, cartItems, shipping, paymentId }) => {
   if (!user) throw new Error("Please log in to place an order.");
   if (!cartItems.length) throw new Error("Your cart is empty.");
+
+  const wholeOrderId = generateWholeOrderId(); // NTX...ORD
+  const sharedPaymentId =
+    paymentId ||
+    `pay_${Date.now().toString(36)}${Math.random().toString(36).substring(2, 7)}`;
 
   const groupedItems = cartItems.reduce((groups, item) => {
     const product = normalizeProduct(item.productSnapshot || item.product || item);
@@ -99,11 +105,15 @@ export const placeOrder = async ({ user, profile, cartItems, shipping }) => {
     return groups;
   }, {});
 
+  const grandTotal = Object.values(groupedItems).reduce((sum, items) => {
+    return sum + items.reduce((iSum, it) => iSum + it.unitPrice * it.quantity, 0);
+  }, 0);
+
   const createdOrders = [];
 
   for (const [vendorId, items] of Object.entries(groupedItems)) {
     const orderRef = db().collection(COLLECTIONS.orders).doc();
-    const orderId = publicId("ORD");
+    const vendorOrderId = generateVendorOrderId(); // ODR...VNTX
     const total = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
 
     await db().runTransaction(async (transaction) => {
@@ -122,7 +132,12 @@ export const placeOrder = async ({ user, profile, cartItems, shipping }) => {
       });
 
       transaction.set(orderRef, compact({
-        orderId,
+        orderId: wholeOrderId,
+        orderID: wholeOrderId,
+        vendorOrderId,
+        orderNumber: vendorOrderId,
+        paymentId: sharedPaymentId,
+        payment_id: sharedPaymentId,
         vendorId,
         userId: user.uid,
         user: {
@@ -142,6 +157,8 @@ export const placeOrder = async ({ user, profile, cartItems, shipping }) => {
         itemCount: items.reduce((sum, item) => sum + item.quantity, 0),
         total,
         totalAmount: total,
+        vendorTotal: total,
+        overallOrderTotal: grandTotal,
         paymentStatus: "paid",
         paymentMethod: "online",
         status: "pending",
@@ -153,7 +170,8 @@ export const placeOrder = async ({ user, profile, cartItems, shipping }) => {
       items.forEach((item, index) => {
         transaction.set(db().collection("order_items").doc(), compact({
           orderId: orderRef.id,
-          publicOrderId: orderId,
+          publicOrderId: vendorOrderId,
+          wholeOrderId,
           vendorId,
           userId: user.uid,
           ...item,
@@ -187,9 +205,10 @@ export const placeOrder = async ({ user, profile, cartItems, shipping }) => {
         userId: vendorId,
         type: "order-created",
         title: "New order received",
-        body: `${profile?.fullName || user.displayName || "Customer"} placed order ${orderId}.`,
+        body: `${profile?.fullName || user.displayName || "Customer"} placed order ${vendorOrderId}.`,
         orderId: orderRef.id,
-        publicOrderId: orderId,
+        publicOrderId: vendorOrderId,
+        wholeOrderId,
         read: false,
         isRead: false,
         createdAt: serverTimestamp(),
@@ -197,7 +216,15 @@ export const placeOrder = async ({ user, profile, cartItems, shipping }) => {
       });
     });
 
-    createdOrders.push({ id: orderRef.id, orderId, vendorId });
+    createdOrders.push({
+      id: orderRef.id,
+      orderId: wholeOrderId,
+      orderID: wholeOrderId,
+      vendorOrderId,
+      vendorId,
+      paymentId: sharedPaymentId,
+      payment_id: sharedPaymentId,
+    });
   }
 
   const batch = db().batch();
@@ -208,7 +235,14 @@ export const placeOrder = async ({ user, profile, cartItems, shipping }) => {
   });
   await batch.commit();
 
-  return createdOrders[0];
+  return {
+    success: true,
+    orderId: wholeOrderId,
+    orderID: wholeOrderId,
+    paymentId: sharedPaymentId,
+    payment_id: sharedPaymentId,
+    vendorOrders: createdOrders,
+  };
 };
 
 export const saveWishlistItem = async ({ userId, product }) => {
