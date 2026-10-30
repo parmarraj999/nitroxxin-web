@@ -338,9 +338,6 @@ function AttendeesStep({ totalTickets, attendees, updateAttendee, contact, setCo
         <Field label="Emergency contact">
           <input value={emergency.name} onChange={(e) => setEmergency({ ...emergency, name: e.target.value })} placeholder="Contact person" />
         </Field>
-        <Field label="Emergency phone">
-          <input value={emergency.phone} onChange={(e) => setEmergency({ ...emergency, phone: e.target.value })} placeholder="Emergency mobile" />
-        </Field>
       </div>
       <div className="eb-attendee-stack">
         {Array.from({ length: totalTickets }, (_, index) => {
@@ -1502,7 +1499,7 @@ export default function EventBooking() {
     if (step === 1 && totalTickets < 1) return 'Select at least one ticket.';
     if (step === 2) {
       if (!contact.name || !contact.phone || !contact.email) return 'Add booking contact name, phone, and email.';
-      if (!emergency.name || !emergency.phone) return 'Add an emergency contact.';
+      if (!emergency.name) return 'Add an emergency contact.';
       if (attendees.slice(0, totalTickets).some((item, index) => !item?.name || !item?.phone || (!item?.age && !(index === 0 && bookingForSelf)))) {
         return 'Each attendee needs name, phone, and age.';
       }
