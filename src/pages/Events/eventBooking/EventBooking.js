@@ -217,15 +217,30 @@ function BookingHeader({ event, seatsLeft, onBack }) {
   );
 }
 
-function Stepper({ step }) {
+function Stepper({ step, setStep }) {
   return (
     <nav className="eb-stepper" aria-label="Booking progress">
-      {STEPS.map(({ id, label, icon: Icon }) => (
-        <div key={id} className={`eb-stepper__item${step === id ? ' is-active' : ''}${step > id ? ' is-done' : ''}`}>
-          <span>{step > id ? <FaCheck /> : <Icon />}</span>
-          <strong>{label}</strong>
-        </div>
-      ))}
+      {STEPS.map(({ id, label, icon: Icon }) => {
+        const isActive = step === id;
+        const isDone = step > id;
+        return (
+          <button
+            key={id}
+            type="button"
+            className={`eb-stepper__item${isActive ? ' is-active' : ''}${isDone ? ' is-done' : ''}`}
+            onClick={() => {
+              if (isDone && setStep) setStep(id);
+            }}
+            disabled={!isDone && !isActive}
+            aria-current={isActive ? 'step' : undefined}
+          >
+            <span className="eb-stepper__badge">
+              {isDone ? <FaCheck /> : id}
+            </span>
+            <span className="eb-stepper__label">{label}</span>
+          </button>
+        );
+      })}
     </nav>
   );
 }
@@ -234,81 +249,118 @@ function TicketStep({ counts, setCount, tiers, seatsLeft }) {
   return (
     <section className="eb-panel">
       <div className="eb-panel__head">
-        <p className="eb-kicker">Choose tickets</p>
-        <h2>Select passes for your booking</h2>
-        <span>{seatsLeft} seats available in this batch</span>
+        <div>
+          <p className="eb-kicker">Choose tickets</p>
+          <h2>Select passes for your booking</h2>
+        </div>
+        <span className="eb-panel__badge">{seatsLeft} seats left</span>
       </div>
       <div className="eb-ticket-list">
-        {tiers.length ? tiers.map((tier) => (
-          <article key={tier.key} className="eb-ticket">
-            <div>
-              <p className="eb-ticket__name">{tier.name}</p>
-              <p className="eb-ticket__desc">{tier.description}</p>
-              {tier.perks?.length > 0 && (
-                <div className="eb-ticket__details-group">
-                  <span className="eb-ticket__details-title">Includes:</span>
-                  <div className="eb-ticket__chips" style={{ marginTop: '4px' }}>
-                    {tier.perks.map((perk, i) => <span key={`inc-${i}`}>{perk}</span>)}
+        {tiers.length ? tiers.map((tier) => {
+          const isSelected = (counts[tier.key] || 0) > 0;
+          return (
+            <article key={tier.key} className={`eb-ticket${isSelected ? ' is-selected' : ''}`}>
+              <div className="eb-ticket__top">
+                <div className="eb-ticket__info">
+                  <div className="eb-ticket__title-row">
+                    <h3 className="eb-ticket__name">{tier.name}</h3>
+                    {isSelected && <span className="eb-ticket__selected-pill">Selected</span>}
                   </div>
+                  <strong className="eb-ticket__price">{formatMoney(tier.price)}</strong>
+                </div>
+                <div className="eb-ticket__counter-wrap">
+                  <Counter
+                    value={counts[tier.key] || 0}
+                    onChange={(value) => setCount(tier.key, value)}
+                    max={Math.min(seatsLeft, tier.availableSeats)}
+                  />
+                </div>
+              </div>
+              {tier.description && <p className="eb-ticket__desc">{tier.description}</p>}
+              {tier.perks?.length > 0 && (
+                <div className="eb-ticket__chips">
+                  {tier.perks.map((perk, i) => (
+                    <span key={`inc-${i}`} className="eb-chip--inc">✓ {perk}</span>
+                  ))}
                 </div>
               )}
               {tier.exclusions?.length > 0 && (
-                <div className="eb-ticket__details-group">
-                  <span className="eb-ticket__details-title">Excludes:</span>
-                  <div className="eb-ticket__chips" style={{ marginTop: '4px' }}>
-                    {tier.exclusions.map((exc, i) => <span key={`exc-${i}`} className="eb-chip--exc">{exc}</span>)}
-                  </div>
+                <div className="eb-ticket__chips">
+                  {tier.exclusions.map((exc, i) => (
+                    <span key={`exc-${i}`} className="eb-chip--exc">✕ {exc}</span>
+                  ))}
                 </div>
               )}
-            </div>
-            <div className="eb-ticket__action">
-              <strong>{formatMoney(tier.price)}</strong>
-              <Counter value={counts[tier.key] || 0} onChange={(value) => setCount(tier.key, value)} max={Math.min(seatsLeft, tier.availableSeats)} />
-            </div>
-          </article>
-        )) : <div className="eb-no-packages"><strong>Tickets are not available yet</strong><span>The host has not published a ticket package for this event.</span></div>}
+            </article>
+          );
+        }) : (
+          <div className="eb-no-packages">
+            <strong>Tickets are not available yet</strong>
+            <span>The host has not published a ticket package for this event.</span>
+          </div>
+        )}
       </div>
     </section>
   );
 }
 
 function CategoryBookingBrief({ event }) {
+  const [expanded, setExpanded] = useState(false);
   const { config, details } = getCategoryDetails(event);
   const bikeReq = resolveBikeRequirements(event);
   const hasBike = Boolean(bikeReq && (bikeReq.bikeType || bikeReq.brand || bikeReq.model || bikeReq.engineCC));
 
   if (!config && !hasBike) return null;
 
+  const keyBikeSummary = [
+    bikeReq?.bikeType,
+    bikeReq?.brand,
+    bikeReq?.model,
+    bikeReq?.engineCC ? (String(bikeReq.engineCC).toLowerCase().includes('cc') ? bikeReq.engineCC : `${bikeReq.engineCC} cc`) : null
+  ].filter(Boolean).join(' • ');
+
   return (
     <section className="eb-category-brief">
-      <div>
-        <p className="eb-kicker">Before you book</p>
-        <h3>{config?.category || 'Ride'} requirements & details</h3>
+      <div
+        className="eb-category-brief__bar"
+        onClick={() => setExpanded(!expanded)}
+        role="button"
+        tabIndex={0}
+      >
+        <div className="eb-category-brief__info">
+          <span className="eb-category-brief__tag">📋 {config?.category || 'Ride'} Requirements</span>
+          {keyBikeSummary && <strong className="eb-category-brief__summary">{keyBikeSummary}</strong>}
+        </div>
+        <button type="button" className="eb-category-brief__toggle" aria-expanded={expanded}>
+          {expanded ? 'Hide details ▴' : 'View details ▾'}
+        </button>
       </div>
-      <div className="eb-category-brief__grid">
-        {hasBike && (
-          <>
-            {bikeReq.bikeType && <div><span>Bike Type</span><strong>{bikeReq.bikeType}</strong></div>}
-            {bikeReq.brand && <div><span>Required Brand</span><strong>{bikeReq.brand}</strong></div>}
-            {bikeReq.model && <div><span>Required Model</span><strong>{bikeReq.model}</strong></div>}
-            {bikeReq.engineCC && (
-              <div>
-                <span>Minimum CC</span>
-                <strong>{String(bikeReq.engineCC).toLowerCase().includes('cc') ? bikeReq.engineCC : `${bikeReq.engineCC} cc`}</strong>
+      {expanded && (
+        <div className="eb-category-brief__grid">
+          {hasBike && (
+            <>
+              {bikeReq.bikeType && <div><span>Bike Type</span><strong>{bikeReq.bikeType}</strong></div>}
+              {bikeReq.brand && <div><span>Required Brand</span><strong>{bikeReq.brand}</strong></div>}
+              {bikeReq.model && <div><span>Required Model</span><strong>{bikeReq.model}</strong></div>}
+              {bikeReq.engineCC && (
+                <div>
+                  <span>Minimum CC</span>
+                  <strong>{String(bikeReq.engineCC).toLowerCase().includes('cc') ? bikeReq.engineCC : `${bikeReq.engineCC} cc`}</strong>
+                </div>
+              )}
+            </>
+          )}
+          {details.map((field) => {
+            const isLongText = typeof field.value === 'string' && field.value.length > 60;
+            return (
+              <div key={field.id} className={isLongText ? 'eb-category-item--wide' : ''}>
+                <span>{field.label}</span>
+                <strong>{formatCategoryValue(field.value, field)}</strong>
               </div>
-            )}
-          </>
-        )}
-        {details.map((field) => {
-          const isLongText = typeof field.value === 'string' && field.value.length > 60;
-          return (
-            <div key={field.id} className={isLongText ? 'eb-category-item--wide' : ''}>
-              <span>{field.label}</span>
-              <strong>{formatCategoryValue(field.value, field)}</strong>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </section>
   );
 }
@@ -1248,7 +1300,7 @@ export default function EventBooking() {
 
   // for opening ticket popup 
   const [bookingConfirmation, setBookingConfirmation] = useState(null);
-
+  const [showOrderBreakdown, setShowOrderBreakdown] = useState(false);
   
   const [error, setError] = useState('');
   const [bookingForSelf, setBookingForSelf] = useState(false);
@@ -1764,20 +1816,12 @@ export default function EventBooking() {
     <div className="eb-page">
       <BookingHeader event={event} seatsLeft={seatsLeft} onBack={previous} />
       <div className="eb-shell">
-        <Stepper step={step} />
+        <Stepper step={step} setStep={setStep} />
         <div className="eb-content">
           <main>
             {step === 1 && <CategoryBookingBrief event={event} />}
             {renderStep()}
             {error && <p className="eb-error">{error}</p>}
-            <div className="eb-actions">
-              <button type="button" className="eb-btn eb-btn--ghost" onClick={previous}>
-                Back
-              </button>
-              <button type="button" className="eb-btn eb-btn--primary" onClick={next} disabled={submitting}>
-                {submitting ? 'Creating booking...' : step === STEPS.length ? `Pay ${formatMoney(summary.total)}` : 'Continue'}
-              </button>
-            </div>
           </main>
           <BookingSummary
             event={event}
@@ -1789,6 +1833,116 @@ export default function EventBooking() {
           />
         </div>
       </div>
+
+      {/* ── Fixed Bottom Bar with Order Summary Tab & Action Buttons ── */}
+      <div className="eb-fixed-bottom-bar">
+        <div
+          className="eb-fixed-bar__summary-tab"
+          onClick={() => setShowOrderBreakdown((prev) => !prev)}
+          role="button"
+          tabIndex={0}
+          aria-label="Toggle order breakdown"
+        >
+          <div className="eb-fixed-bar__summary-text">
+            <span className="eb-fixed-bar__kicker">
+              {step === STEPS.length ? 'Final Payable' : 'Order Total'}
+            </span>
+            <strong className="eb-fixed-bar__price">{formatMoney(summary.total)}</strong>
+            <span className="eb-fixed-bar__sub">
+              {summary.ticketCount} {summary.ticketCount === 1 ? 'ticket' : 'tickets'} • {showOrderBreakdown ? 'Hide details ▾' : 'View details ▴'}
+            </span>
+          </div>
+        </div>
+
+        <div className="eb-fixed-bar__actions">
+          <button
+            type="button"
+            className="eb-fixed-bar__btn eb-fixed-bar__btn--back"
+            onClick={previous}
+            aria-label="Go back"
+          >
+            <FaArrowLeft style={{ fontSize: '12px' }} />
+            <span>Back</span>
+          </button>
+
+          <button
+            type="button"
+            className="eb-fixed-bar__btn eb-fixed-bar__btn--continue"
+            onClick={next}
+            disabled={submitting || (step === 1 && summary.ticketCount === 0)}
+            aria-label="Continue booking"
+          >
+            <span>
+              {submitting
+                ? 'Creating booking...'
+                : step === STEPS.length
+                ? `Pay ${formatMoney(summary.total)}`
+                : 'Continue'}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* ── Slide-up Order Breakdown Sheet ── */}
+      {showOrderBreakdown && (
+        <div className="eb-breakdown-overlay" onClick={() => setShowOrderBreakdown(false)}>
+          <div className="eb-breakdown-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="eb-breakdown-sheet__header">
+              <div>
+                <p className="eb-kicker" style={{ margin: 0 }}>Order Summary</p>
+                <h4>{event.title}</h4>
+              </div>
+              <button
+                type="button"
+                className="eb-breakdown-sheet__close"
+                onClick={() => setShowOrderBreakdown(false)}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="eb-breakdown-sheet__body">
+              <div className="eb-summary__meta" style={{ paddingBottom: '12px' }}>
+                <span><FaCalendarAlt />{event.dateTimeText || event.dateText}</span>
+                <span><FaMapMarkerAlt />{event.location}</span>
+              </div>
+
+              <div className="eb-summary__rows">
+                {Object.entries(counts).filter(([, value]) => value > 0).map(([key, value]) => (
+                  <div key={key}>
+                    <span>{key} × {value}</span>
+                    <strong>{formatMoney(summary.tierTotals[key] || 0)}</strong>
+                  </div>
+                ))}
+                {availableAddOns.filter((item) => selectedAddOns.includes(item.key)).map((item) => (
+                  <div key={item.key}>
+                    <span>{item.title}</span>
+                    <strong>{formatMoney(item.price)}</strong>
+                  </div>
+                ))}
+                {summary.discount > 0 && (
+                  <div style={{ color: '#0a8f5a' }}>
+                    <span>Coupon discount</span>
+                    <strong>-{formatMoney(summary.discount)}</strong>
+                  </div>
+                )}
+                {summary.fees > 0 && (
+                  <div>
+                    <span>Convenience / Taxes</span>
+                    <strong>{formatMoney(summary.fees)}</strong>
+                  </div>
+                )}
+              </div>
+
+              <div className="eb-summary__total" style={{ marginTop: '16px', paddingTop: '14px' }}>
+                <span>Total Amount</span>
+                <strong>{formatMoney(summary.total)}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isGeneratingTicket && (
         <div className="eb-ticket-generating-overlay" role="dialog" aria-modal="true">

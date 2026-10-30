@@ -123,6 +123,44 @@ export default function EventDetail() {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
 
+  const { priceKicker, priceDisplay, priceSub } = useMemo(() => {
+    if (!event) return { priceKicker: "Starts from", priceDisplay: "₹0", priceSub: "Paid" };
+
+    const rawPrice = event.ticketPrice ?? event.price;
+    const isFree =
+      rawPrice === 0 ||
+      rawPrice === "0" ||
+      (typeof event.priceText === "string" && event.priceText.toLowerCase().trim() === "free");
+
+    if (isFree) {
+      return {
+        priceKicker: "Event",
+        priceDisplay: "Free",
+        priceSub: "Free Entry",
+      };
+    }
+
+    let numericPrice = null;
+    if (typeof rawPrice === "number" && !isNaN(rawPrice)) {
+      numericPrice = rawPrice;
+    } else if (typeof rawPrice === "string" && rawPrice.replace(/\D/g, "")) {
+      numericPrice = Number(rawPrice.replace(/\D/g, ""));
+    } else if (typeof event.priceText === "string") {
+      const match = event.priceText.replace(/,/g, "").match(/\d+/);
+      if (match) numericPrice = Number(match[0]);
+    }
+
+    const priceFormatted = numericPrice
+      ? `₹${numericPrice.toLocaleString("en-IN")}`
+      : (event.priceText || (event.ticketPrice ? `₹${event.ticketPrice}` : "₹0"));
+
+    return {
+      priceKicker: "Starts from",
+      priceDisplay: priceFormatted,
+      priceSub: event.ticketType || "Paid",
+    };
+  }, [event]);
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -391,11 +429,7 @@ export default function EventDetail() {
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </button>
-
-          <Link to="/" className="ed-logo-link" aria-label="Nitroxx Home">
-            <img src="/assets/images/logo-white.png" alt="Nitroxx" className="ed-logo-img" />
-          </Link>
-        </div>
+          </div>
 
         {event && (
           <div className="ed-nav-actions">
@@ -467,7 +501,6 @@ export default function EventDetail() {
     .slice(0, 4);
   const seatsLeft = Math.max(0, Number(event.capacity || 0) - Number(event.registeredCount || 0));
   const categoryDetails = getCategoryDetails(event);
-
 
   return (
     <div className="event-detail-page">
@@ -851,6 +884,27 @@ export default function EventDetail() {
           )}
         </div>
       </div>
+
+      {/* ── Fixed Mobile Bottom Bar (matching reference design) ── */}
+      {event && (
+        <div className="ed-mobile-bottom-bar">
+          <div className="ed-mobile-bar-left">
+            <span className="ed-mobile-bar-kicker">{priceKicker}</span>
+            <span className="ed-mobile-bar-price">{priceDisplay}</span>
+            {/* <span className="ed-mobile-bar-type">{priceSub}</span> */}
+          </div>
+          <button
+            type="button"
+            className="ed-mobile-bar-btn"
+            onClick={() => navigate(`/event/${event.id}/book`, {
+              state: { event, ticketTemplateUrl: event.ticketTemplateUrl }
+            })}
+            aria-label="Book Ticket"
+          >
+            <span className="ed-mobile-bar-btn-line">Book Ticket</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
