@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import { useCollection } from "../../../hooks/useFirestore";
 import { db, serverTimestamp } from "../../../services/firebase";
@@ -132,15 +131,6 @@ export default function Wallet() {
 
   return (
     <div className="nx-wallet-page-wrap">
-      {/* Top Header matching Screenshot 3 */}
-      <div className="nx-wallet-header">
-        <Link to="/profile" className="nx-wallet-back-btn" title="Back to Profile">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-        </Link>
-      </div>
-
       {/* Desktop Dashboard Grid */}
       <div className="nx-wallet-desktop-layout">
         {/* Hero Section matching Screenshot 3 */}

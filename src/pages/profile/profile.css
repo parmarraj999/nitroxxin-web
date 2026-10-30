@@ -5325,6 +5325,15 @@
   }
 }
 
+/* Ensure redundant legacy inner back buttons do not display or interfere */
+.nx-saved-events-back-btn,
+.nx-wishlist-back-btn,
+.nx-wallet-back-btn,
+.nx-addr-back-btn {
+  display: none !important;
+}
+
+
 
 
 

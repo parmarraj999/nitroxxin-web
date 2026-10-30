@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import "./profile.css";
 import { useAuth } from "../../context/AuthContext";
@@ -8,16 +8,48 @@ export default function Profile() {
   const location = useLocation();
   const { logout } = useAuth();
 
-  // On mobile, if path is exactly "/profile", we show the sidebar menu. If path is a subroute, we can show the content.
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== "undefined" ? window.innerWidth <= 768 : false
+  );
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // On mobile, if path is exactly "/profile", we show the sidebar menu. If path is a subroute, we show the content.
   const isRootProfile = location.pathname === "/profile" || location.pathname === "/profile/";
 
-  const handleBack = () => {
-    if (!isRootProfile) {
-      navigate("/profile");
-    } else if (window.history.length > 1) {
+  // Exits the profile section completely and returns to where the user was on the site
+  const handleExitProfile = () => {
+    try {
+      const lastSite = sessionStorage.getItem("nx_last_site_path");
+      if (lastSite && !lastSite.startsWith("/profile") && lastSite !== location.pathname) {
+        navigate(lastSite);
+        return;
+      }
+    } catch (e) {
+      // fallback
+    }
+
+    if (window.history.length > 1) {
       navigate(-1);
     } else {
       navigate("/");
+    }
+  };
+
+  // On mobile, when inside a subpage, returns to the /profile settings menu
+  const handleSubpageBack = () => {
+    if (location.state?.fromProfileMenu) {
+      navigate(-1);
+    } else {
+      // If user directly opened a subroute (e.g. from bookmark or direct link),
+      // replace current entry with /profile so history remains clean and doesn't loop
+      navigate("/profile", { replace: true });
     }
   };
 
@@ -164,6 +196,11 @@ export default function Profile() {
     },
   ];
 
+  const currentMenuItem = menuItems.find(
+    (item) => location.pathname === item.to || location.pathname.startsWith(item.to + "/")
+  );
+  const currentTitle = currentMenuItem ? currentMenuItem.label : "Settings & Activity";
+
   return (
     <div className={`nx-profile-layout${!isRootProfile ? " nx-profile-view-subpage" : ""}`}>
       {/* ── Left Sidebar (Settings & Activity) ── */}
@@ -172,8 +209,9 @@ export default function Profile() {
           <button
             type="button"
             className="nx-profile-back-circle-btn"
-            onClick={handleBack}
-            aria-label="Back"
+            onClick={handleExitProfile}
+            aria-label="Exit to Nitroxx"
+            title="Exit to Nitroxx"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="15 18 9 12 15 6" />
@@ -185,13 +223,17 @@ export default function Profile() {
         <nav className="nx-profile-menu">
           {menuItems.map((item) => {
             const isEditDetails = item.to === "/profile/edit-details";
+            const isActive =
+              location.pathname === item.to ||
+              (isEditDetails && isRootProfile);
+
             return (
               <NavLink
                 key={item.to}
                 to={item.to}
-                className={({ isActive }) =>
-                  `nx-profile-menu-item${isActive || (isEditDetails && isRootProfile) ? " is-active" : ""}`
-                }
+                replace={!isMobile}
+                state={{ fromProfileMenu: true }}
+                className={`nx-profile-menu-item${isActive ? " is-active" : ""}`}
               >
                 <div className="nx-profile-item-left">
                   <span className={`nx-profile-item-icon${item.isHighlighted ? " is-fire" : ""}`}>
@@ -237,14 +279,15 @@ export default function Profile() {
           <button
             type="button"
             className="nx-profile-back-circle-btn"
-            onClick={handleBack}
-            aria-label="Back to settings"
+            onClick={handleSubpageBack}
+            aria-label="Back to settings menu"
+            title="Back to Settings"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </button>
-          <span className="nx-profile-mobile-nav-title">Settings & Activity</span>
+          <span className="nx-profile-mobile-nav-title">{currentTitle}</span>
         </div>
         <Outlet />
       </main>

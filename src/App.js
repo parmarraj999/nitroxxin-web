@@ -1,5 +1,6 @@
+import React, { useEffect } from 'react';
 import './App.css';
-import { BrowserRouter as Router, Routes, Route, useLocation, Outlet } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, Outlet, Navigate } from 'react-router-dom';
 
 import Navbar from './components/layout/navbar/navbar';
 import BottomNav from './components/layout/bottomNav/bottomNav';
@@ -99,6 +100,17 @@ const AppShell = () => {
   const isSearchPage = location.pathname.includes('/search');
   const isPrivacyPage = location.pathname.includes('/privacy');
 
+  // Track the last non-profile page visited so the profile back button can return directly to it
+  useEffect(() => {
+    try {
+      if (!location.pathname.startsWith('/profile')) {
+        sessionStorage.setItem('nx_last_site_path', location.pathname + location.search + location.hash);
+      }
+    } catch (e) {
+      // Ignore storage errors in private browsing/incognito
+    }
+  }, [location.pathname, location.search, location.hash]);
+
   return (
     <div className={`app-container${isProfilePage ? ' is-profile-view' : ''}${isSearchPage ? ' is-search-view' : ''}${isPrivacyPage ? ' is-privacy-view' : ''}`}>
       <ScreenLoader />
@@ -170,10 +182,13 @@ const AppShell = () => {
           <Route path="throttle-list" element={<ThrottleList />} />
           <Route path="feedback" element={<ShareFeedback />} />
           {/* Backward compatibility aliases */}
+          <Route path="orders" element={<MyOrders />} />
           <Route path="events" element={<JoinedEvents />} />
           <Route path="accessories" element={<MyOrders />} />
           <Route path="wallet" element={<Wallet />} />
           <Route path="support" element={<ShareFeedback />} />
+          {/* Catch-all redirect for any unknown profile subroute */}
+          <Route path="*" element={<Navigate to="/profile" replace />} />
         </Route>
       </Routes>
       <FooterWrapper />

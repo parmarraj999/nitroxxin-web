@@ -702,7 +702,7 @@ BAR (heading + search side by side) ===== */
 
 .ep-event-card__name {
   font-family: 'Poppins', sans-serif;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 15.5px;
   line-height: 1.3;
   color: #ffffff;
@@ -716,7 +716,7 @@ BAR (heading + search side by side) ===== */
 
 .ep-event-card__price {
   font-family: 'Poppins', sans-serif;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 15px;
   color: #ffffff;
   white-space: nowrap;
@@ -738,7 +738,7 @@ BAR (heading + search side by side) ===== */
 .ep-event-card__throttled {
   font-family: 'Poppins', sans-serif;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   color: #f97316;
   margin-top: 1px;
 }
@@ -870,7 +870,7 @@ BAR (heading + search side by side) ===== */
 .ep-upcoming-header__title {
   font-family: 'Poppins', sans-serif;
   font-size: 23px;
-  font-weight: 800;
+  font-weight: 600;
   color: inherit;
   margin: 0;
   display: flex;

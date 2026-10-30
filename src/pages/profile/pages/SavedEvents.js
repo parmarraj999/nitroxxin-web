@@ -476,14 +476,9 @@ export default function SavedEvents() {
 
   return (
     <div className="nx-saved-events-page-wrap">
-      {/* Top Header Row with Back Button, Title & Search Bar */}
+      {/* Top Header Row with Title & Search Bar */}
       <div className="nx-saved-events-header">
         <div className="nx-saved-events-header-left">
-          <Link to="/profile" className="nx-saved-events-back-btn" title="Back to Profile">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </Link>
           <h1 className="nx-saved-events-title">Saved Events</h1>
         </div>
 

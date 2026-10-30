@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import { useCollection } from "../../../hooks/useFirestore";
 import { db, serverTimestamp } from "../../../services/firebase";
@@ -201,11 +200,6 @@ export default function SavedAddresses() {
       {/* Top Header matching Screenshot 2 */}
       <div className="nx-addr-header">
         <div className="nx-addr-header-left">
-          <Link to="/profile" className="nx-addr-back-btn" title="Back to Profile">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </Link>
           <h1 className="nx-addr-title">Saved Addresses</h1>
         </div>
 
