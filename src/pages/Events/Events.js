@@ -391,15 +391,6 @@ export default function Events() {
 
   const upcomingTrackRef = useRef(null);
 
-  const scrollUpcoming = (direction) => {
-    if (!upcomingTrackRef.current) return;
-    const scrollAmount = 340 * 2;
-    upcomingTrackRef.current.scrollBy({
-      left: direction === "left" ? -scrollAmount : scrollAmount,
-      behavior: "smooth",
-    });
-  };
-
   const activeCategory = searchParams.get("category") || "All";
 
   const liveEvents = useMemo(
