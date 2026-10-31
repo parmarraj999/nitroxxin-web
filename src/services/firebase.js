@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
@@ -17,6 +17,13 @@ const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 export const authInstance = getAuth(app);
 export const firestoreInstance = getFirestore(app);
 export const storageInstance = getStorage(app);
+
+// Explicitly set browser local persistence for authInstance
+if (typeof window !== "undefined" && authInstance) {
+  setPersistence(authInstance, browserLocalPersistence).catch((err) => {
+    console.warn("Failed to set Firebase Auth local persistence:", err);
+  });
+}
 
 // Explicitly configure client agent reCAPTCHA configuration.
 // This prevents Firebase Auth from requesting unconfigured reCAPTCHA Enterprise config
@@ -47,14 +54,12 @@ export const getFirebase = () => {
     firebaseApp = window.firebase.apps.length
       ? window.firebase.app()
       : window.firebase.initializeApp(firebaseConfig);
-
-    window.firebase.auth().setPersistence(window.firebase.auth.Auth.Persistence.LOCAL);
   }
 
   return window.firebase;
 };
 
-export const auth = () => getFirebase().auth();
+export const auth = () => authInstance;
 export const db = () => getFirebase().firestore();
 export const storage = () => getFirebase().storage();
 

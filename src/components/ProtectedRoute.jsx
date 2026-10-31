@@ -12,7 +12,13 @@ export default function ProtectedRoute({ children }) {
     if (!loading && !isAuthenticated) openLogin();
   }, [isAuthenticated, loading, openLogin]);
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <div style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div className="profile-spinner" />
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/" replace state={{ from: location.pathname }} />;

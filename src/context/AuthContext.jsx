@@ -7,10 +7,39 @@ import { uploadProfileImage, uploadDrivingLicenseImage } from "../services/stora
 
 const AuthContext = createContext(null);
 
+const getInitialUser = () => {
+  try {
+    const savedUser = localStorage.getItem("nitroxxin_user");
+    if (savedUser) return JSON.parse(savedUser);
+    const devUid = localStorage.getItem("nitroxxin_dev_test_uid");
+    if (devUid) {
+      return {
+        uid: devUid,
+        isDevMock: true,
+        phone: "+919999999999",
+        fullName: "User",
+      };
+    }
+  } catch (e) {
+    console.warn("Error reading cached user:", e);
+  }
+  return null;
+};
+
+const getInitialProfile = () => {
+  try {
+    const savedProfile = localStorage.getItem("nitroxxin_profile");
+    if (savedProfile) return JSON.parse(savedProfile);
+  } catch (e) {
+    console.warn("Error reading cached profile:", e);
+  }
+  return null;
+};
+
 export const FirebaseAuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(getInitialUser);
+  const [profile, setProfile] = useState(getInitialProfile);
+  const [loading, setLoading] = useState(() => !getInitialUser());
   const [error, setError] = useState(null);
 
   // Modal flow state
@@ -30,7 +59,20 @@ export const FirebaseAuthProvider = ({ children }) => {
 
       if (firebaseUser) {
         localStorage.removeItem("nitroxxin_dev_test_uid");
-        setUser(firebaseUser);
+        localStorage.setItem("userId", firebaseUser.uid);
+        localStorage.setItem("nitroxxin_auth_uid", firebaseUser.uid);
+
+        const basePayload = {
+          uid: firebaseUser.uid,
+          phone: firebaseUser.phoneNumber || "",
+          phoneNumber: firebaseUser.phoneNumber || "",
+          email: firebaseUser.email || "",
+          fullName: firebaseUser.displayName || "",
+          displayName: firebaseUser.displayName || "",
+          photoURL: firebaseUser.photoURL || "",
+        };
+        localStorage.setItem("nitroxxin_user", JSON.stringify(basePayload));
+        setUser((prev) => ({ ...basePayload, ...(prev || {}), ...firebaseUser }));
 
         // Realtime listener to users/{uid} document
         const docRef = doc(firestoreInstance, "users", firebaseUser.uid);
@@ -40,21 +82,35 @@ export const FirebaseAuthProvider = ({ children }) => {
             if (docSnap.exists()) {
               const profileData = { id: docSnap.id, ...docSnap.data() };
               setProfile(profileData);
+              localStorage.setItem("nitroxxin_profile", JSON.stringify(profileData));
             } else {
-              setProfile(null);
+              // Ensure user profile document exists so we don't end up with an empty state
+              ensureUserProfile(firebaseUser.uid, {
+                phone: firebaseUser.phoneNumber || "",
+                fullName: firebaseUser.displayName || "",
+                email: firebaseUser.email || "",
+              })
+                .then((ensured) => {
+                  setProfile(ensured);
+                  localStorage.setItem("nitroxxin_profile", JSON.stringify(ensured));
+                })
+                .catch((pErr) => {
+                  console.warn("Could not ensure profile document:", pErr);
+                });
             }
             setLoading(false);
           },
           (snapError) => {
             console.error("Firestore sync error:", snapError);
-            setError(snapError.message);
+            // DO NOT log out on snapshot error; preserve user session
             setLoading(false);
           }
         );
       } else {
-        // Check if a dev test UID is active in localStorage
+        // Firebase has no active user in authInstance
         const savedDevUid = localStorage.getItem("nitroxxin_dev_test_uid");
         if (savedDevUid) {
+          localStorage.setItem("userId", savedDevUid);
           const docRef = doc(firestoreInstance, "users", savedDevUid);
           unsubscribeProfile = onSnapshot(
             docRef,
@@ -62,17 +118,30 @@ export const FirebaseAuthProvider = ({ children }) => {
               if (docSnap.exists()) {
                 const profileData = { id: docSnap.id, ...docSnap.data() };
                 setProfile(profileData);
-                setUser({
+                localStorage.setItem("nitroxxin_profile", JSON.stringify(profileData));
+                const mockUser = {
                   uid: savedDevUid,
                   phone: profileData?.phone || profileData?.phoneNumber || "+919999999999",
-                  fullName: profileData?.fullName || profileData?.name || profileData?.displayName || "Test User",
+                  fullName:
+                    profileData?.fullName ||
+                    profileData?.name ||
+                    profileData?.displayName ||
+                    "Test User",
                   email: profileData?.email || `${savedDevUid}@test.nitroxxin.com`,
                   isDevMock: true,
-                });
+                };
+                setUser(mockUser);
+                localStorage.setItem("nitroxxin_user", JSON.stringify(mockUser));
               } else {
-                localStorage.removeItem("nitroxxin_dev_test_uid");
-                setProfile(null);
-                setUser(null);
+                // If docSnap doesn't exist, still preserve the active dev session
+                const fallbackUser = {
+                  uid: savedDevUid,
+                  phone: "+919999999999",
+                  fullName: "Test User",
+                  email: `${savedDevUid}@test.nitroxxin.com`,
+                  isDevMock: true,
+                };
+                setUser(fallbackUser);
               }
               setLoading(false);
             },
@@ -82,6 +151,11 @@ export const FirebaseAuthProvider = ({ children }) => {
             }
           );
         } else {
+          // Truly unauthenticated: clear user and profile
+          localStorage.removeItem("nitroxxin_user");
+          localStorage.removeItem("nitroxxin_profile");
+          localStorage.removeItem("userId");
+          localStorage.removeItem("nitroxxin_auth_uid");
           setUser(null);
           setProfile(null);
           setLoading(false);
@@ -133,12 +207,24 @@ export const FirebaseAuthProvider = ({ children }) => {
     try {
       if (!confirmationResult) throw new Error("No verification context found. Please request OTP again.");
       const firebaseUser = await verifyOTP(confirmationResult, code);
-      
+
+      localStorage.setItem("userId", firebaseUser.uid);
+      localStorage.setItem("nitroxxin_auth_uid", firebaseUser.uid);
+      const userPayload = {
+        uid: firebaseUser.uid,
+        phoneNumber: firebaseUser.phoneNumber || phoneNumber || "",
+        phone: firebaseUser.phoneNumber || phoneNumber || "",
+      };
+      localStorage.setItem("nitroxxin_user", JSON.stringify(userPayload));
+      setUser(firebaseUser);
+
       // Ensure basic user profile exists in Firestore without blocking on full detail setup
       try {
-        await ensureUserProfile(firebaseUser.uid, {
+        const ensured = await ensureUserProfile(firebaseUser.uid, {
           phone: firebaseUser.phoneNumber || phoneNumber || "",
         });
+        setProfile(ensured);
+        localStorage.setItem("nitroxxin_profile", JSON.stringify(ensured));
       } catch (profileErr) {
         console.warn("Could not ensure profile document:", profileErr);
       }
@@ -206,6 +292,7 @@ export const FirebaseAuthProvider = ({ children }) => {
 
       const realUid = presentUser.id || presentUser.uid;
       localStorage.setItem("nitroxxin_dev_test_uid", realUid);
+      localStorage.setItem("userId", realUid);
 
       const mockUser = {
         uid: realUid,
@@ -215,6 +302,9 @@ export const FirebaseAuthProvider = ({ children }) => {
         ...presentUser,
         isDevMock: true,
       };
+
+      localStorage.setItem("nitroxxin_user", JSON.stringify(mockUser));
+      localStorage.setItem("nitroxxin_profile", JSON.stringify(presentUser));
 
       setUser(mockUser);
       setProfile(presentUser);
@@ -237,13 +327,29 @@ export const FirebaseAuthProvider = ({ children }) => {
     try {
       const firebaseUser = await loginWithGoogle();
       if (firebaseUser) {
+        localStorage.setItem("userId", firebaseUser.uid);
+        localStorage.setItem("nitroxxin_auth_uid", firebaseUser.uid);
+        const userPayload = {
+          uid: firebaseUser.uid,
+          fullName: firebaseUser.displayName || "",
+          displayName: firebaseUser.displayName || "",
+          email: firebaseUser.email || "",
+          profilePhoto: firebaseUser.photoURL || "",
+          photoURL: firebaseUser.photoURL || "",
+          phone: firebaseUser.phoneNumber || "",
+        };
+        localStorage.setItem("nitroxxin_user", JSON.stringify(userPayload));
+        setUser(firebaseUser);
+
         try {
-          await ensureUserProfile(firebaseUser.uid, {
+          const ensured = await ensureUserProfile(firebaseUser.uid, {
             fullName: firebaseUser.displayName || "",
             email: firebaseUser.email || "",
             profilePhoto: firebaseUser.photoURL || "",
             phone: firebaseUser.phoneNumber || "",
           });
+          setProfile(ensured);
+          localStorage.setItem("nitroxxin_profile", JSON.stringify(ensured));
         } catch (profileErr) {
           console.warn("Could not ensure profile document:", profileErr);
         }
@@ -266,6 +372,10 @@ export const FirebaseAuthProvider = ({ children }) => {
     setLoading(true);
     try {
       localStorage.removeItem("nitroxxin_dev_test_uid");
+      localStorage.removeItem("nitroxxin_user");
+      localStorage.removeItem("nitroxxin_profile");
+      localStorage.removeItem("userId");
+      localStorage.removeItem("nitroxxin_auth_uid");
       await logoutUser();
       setProfile(null);
       setUser(null);
