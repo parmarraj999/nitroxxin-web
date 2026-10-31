@@ -31,28 +31,28 @@ export default function MyOrders() {
   const [directFetchedOrders, setDirectFetchedOrders] = useState([]);
   const [hasAutoOpened, setHasAutoOpened] = useState(false);
 
-  // 1. Fetch from users/{userId}/order
-  const { data: userOrderData, loading: loadingUserOrder } = useCollection(
-    user?.uid ? `users/${user.uid}/order` : null
-  );
-
-  // 2. Fetch from user/{userId}/order (singular collection "user")
-  const { data: userSingularOrderData } = useCollection(
-    user?.uid ? `user/${user.uid}/order` : null
-  );
-
-  // 3. Fetch from users/{userId}/orders (plural)
-  const { data: userPluralOrdersData } = useCollection(
+  // 1. Primary: Fetch from users/{userId}/orders (plural)
+  const { data: userPluralOrdersData, loading: loadingUserOrders } = useCollection(
     user?.uid ? `users/${user.uid}/orders` : null
   );
 
-  // 4. Fetch from global orders collection
+  // 2. Global orders collection
   const { data: globalOrdersData, loading: loadingGlobal } = useCollection(COLLECTIONS.orders, {
     where: user?.uid ? [["userId", "==", user.uid]] : [["userId", "==", "NO_USER"]],
     limit: 60,
   });
 
-  const loading = loadingUserOrder && loadingGlobal;
+  // 3. Fallback: legacy users/{userId}/order
+  const { data: userOrderData } = useCollection(
+    user?.uid ? `users/${user.uid}/order` : null
+  );
+
+  // 4. Fallback: legacy user/{userId}/order
+  const { data: userSingularOrderData } = useCollection(
+    user?.uid ? `user/${user.uid}/order` : null
+  );
+
+  const loading = loadingUserOrders && loadingGlobal;
 
   // Handle URL query parameters (?payment_id=... or ?orderId=...)
   useEffect(() => {

@@ -171,20 +171,13 @@ export const AddOrderToFirestore = async ({
       // A. Global orders collection (used by vendor dashboard & queries)
       batch.set(orderRef, vendorOrderDoc);
 
-      // B. User subcollections: users/{userId}/orders and users/{userId}/order
+      // B. User subcollection: users/{userId}/orders
       const userOrdersRef = database
         .collection("users")
         .doc(userId)
         .collection("orders")
         .doc(orderRef.id);
       batch.set(userOrdersRef, vendorOrderDoc);
-
-      const userSingularOrderRef = database
-        .collection("users")
-        .doc(userId)
-        .collection("order")
-        .doc(orderRef.id);
-      batch.set(userSingularOrderRef, vendorOrderDoc);
 
       // C. Vendor subcollection: vendors/{vendorId}/orders
       const vendorSubcollectionRef = database
