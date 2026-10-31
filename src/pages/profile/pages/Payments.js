@@ -37,7 +37,7 @@ export default function Payments() {
     })),
     ...(orders || []).map((o) => ({
       id: o.id,
-      title: o.items?.[0]?.productSnapshot?.name || `Gear Order #${o.orderId || o.id?.slice(-4)}`,
+      title: o.items?.[0]?.name || o.items?.[0]?.productSnapshot?.name || `Gear Order #${o.orderID || o.orderId || o.id?.slice(-4)}`,
       amount: o.totalAmount || o.total || 0,
       type: "Store Order",
       status: o.paymentStatus || "paid",

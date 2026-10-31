@@ -132,22 +132,16 @@ export const AddOrderToFirestore = async ({
     for (const [vId, vData] of Object.entries(vendorMap)) {
       const vendorOrderId = generateVendorOrderId(); // e.g. ODR123456VNTX
       const orderRef = database.collection(COLLECTIONS.orders || "orders").doc();
-      const firstVendorItem = vData.items[0] || {};
       const vendorItemCount = vData.items.reduce((acc, it) => acc + (it.quantity || 1), 0);
 
       const vendorOrderDoc = {
         id: orderRef.id,
-        orderDocId: orderRef.id,
         // Whole Order ID: shared across all vendor orders from this payment
-        orderId: wholeOrderId,
         orderID: wholeOrderId,
         // Specific Vendor Order ID: unique per vendor
         vendorOrderId: vendorOrderId,
-        orderNumber: vendorOrderId, // Primary ID displayed for this vendor's order
         // Shared payment ID
-        paymentId: paymentId,
         payment_id: paymentId,
-        razorpayPaymentId: paymentId,
         razorpayOrderId: razorpayOrderId,
         razorpaySignature: razorpaySignature,
         // Vendor info
@@ -155,19 +149,11 @@ export const AddOrderToFirestore = async ({
         vendorName: vData.vendorName,
         // Customer info
         userId: userId,
-        user: customerData,
         customer: customerData,
-        // Vendor items only
+        // Vendor items only (all details: name, image, price, quantity, specs are inside items)
         items: vData.items,
-        itemCount: vendorItemCount,
-        itemName: firstVendorItem.name || "Motorcycle Accessory",
-        image: firstVendorItem.image || "",
         // Financials for this vendor
-        subtotal: vData.totalAmount,
-        price: vData.totalAmount,
-        total: vData.totalAmount,
         totalAmount: vData.totalAmount,
-        vendorTotal: vData.totalAmount,
         overallOrderTotal: totalAmount, // Grand total of full checkout
         // Shipping & delivery
         deliveryAddress: deliveryAddressStr,
@@ -177,7 +163,6 @@ export const AddOrderToFirestore = async ({
         paymentMode: "Prepaid (Razorpay)",
         paymentStatus: "paid",
         status: "confirmed",
-        orderStatus: "confirmed",
         statusMessage: `Your order has been confirmed and is being processed by ${vData.vendorName}.`,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -223,13 +208,10 @@ export const AddOrderToFirestore = async ({
     const paymentDocRef = database.collection("payments").doc(paymentId);
     const paymentRecord = {
       id: paymentId,
-      paymentId: paymentId,
       payment_id: paymentId,
-      orderId: wholeOrderId,
       orderID: wholeOrderId,
       vendorOrderIds: createdVendorOrders.map((o) => o.vendorOrderId),
       orderDocIds: createdVendorOrders.map((o) => o.docId),
-      razorpayPaymentId: paymentId,
       razorpayOrderId: razorpayOrderId,
       razorpaySignature: razorpaySignature,
       amount: totalAmount,
@@ -240,9 +222,7 @@ export const AddOrderToFirestore = async ({
       paymentMode: "Prepaid (Razorpay)",
       userId: userId,
       customer: customerData,
-      user: customerData,
       items: normalizedItems,
-      itemCount: normalizedItems.reduce((acc, it) => acc + (it.quantity || 1), 0),
       vendorIds: vendorIds,
       vendorOrders: createdVendorOrders,
       deliveryAddress: deliveryAddressStr,
@@ -263,10 +243,8 @@ export const AddOrderToFirestore = async ({
     const transactionData = {
       id: paymentId,
       transactionId: paymentId,
-      orderId: wholeOrderId,
       orderID: wholeOrderId,
       vendorOrderIds: createdVendorOrders.map((o) => o.vendorOrderId),
-      paymentId: paymentId,
       payment_id: paymentId,
       title: `Store Order #${wholeOrderId}`,
       category: "order",
@@ -276,8 +254,7 @@ export const AddOrderToFirestore = async ({
       status: "success",
       paymentMethod: "Razorpay Online",
       dateText: `on ${new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}, at ${new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).toLowerCase()}`,
-      itemCount: normalizedItems.reduce((acc, it) => acc + (it.quantity || 1), 0),
-      description: `Payment for Order #${wholeOrderId} (${createdVendorOrders.length} packages from ${vendorIds.length} vendors)`,
+      description: `Payment for Order #${wholeOrderId} (${createdVendorOrders.length} package${createdVendorOrders.length > 1 ? "s" : ""} from ${vendorIds.length} vendor${vendorIds.length > 1 ? "s" : ""})`,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
@@ -302,9 +279,7 @@ export const AddOrderToFirestore = async ({
 
     return {
       success: true,
-      orderId: wholeOrderId,
       orderID: wholeOrderId,
-      paymentId: paymentId,
       payment_id: paymentId,
       vendorOrders: createdVendorOrders,
       vendorOrderIds: createdVendorOrders.map((o) => o.vendorOrderId),
@@ -316,49 +291,49 @@ export const AddOrderToFirestore = async ({
 };
 
 /**
- * Fetches all vendor order documents belonging to a payment_id / paymentId
+ * Fetches all vendor order documents belonging to a payment_id
  */
 export const getOrdersByPaymentId = async (paymentId) => {
   if (!paymentId) return [];
   try {
     const snap1 = await db()
       .collection(COLLECTIONS.orders || "orders")
-      .where("paymentId", "==", paymentId)
+      .where("payment_id", "==", paymentId)
       .get();
     if (!snap1.empty) {
       return snap1.docs.map((d) => ({ id: d.id, ...d.data() }));
     }
     const snap2 = await db()
       .collection(COLLECTIONS.orders || "orders")
-      .where("payment_id", "==", paymentId)
+      .where("paymentId", "==", paymentId)
       .get();
     return snap2.docs.map((d) => ({ id: d.id, ...d.data() }));
   } catch (err) {
-    console.error("Error fetching orders by paymentId:", err);
+    console.error("Error fetching orders by payment_id:", err);
     return [];
   }
 };
 
 /**
- * Fetches all vendor order documents belonging to an orderId / orderID
+ * Fetches all vendor order documents belonging to an orderID
  */
 export const getOrdersByOrderId = async (orderId) => {
   if (!orderId) return [];
   try {
     const snap1 = await db()
       .collection(COLLECTIONS.orders || "orders")
-      .where("orderId", "==", orderId)
+      .where("orderID", "==", orderId)
       .get();
     if (!snap1.empty) {
       return snap1.docs.map((d) => ({ id: d.id, ...d.data() }));
     }
     const snap2 = await db()
       .collection(COLLECTIONS.orders || "orders")
-      .where("orderID", "==", orderId)
+      .where("orderId", "==", orderId)
       .get();
     return snap2.docs.map((d) => ({ id: d.id, ...d.data() }));
   } catch (err) {
-    console.error("Error fetching orders by orderId:", err);
+    console.error("Error fetching orders by orderID:", err);
     return [];
   }
 };

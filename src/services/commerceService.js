@@ -132,20 +132,11 @@ export const placeOrder = async ({ user, profile, cartItems, shipping, paymentId
       });
 
       transaction.set(orderRef, compact({
-        orderId: wholeOrderId,
         orderID: wholeOrderId,
         vendorOrderId,
-        orderNumber: vendorOrderId,
-        paymentId: sharedPaymentId,
         payment_id: sharedPaymentId,
         vendorId,
         userId: user.uid,
-        user: {
-          uid: user.uid,
-          email: user.email,
-          name: profile?.fullName || profile?.name || profile?.displayName || user.fullName || user.displayName || "",
-          phone: profile?.phone || profile?.phoneNumber || user.phone || user.phoneNumber || "",
-        },
         customer: {
           uid: user.uid,
           email: user.email,
@@ -154,10 +145,7 @@ export const placeOrder = async ({ user, profile, cartItems, shipping, paymentId
         },
         shipping,
         items,
-        itemCount: items.reduce((sum, item) => sum + item.quantity, 0),
-        total,
         totalAmount: total,
-        vendorTotal: total,
         overallOrderTotal: grandTotal,
         paymentStatus: "paid",
         paymentMethod: "online",
@@ -218,11 +206,9 @@ export const placeOrder = async ({ user, profile, cartItems, shipping, paymentId
 
     createdOrders.push({
       id: orderRef.id,
-      orderId: wholeOrderId,
       orderID: wholeOrderId,
       vendorOrderId,
       vendorId,
-      paymentId: sharedPaymentId,
       payment_id: sharedPaymentId,
     });
   }
@@ -237,9 +223,7 @@ export const placeOrder = async ({ user, profile, cartItems, shipping, paymentId
 
   return {
     success: true,
-    orderId: wholeOrderId,
     orderID: wholeOrderId,
-    paymentId: sharedPaymentId,
     payment_id: sharedPaymentId,
     vendorOrders: createdOrders,
   };

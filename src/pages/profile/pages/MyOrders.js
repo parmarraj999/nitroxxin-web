@@ -539,7 +539,7 @@ export default function MyOrders() {
                         gap: "6px",
                       }}
                     >
-                      <span className="nx-order-id-tag">Order #{ord.orderId}</span>
+                      <span className="nx-order-id-tag">Order #{ord.orderID || ord.orderId}</span>
                       {ord.vendorPackagesCount > 1 && (
                         <span className="nx-order-vendor-tag">
                           📦 {ord.vendorPackagesCount} Vendor Packages
@@ -764,7 +764,7 @@ export default function MyOrders() {
                     marginTop: "4px",
                   }}
                 >
-                  Whole Order ID: #{selectedOrder.orderId}
+                  Whole Order ID: #{selectedOrder.orderID || selectedOrder.orderId}
                 </span>
               </div>
               <button
@@ -905,7 +905,7 @@ export default function MyOrders() {
                     marginTop: "4px",
                   }}
                 >
-                  Order #{trackingOrder.orderId}
+                  Order #{trackingOrder.orderID || trackingOrder.orderId}
                 </span>
               </div>
               <button
@@ -942,7 +942,7 @@ export default function MyOrders() {
                 trackingOrder.vendorPackages[0] ||
                 trackingOrder;
               const pkgStatus = currentPkg.status || trackingOrder.status;
-              const pkgOrderId = currentPkg.vendorOrderId || trackingOrder.orderId;
+              const pkgOrderId = currentPkg.vendorOrderId || trackingOrder.orderID || trackingOrder.orderId;
 
               return (
                 <div className="nx-tracking-timeline">
