@@ -233,3 +233,30 @@
     border-radius: 12px;
   }
 }
+
+/* Localhost Dev OTP Bypass Button */
+.otp-bypass-btn {
+  background: rgba(56, 189, 248, 0.1);
+  color: #38bdf8;
+  border: 1px dashed rgba(56, 189, 248, 0.4);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.otp-bypass-btn:hover:not(:disabled) {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: #38bdf8;
+  color: #7dd3fc;
+  transform: translateY(-1px);
+}
+
+.otp-bypass-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

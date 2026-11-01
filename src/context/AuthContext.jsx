@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
 import { firestoreInstance } from "../services/firebase";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, onSnapshot, setDoc, serverTimestamp } from "firebase/firestore";
 import { subscribeToAuth, sendOTP, verifyOTP, logoutUser, loginWithGoogle } from "../services/authService";
 import { createUserProfile, updateUserProfile, ensureUserProfile, findExistingUser } from "../services/userService";
 import { uploadProfileImage, uploadDrivingLicenseImage } from "../services/storageService";
@@ -321,6 +321,80 @@ export const FirebaseAuthProvider = ({ children }) => {
     }
   }, []);
 
+  const loginWithPhoneNoOtp = useCallback(async (rawPhone) => {
+    const trimmed = (rawPhone || "").trim().replace(/\D/g, "");
+    if (!trimmed || trimmed.length !== 10) {
+      const err = new Error("Please enter a valid 10-digit mobile number.");
+      setModalError(err.message);
+      throw err;
+    }
+
+    const fullPhoneNumber = `+91${trimmed}`;
+    setModalLoading(true);
+    setModalError(null);
+
+    try {
+      // 1. Check if user already exists with this phone number in Firestore
+      let existing = await findExistingUser(fullPhoneNumber);
+      if (!existing) {
+        existing = await findExistingUser(trimmed);
+      }
+
+      let targetUid = existing?.id || existing?.uid;
+
+      if (!existing || !targetUid) {
+        // Create user profile document in Firestore for testing
+        targetUid = `dev_user_${trimmed}`;
+        const userRef = doc(firestoreInstance, "users", targetUid);
+        const newProfile = {
+          id: targetUid,
+          uid: targetUid,
+          phone: fullPhoneNumber,
+          phoneNumber: fullPhoneNumber,
+          fullName: `Rider ${trimmed.slice(-4)}`,
+          displayName: `Rider ${trimmed.slice(-4)}`,
+          email: `rider${trimmed.slice(-4)}@test.nitroxxin.com`,
+          isProfileComplete: true,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        };
+        await setDoc(userRef, newProfile, { merge: true });
+        existing = newProfile;
+      }
+
+      localStorage.setItem("nitroxxin_dev_test_uid", targetUid);
+      localStorage.setItem("userId", targetUid);
+      localStorage.setItem("nitroxxin_auth_uid", targetUid);
+
+      const mockUser = {
+        uid: targetUid,
+        phone: existing.phone || fullPhoneNumber,
+        phoneNumber: existing.phone || fullPhoneNumber,
+        fullName: existing.fullName || existing.name || existing.displayName || `Rider ${trimmed.slice(-4)}`,
+        displayName: existing.fullName || existing.name || existing.displayName || `Rider ${trimmed.slice(-4)}`,
+        email: existing.email || `rider${trimmed.slice(-4)}@test.nitroxxin.com`,
+        ...existing,
+        isDevMock: true,
+      };
+
+      localStorage.setItem("nitroxxin_user", JSON.stringify(mockUser));
+      localStorage.setItem("nitroxxin_profile", JSON.stringify(existing));
+
+      setUser(mockUser);
+      setProfile(existing);
+
+      setIsAuthOpen(false);
+      setConfirmationResult(null);
+      return mockUser;
+    } catch (err) {
+      console.error("Localhost No-OTP login failed:", err);
+      setModalError(err.message || "Failed to log in without OTP");
+      throw err;
+    } finally {
+      setModalLoading(false);
+    }
+  }, []);
+
   const signInWithGoogle = useCallback(async () => {
     setModalLoading(true);
     setModalError(null);
@@ -480,6 +554,7 @@ export const FirebaseAuthProvider = ({ children }) => {
     uploadUserDrivingLicense,
     removeUserDrivingLicense,
     loginWithUid,
+    loginWithPhoneNoOtp,
 
     // Modal state
     isAuthOpen,
@@ -506,6 +581,7 @@ export const FirebaseAuthProvider = ({ children }) => {
     uploadUserDrivingLicense,
     removeUserDrivingLicense,
     loginWithUid,
+    loginWithPhoneNoOtp,
     isAuthOpen,
     activeView,
     phoneNumber,

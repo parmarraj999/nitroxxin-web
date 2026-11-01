@@ -8,11 +8,19 @@ export default function OTPModal() {
     phoneNumber,
     confirmOTP,
     triggerOTP,
+    loginWithPhoneNoOtp,
     modalLoading,
     modalError,
     setModalError,
     openLogin,
   } = useAuth();
+
+  const isLocalhost =
+    typeof window !== "undefined" &&
+    (window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1" ||
+      window.location.hostname === "::1" ||
+      window.location.hostname.includes("192.168."));
 
   const [otp, setOtp] = useState(new Array(6).fill(""));
   const [timer, setTimer] = useState(30);
@@ -181,6 +189,25 @@ export default function OTPModal() {
           </button>
         )}
       </div>
+
+      {isLocalhost && (
+        <div style={{ marginTop: "14px", textAlign: "center" }}>
+          <button
+            type="button"
+            className="otp-bypass-btn"
+            onClick={async () => {
+              try {
+                await loginWithPhoneNoOtp(phoneNumber);
+              } catch (err) {
+                console.error("Localhost OTP bypass failed:", err);
+              }
+            }}
+            disabled={modalLoading}
+          >
+            ⚡ Login without OTP (Localhost Dev)
+          </button>
+        </div>
+      )}
 
       <div className="otp-back-row">
         <button

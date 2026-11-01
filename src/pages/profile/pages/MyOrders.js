@@ -4,6 +4,7 @@ import { useAuth } from "../../../context/AuthContext";
 import { useCollection } from "../../../hooks/useFirestore";
 import { COLLECTIONS } from "../../../services/firebase";
 import { getOrdersByPaymentId, getOrdersByOrderId } from "../../../payments/placeOrder";
+import OrderDetailModal from "../components/OrderDetailModal";
 
 export default function MyOrders() {
   const { user } = useAuth();
@@ -20,7 +21,6 @@ export default function MyOrders() {
   // Modals state
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [trackingOrder, setTrackingOrder] = useState(null);
-  const [activeTrackPkgIdx, setActiveTrackPkgIdx] = useState(0);
 
   const [reviewOrder, setReviewOrder] = useState(null);
   const [reviewRating, setReviewRating] = useState(5);
@@ -392,8 +392,7 @@ export default function MyOrders() {
   };
 
   const handleOpenTracking = (ord) => {
-    setTrackingOrder(ord);
-    setActiveTrackPkgIdx(0);
+    setSelectedOrder(ord);
   };
 
   return (
@@ -744,250 +743,25 @@ export default function MyOrders() {
         </div>
       )}
 
-      {/* View Details Modal with Multi-Vendor Package Breakdown */}
+      {/* Dark UI Order / Product Details & Invoice Popup with Integrated Timeline */}
       {selectedOrder && (
-        <div className="profile-modal-backdrop" onClick={() => setSelectedOrder(null)}>
-          <div
-            className="profile-modal nx-order-details-modal"
-            style={{ maxWidth: "680px" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="profile-modal-header">
-              <div>
-                <h3 style={{ margin: 0 }}>Order Details</h3>
-                <span
-                  style={{
-                    fontSize: "12px",
-                    color: "#94a3b8",
-                    fontFamily: "monospace",
-                    display: "block",
-                    marginTop: "4px",
-                  }}
-                >
-                  Whole Order ID: #{selectedOrder.orderID || selectedOrder.orderId}
-                </span>
-              </div>
-              <button
-                type="button"
-                className="profile-modal-close"
-                onClick={() => setSelectedOrder(null)}
-              >
-                &times;
-              </button>
-            </div>
-
-            <div className="nx-order-modal-body">
-              {/* Meta Grid */}
-              <div
-                className="nx-order-modal-meta"
-                style={{ gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))" }}
-              >
-                <div>
-                  <span className="nx-modal-label">Status:</span>
-                  <strong className={`nx-modal-status status-${selectedOrder.status}`}>
-                    {selectedOrder.status.toUpperCase()}
-                  </strong>
-                </div>
-                <div>
-                  <span className="nx-modal-label">Payment ID:</span>
-                  <strong
-                    style={{
-                      fontFamily: "monospace",
-                      fontSize: "12px",
-                      wordBreak: "break-all",
-                    }}
-                  >
-                    {selectedOrder.payment_id || selectedOrder.paymentId || "Online (Prepaid)"}
-                  </strong>
-                </div>
-                <div>
-                  <span className="nx-modal-label">Date:</span>
-                  <strong>{selectedOrder.dateText}</strong>
-                </div>
-                <div>
-                  <span className="nx-modal-label">Payment:</span>
-                  <strong>{selectedOrder.paymentMode}</strong>
-                </div>
-              </div>
-
-              {/* Delivery Address */}
-              <div className="nx-modal-address-box">
-                <span className="nx-modal-label">Delivery Address:</span>
-                <p>{selectedOrder.deliveryAddress}</p>
-              </div>
-
-              {/* Packages breakdown per vendor */}
-              <div style={{ marginTop: "6px" }}>
-                <h4 className="nx-modal-items-heading">
-                  Packages by Vendor ({selectedOrder.vendorPackages.length})
-                </h4>
-                <div className="nx-modal-vendor-packages-list">
-                  {selectedOrder.vendorPackages.map((pkg) => (
-                    <div className="nx-modal-vendor-package-card" key={pkg.vendorOrderId}>
-                      <div className="nx-modal-pkg-header">
-                        <div className="nx-modal-pkg-vendor-info">
-                          <span className="nx-modal-pkg-vendor-badge">Vendor</span>
-                          <strong className="nx-modal-pkg-vendor-name">{pkg.vendorName}</strong>
-                          <span className="nx-modal-pkg-suborder-id">
-                            Package ID: {pkg.vendorOrderId}
-                          </span>
-                        </div>
-                        <span className={`nx-modal-status status-${pkg.status}`}>
-                          {pkg.status.toUpperCase()}
-                        </span>
-                      </div>
-
-                      <div className="nx-modal-items-list">
-                        {pkg.items.map((item, idx) => (
-                          <div className="nx-modal-item-row" key={idx}>
-                            <img
-                              src={item.image}
-                              alt={item.name}
-                              className="nx-modal-item-img"
-                            />
-                            <div className="nx-modal-item-info">
-                              <h5>{item.name}</h5>
-                              <span className="nx-modal-item-specs">{item.specs}</span>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  alignItems: "center",
-                                  marginTop: "4px",
-                                }}
-                              >
-                                <span className="nx-modal-item-qty">Qty: {item.quantity}</span>
-                                <strong className="nx-modal-item-price">
-                                  ₹{item.price?.toLocaleString("en-IN")}
-                                </strong>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="nx-modal-pkg-footer">
-                        <span>Vendor Package Subtotal:</span>
-                        <strong>₹{pkg.subtotal?.toLocaleString("en-IN")}</strong>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Total Row */}
-              <div className="nx-modal-total-row">
-                <span>Total Amount Paid (All Packages)</span>
-                <strong>₹{selectedOrder.price?.toLocaleString("en-IN")}</strong>
-              </div>
-            </div>
-          </div>
-        </div>
+        <OrderDetailModal
+          order={selectedOrder}
+          onClose={() => {
+            setSelectedOrder(null);
+            setTrackingOrder(null);
+          }}
+          user={user}
+        />
       )}
 
-      {/* Track Order Timeline Modal */}
-      {trackingOrder && (
-        <div className="profile-modal-backdrop" onClick={() => setTrackingOrder(null)}>
-          <div
-            className="profile-modal"
-            style={{ maxWidth: "580px" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="profile-modal-header">
-              <div>
-                <h3 style={{ margin: 0 }}>Shipment Tracking</h3>
-                <span
-                  style={{
-                    fontSize: "12px",
-                    color: "#94a3b8",
-                    fontFamily: "monospace",
-                    display: "block",
-                    marginTop: "4px",
-                  }}
-                >
-                  Order #{trackingOrder.orderID || trackingOrder.orderId}
-                </span>
-              </div>
-              <button
-                type="button"
-                className="profile-modal-close"
-                onClick={() => setTrackingOrder(null)}
-              >
-                &times;
-              </button>
-            </div>
-
-            {/* If multi-package, render vendor package tabs */}
-            {trackingOrder.vendorPackagesCount > 1 && (
-              <div className="nx-tracking-pkg-tabs">
-                {trackingOrder.vendorPackages.map((pkg, idx) => (
-                  <button
-                    type="button"
-                    key={pkg.vendorOrderId}
-                    className={`nx-tracking-pkg-tab ${
-                      activeTrackPkgIdx === idx ? "is-active" : ""
-                    }`}
-                    onClick={() => setActiveTrackPkgIdx(idx)}
-                  >
-                    <span>{pkg.vendorName}</span>
-                    <span className="nx-tracking-pkg-tab-badge">{pkg.vendorOrderId}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {(() => {
-              const currentPkg =
-                trackingOrder.vendorPackages[activeTrackPkgIdx] ||
-                trackingOrder.vendorPackages[0] ||
-                trackingOrder;
-              const pkgStatus = currentPkg.status || trackingOrder.status;
-              const pkgOrderId = currentPkg.vendorOrderId || trackingOrder.orderID || trackingOrder.orderId;
-
-              return (
-                <div className="nx-tracking-timeline">
-                  <div className="nx-track-step is-done">
-                    <div className="nx-track-node" />
-                    <div className="nx-track-content">
-                      <h5>Package Confirmed</h5>
-                      <p>
-                        Package #{pkgOrderId} verified and processed by{" "}
-                        {currentPkg.vendorName || "vendor"}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="nx-track-step is-done">
-                    <div className="nx-track-node" />
-                    <div className="nx-track-content">
-                      <h5>Packed & Inspected</h5>
-                      <p>Quality check passed and sealed for shipment</p>
-                    </div>
-                  </div>
-                  <div
-                    className={`nx-track-step ${
-                      pkgStatus === "shipping" || pkgStatus === "delivered" ? "is-done" : ""
-                    }`}
-                  >
-                    <div className="nx-track-node" />
-                    <div className="nx-track-content">
-                      <h5>In Transit (BlueDart Express)</h5>
-                      <p>
-                        Tracking ID: BD9827361928IN • Estimated Delivery: {trackingOrder.dateText}
-                      </p>
-                    </div>
-                  </div>
-                  <div className={`nx-track-step ${pkgStatus === "delivered" ? "is-done" : ""}`}>
-                    <div className="nx-track-node" />
-                    <div className="nx-track-content">
-                      <h5>Delivered</h5>
-                      <p>Package delivered to {trackingOrder.deliveryAddress || "recipient address"}</p>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-        </div>
+      {/* Fallback Track Modal if trackingOrder directly set */}
+      {trackingOrder && !selectedOrder && (
+        <OrderDetailModal
+          order={trackingOrder}
+          onClose={() => setTrackingOrder(null)}
+          user={user}
+        />
       )}
     </div>
   );

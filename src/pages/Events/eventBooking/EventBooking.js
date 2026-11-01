@@ -182,20 +182,6 @@ function Field({ label, children }) {
   );
 }
 
-function Counter({ value, min = 0, max = 20, onChange }) {
-  return (
-    <div className="eb-counter">
-      <button type="button" onClick={() => onChange(Math.max(min, value - 1))} disabled={value <= min}>
-        -
-      </button>
-      <span>{value}</span>
-      <button type="button" onClick={() => onChange(Math.min(max, value + 1))} disabled={value >= max}>
-        +
-      </button>
-    </div>
-  );
-}
-
 function BookingHeader({ event, seatsLeft, onBack }) {
   return (
     <header className="eb-hero">
@@ -246,54 +232,223 @@ function Stepper({ step, setStep }) {
 }
 
 function TicketStep({ counts, setCount, tiers, seatsLeft }) {
+  const [activePlanTab, setActivePlanTab] = useState('passes');
+
+  const handleSelectTier = (tierKey) => {
+    // If this tier is already selected, do nothing
+    if ((counts[tierKey] || 0) > 0) return;
+
+    // Preserve the current chosen quantity if possible, or default to 1
+    const currentQty = Object.values(counts).find((c) => Number(c) > 0) || 1;
+    const targetTier = tiers.find((t) => t.key === tierKey);
+    const maxForTier = targetTier?.availableSeats && targetTier.availableSeats > 0 ? targetTier.availableSeats : (seatsLeft || 20);
+    const targetQty = Math.max(1, Math.min(Number(currentQty), maxForTier));
+
+    tiers.forEach((t) => {
+      setCount(t.key, t.key === tierKey ? targetQty : 0);
+    });
+  };
+
   return (
-    <section className="eb-panel">
-      <div className="eb-panel__head">
+    <section className="eb-panel eb-plan-panel">
+      {/* Header matching reference UI: Title on Left, Toggle Pill on Right */}
+      <div className="eb-plan-header">
         <div>
-          <p className="eb-kicker">Choose tickets</p>
-          <h2>Select passes for your booking</h2>
+          <h2 className="eb-plan-main-title">Select a Plan</h2>
         </div>
-        <span className="eb-panel__badge">{seatsLeft} seats left</span>
+
+        <div className="eb-plan-toggle-pill">
+          <button
+            type="button"
+            className={`eb-plan-toggle-btn ${activePlanTab === 'passes' ? 'is-active' : ''}`}
+            onClick={() => setActivePlanTab('passes')}
+          >
+            Passes
+          </button>
+          <button
+            type="button"
+            className={`eb-plan-toggle-btn ${activePlanTab === 'group' ? 'is-active' : ''}`}
+            onClick={() => setActivePlanTab('group')}
+          >
+            <span>Group</span>
+            <span className="eb-plan-toggle-discount">{seatsLeft > 0 ? `${seatsLeft} LEFT` : 'SOLD OUT'}</span>
+          </button>
+        </div>
       </div>
-      <div className="eb-ticket-list">
-        {tiers.length ? tiers.map((tier) => {
-          const isSelected = (counts[tier.key] || 0) > 0;
-          return (
-            <article key={tier.key} className={`eb-ticket${isSelected ? ' is-selected' : ''}`}>
-              <div className="eb-ticket__top">
-                <div className="eb-ticket__info">
-                  <div className="eb-ticket__title-row">
-                    <h3 className="eb-ticket__name">{tier.name}</h3>
-                    {isSelected && <span className="eb-ticket__selected-pill">Selected</span>}
+
+      {/* Plan Cards Stack */}
+      <div className="eb-plan-list">
+        {tiers.length ? (
+          tiers.map((tier, idx) => {
+            const count = Number(counts[tier.key] || 0);
+            const isSelected = count > 0;
+            const maxAllowed = Math.min(seatsLeft, tier.availableSeats > 0 ? tier.availableSeats : 20);
+
+            // Subtitle derivation: use tier.ticketFor, shortDescription, or fallback
+            const subtitle = tier.ticketFor
+              ? `For ${tier.ticketFor}`
+              : tier.description && tier.description.length < 50
+              ? tier.description
+              : (idx === 0 ? 'For Individuals' : idx === 1 ? 'For Teams & Crews' : 'Premium Access');
+
+            return (
+              <article
+                key={tier.key}
+                className={`eb-plan-card ${isSelected ? 'is-selected' : ''}`}
+                onClick={() => handleSelectTier(tier.key)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleSelectTier(tier.key);
+                  }
+                }}
+              >
+                {/* Top Row: Radio, Title/Subtitle on Left | Price/Subtext on Right */}
+                <div className="eb-plan-card-top">
+                  <div className="eb-plan-card-left">
+                    <span className={`eb-plan-radio-circle ${isSelected ? 'is-checked' : ''}`}>
+                      {isSelected && <span className="eb-plan-radio-dot" />}
+                    </span>
+                    <div className="eb-plan-title-box">
+                      <h3 className="eb-plan-name">{tier.name}</h3>
+                      <p className="eb-plan-subtitle">{subtitle}</p>
+                    </div>
                   </div>
-                  <strong className="eb-ticket__price">{formatMoney(tier.price)}</strong>
+
+                  <div className="eb-plan-card-right">
+                    <span className="eb-plan-price">{formatMoney(tier.price)}</span>
+                    <span className="eb-plan-price-unit">Per Person</span>
+                  </div>
                 </div>
-                <div className="eb-ticket__counter-wrap">
-                  <Counter
-                    value={counts[tier.key] || 0}
-                    onChange={(value) => setCount(tier.key, value)}
-                    max={Math.min(seatsLeft, tier.availableSeats)}
-                  />
-                </div>
-              </div>
-              {tier.description && <p className="eb-ticket__desc">{tier.description}</p>}
-              {tier.perks?.length > 0 && (
-                <div className="eb-ticket__chips">
-                  {tier.perks.map((perk, i) => (
-                    <span key={`inc-${i}`} className="eb-chip--inc">✓ {perk}</span>
-                  ))}
-                </div>
-              )}
-              {tier.exclusions?.length > 0 && (
-                <div className="eb-ticket__chips">
-                  {tier.exclusions.map((exc, i) => (
-                    <span key={`exc-${i}`} className="eb-chip--exc">✕ {exc}</span>
-                  ))}
-                </div>
-              )}
-            </article>
-          );
-        }) : (
+
+                {/* Expanded Details Section: Features List, Divider, Bottom Row */}
+                {isSelected && (
+                  <div className="eb-plan-expanded-content">
+                    {/* Features List (Inclusions / Perks) */}
+                    <div className="eb-plan-features-list">
+                      {tier.perks && tier.perks.length > 0 ? (
+                        tier.perks.map((perk, i) => (
+                          <div key={`perk-${i}`} className="eb-plan-feature-item">
+                            <span className="eb-plan-feature-icon">
+                              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                                <circle cx="10" cy="10" r="9" stroke="#1d72fe" strokeWidth="1.8" />
+                                <path d="M6 10.2L8.7 13L14 7.5" stroke="#1d72fe" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            </span>
+                            <span className="eb-plan-feature-text">{perk}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <>
+                          <div className="eb-plan-feature-item">
+                            <span className="eb-plan-feature-icon">
+                              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                                <circle cx="10" cy="10" r="9" stroke="#1d72fe" strokeWidth="1.8" />
+                                <path d="M6 10.2L8.7 13L14 7.5" stroke="#1d72fe" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            </span>
+                            <span className="eb-plan-feature-text">Official Event Entry & Rider Access Pass</span>
+                          </div>
+                          <div className="eb-plan-feature-item">
+                            <span className="eb-plan-feature-icon">
+                              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                                <circle cx="10" cy="10" r="9" stroke="#1d72fe" strokeWidth="1.8" />
+                                <path d="M6 10.2L8.7 13L14 7.5" stroke="#1d72fe" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            </span>
+                            <span className="eb-plan-feature-text">Route Briefing & Marshal Support</span>
+                          </div>
+                          <div className="eb-plan-feature-item">
+                            <span className="eb-plan-feature-icon">
+                              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                                <circle cx="10" cy="10" r="9" stroke="#1d72fe" strokeWidth="1.8" />
+                                <path d="M6 10.2L8.7 13L14 7.5" stroke="#1d72fe" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            </span>
+                            <span className="eb-plan-feature-text">Instant Digital QR Ticket with Verification</span>
+                          </div>
+                        </>
+                      )}
+
+                      {/* Exclusions if present */}
+                      {tier.exclusions && tier.exclusions.length > 0 && (
+                        tier.exclusions.map((exc, i) => (
+                          <div key={`exc-${i}`} className="eb-plan-feature-item is-exclusion">
+                            <span className="eb-plan-feature-icon is-exclusion">
+                              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                                <circle cx="10" cy="10" r="9" stroke="#94a3b8" strokeWidth="1.8" />
+                                <path d="M7 7L13 13M13 7L7 13" stroke="#94a3b8" strokeWidth="1.8" strokeLinecap="round" />
+                              </svg>
+                            </span>
+                            <span className="eb-plan-feature-text is-exclusion">{exc}</span>
+                          </div>
+                        ))
+                      )}
+
+                      {/* Description note if long */}
+                      {tier.description && tier.perks && tier.perks.length > 0 && !tier.perks.includes(tier.description) && (
+                        <p className="eb-plan-desc-note">{tier.description}</p>
+                      )}
+                    </div>
+
+                    {/* Divider line */}
+                    <div className="eb-plan-divider" />
+
+                    {/* Bottom Row: Users icon + Label on Left | Quantity Counter Pill on Right */}
+                    <div className="eb-plan-bottom-row" onClick={(e) => e.stopPropagation()}>
+                      <div className="eb-plan-users-meta">
+                        <div className="eb-plan-users-icon-wrap">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                          </svg>
+                        </div>
+                        <div className="eb-plan-users-text">
+                          <strong className="eb-plan-users-title">Attendees</strong>
+                          <span className="eb-plan-users-sub">
+                            {tier.availableSeats ? `Max ${maxAllowed} passes • ${tier.availableSeats} available` : `Starting at ${count} pass`}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="eb-plan-counter-pill">
+                        <button
+                          type="button"
+                          className="eb-plan-counter-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCount(tier.key, Math.max(1, count - 1));
+                          }}
+                          disabled={count <= 1}
+                          aria-label="Decrease attendees"
+                        >
+                          −
+                        </button>
+                        <span className="eb-plan-counter-value">{count}</span>
+                        <button
+                          type="button"
+                          className="eb-plan-counter-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCount(tier.key, Math.min(maxAllowed, count + 1));
+                          }}
+                          disabled={count >= maxAllowed}
+                          aria-label="Increase attendees"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </article>
+            );
+          })
+        ) : (
           <div className="eb-no-packages">
             <strong>Tickets are not available yet</strong>
             <span>The host has not published a ticket package for this event.</span>

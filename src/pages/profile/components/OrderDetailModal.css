@@ -1,0 +1,1026 @@
+/* ==========================================================================
+   Order / Invoice Product Details Dark Popup
+   Refined Dark UI with high contrast, rem typography, spring motion & depth
+   ========================================================================== */
+
+.nx-dark-inv-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(3, 6, 12, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: nxInvFadeIn 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes nxInvFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.nx-dark-inv-modal {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  background: #0b0f17;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 28px;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.85),
+              0 0 1px 1px rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  animation: nxInvSlideUp 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes nxInvSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Top Navigation Bar (§12 Materials & Chrome, §10 Touch Targets)
+   -------------------------------------------------------------------------- */
+.nx-dark-inv-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: rgba(11, 15, 23, 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* 44px minimum touch target for wayfinding buttons */
+.nx-dark-inv-nav-btn {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #141b28;
+  color: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.18s ease, transform 0.08s ease-out, border-color 0.18s ease;
+  padding: 0;
+}
+
+.nx-dark-inv-nav-btn:hover {
+  background: #1d2638;
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.nx-dark-inv-nav-btn:active {
+  transform: scale(0.96);
+}
+
+.nx-dark-inv-nav-title {
+  margin: 0;
+  font-size: 1.0625rem; /* ~17px */
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+/* More Menu Dropdown */
+.nx-dark-inv-more-wrap {
+  position: relative;
+}
+
+.nx-dark-inv-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: #151d2c;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 16px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65);
+  padding: 6px;
+  min-width: 200px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: nxInvFadeIn 0.15s ease-out;
+}
+
+.nx-dark-inv-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  font-size: 0.84375rem; /* 13.5px */
+  font-weight: 600;
+  color: #e2e8f0;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.nx-dark-inv-menu-item:hover {
+  background: #202b40;
+  color: #ffffff;
+}
+
+.nx-dark-inv-menu-item:active {
+  transform: scale(0.98);
+}
+
+/* --------------------------------------------------------------------------
+   Scrollable Body
+   -------------------------------------------------------------------------- */
+.nx-dark-inv-body {
+  padding: 12px 20px 24px 20px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  scroll-behavior: smooth;
+}
+
+.nx-dark-inv-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.nx-dark-inv-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.nx-dark-inv-body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+}
+
+.nx-dark-inv-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* --------------------------------------------------------------------------
+   Hero Invoice Summary (High-contrast, copyable ID, tight hero typography)
+   -------------------------------------------------------------------------- */
+.nx-dark-inv-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 2px;
+}
+
+.nx-dark-inv-id-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.nx-dark-inv-id-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 4px 10px;
+  color: #cbd5e1;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nx-dark-inv-id-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.nx-dark-inv-id-btn:active {
+  transform: scale(0.97);
+}
+
+.nx-dark-inv-copy-icon {
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+}
+
+.nx-dark-inv-status-pill {
+  font-size: 0.75rem; /* 12px */
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 4px 12px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nx-dark-inv-status-pill.is-paid,
+.nx-dark-inv-status-pill.is-delivered {
+  background: rgba(16, 185, 129, 0.16);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.32);
+}
+
+.nx-dark-inv-status-pill.is-shipping {
+  background: rgba(37, 99, 235, 0.16);
+  color: #60a5fa;
+  border: 1px solid rgba(37, 99, 235, 0.32);
+}
+
+.nx-dark-inv-status-pill.is-cancelled {
+  background: rgba(239, 68, 68, 0.16);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.32);
+}
+
+/* Tight hero typography (§15) */
+.nx-dark-inv-big-amount {
+  font-size: clamp(2.125rem, 6vw, 2.625rem); /* 34px - 42px */
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  margin: 2px 0;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+.nx-dark-inv-dates-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.nx-dark-inv-date-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nx-dark-inv-date-label {
+  font-size: 0.8125rem; /* 13px */
+  font-weight: 600;
+  color: #cbd5e1; /* High-contrast slate-300 */
+  letter-spacing: 0.02em;
+}
+
+.nx-dark-inv-date-val {
+  font-size: 0.9375rem; /* 15px */
+  font-weight: 700;
+  color: #ffffff;
+}
+
+/* Consistent solid hairline divider (§9) */
+.nx-dark-inv-solid-divider {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin: 6px 0 2px 0;
+  width: 100%;
+}
+
+/* --------------------------------------------------------------------------
+   Cards: Top-edge depth highlight (§8 Materials)
+   -------------------------------------------------------------------------- */
+.nx-dark-inv-card {
+  background: #131926;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.07),
+              0 4px 18px rgba(0, 0, 0, 0.25);
+  transition: border-color 0.18s ease;
+}
+
+.nx-dark-inv-card:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.nx-dark-inv-card-title {
+  margin: 0;
+  font-size: 0.9375rem; /* 15px */
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+/* --------------------------------------------------------------------------
+   "Billed to" Card (Muted avatar, high contrast text)
+   -------------------------------------------------------------------------- */
+.nx-dark-inv-user-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+/* Neutral avatar (§9: don't compete with primary blue action) */
+.nx-dark-inv-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: #1e283c;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.125rem;
+  color: #e2e8f0;
+  overflow: hidden;
+}
+
+.nx-dark-inv-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.nx-dark-inv-user-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.nx-dark-inv-user-name {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nx-dark-inv-user-contact {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.84375rem; /* ~13.5px */
+  color: #cbd5e1; /* High contrast */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nx-dark-inv-user-contact svg {
+  flex-shrink: 0;
+  color: #94a3b8;
+}
+
+.nx-dark-inv-user-addr {
+  font-size: 0.84375rem; /* ~13.5px instead of tiny 10px */
+  color: #cbd5e1;
+  line-height: 1.5;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+}
+
+.nx-dark-inv-user-addr svg {
+  flex-shrink: 0;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+/* Folded single payment line (§3: remove duplicate status) */
+.nx-dark-inv-pay-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8125rem;
+  color: #cbd5e1;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.nx-dark-inv-pay-btn {
+  background: transparent;
+  border: none;
+  color: #93c5fd;
+  font-weight: 600;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+}
+
+.nx-dark-inv-pay-btn:hover {
+  background: rgba(59, 130, 246, 0.15);
+  color: #bfdbfe;
+}
+
+/* --------------------------------------------------------------------------
+   Order Timeline Card (§3 Three clear states, §4 Split shipments, §10 44px)
+   -------------------------------------------------------------------------- */
+.nx-dark-timeline-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.nx-dark-timeline-split-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #60a5fa;
+  background: rgba(37, 99, 235, 0.14);
+  border: 1px solid rgba(37, 99, 235, 0.28);
+  border-radius: 999px;
+  padding: 4px 10px;
+  letter-spacing: 0.03em;
+}
+
+/* Multi-Vendor Package Selector: 44px touch targets (§10) */
+.nx-dark-timeline-tabs-wrap {
+  position: relative;
+  margin-bottom: 4px;
+}
+
+.nx-dark-timeline-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 2px 8px 2px;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.nx-dark-timeline-tabs::-webkit-scrollbar {
+  height: 4px;
+}
+
+.nx-dark-timeline-tabs::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+}
+
+.nx-dark-timeline-tab {
+  min-height: 44px;
+  background: #182133;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.18s ease, transform 0.08s ease-out, border-color 0.18s ease;
+}
+
+.nx-dark-timeline-tab:hover {
+  background: #202b40;
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.nx-dark-timeline-tab:active {
+  transform: scale(0.97);
+}
+
+.nx-dark-timeline-tab.is-active {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+}
+
+/* Timeline Stepper: Exactly 3 Unmistakable States (§3) */
+.nx-dark-timeline-steps {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  padding: 6px 0 4px 4px;
+}
+
+.nx-dark-timeline-step {
+  display: flex;
+  gap: 16px;
+  position: relative;
+  padding-bottom: 22px;
+}
+
+.nx-dark-timeline-step:last-child {
+  padding-bottom: 0;
+}
+
+/* Connecting Line */
+.nx-dark-timeline-step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 28px;
+  left: 14px;
+  bottom: 0;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  transition: background 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.nx-dark-timeline-step.is-done:not(:last-child)::after {
+  background: #2563eb;
+}
+
+/* Node States: 1) Done, 2) Current (Active), 3) Upcoming */
+.nx-dark-timeline-node {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #141b28;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  z-index: 2;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  color: #94a3b8;
+}
+
+/* State 1: DONE */
+.nx-dark-timeline-step.is-done .nx-dark-timeline-node {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+/* State 2: CURRENT (UNMISTAKABLE ACTIVE STATE) */
+.nx-dark-timeline-step.is-current .nx-dark-timeline-node {
+  background: #0f172a;
+  border-color: #3b82f6;
+  color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.28);
+}
+
+.nx-dark-timeline-pulse-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #3b82f6;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.8);
+  animation: nxTimelinePulse 1.8s infinite;
+}
+
+@keyframes nxTimelinePulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
+}
+
+/* State 3: UPCOMING */
+.nx-dark-timeline-step.is-upcoming .nx-dark-timeline-node {
+  background: #141b28;
+  border-color: rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.nx-dark-timeline-content {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+}
+
+.nx-dark-timeline-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nx-dark-timeline-title {
+  margin: 0;
+  font-size: 0.90625rem; /* 14.5px */
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.nx-dark-timeline-step.is-upcoming .nx-dark-timeline-title {
+  color: #94a3b8;
+}
+
+.nx-dark-timeline-badge-in-progress {
+  font-size: 0.6875rem; /* 11px */
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: rgba(37, 99, 235, 0.18);
+  color: #60a5fa;
+  border: 1px solid rgba(37, 99, 235, 0.35);
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+
+.nx-dark-timeline-desc {
+  margin: 0;
+  font-size: 0.8125rem; /* 13px */
+  color: #cbd5e1; /* High contrast */
+  line-height: 1.45;
+}
+
+.nx-dark-timeline-step.is-upcoming .nx-dark-timeline-desc {
+  color: #64748b;
+}
+
+/* --------------------------------------------------------------------------
+   Item Details Card (§2 Wrap item names, §4 Seller attribution, §5 Tabular)
+   -------------------------------------------------------------------------- */
+.nx-dark-inv-items-table {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.nx-dark-inv-table-head {
+  display: grid;
+  grid-template-columns: 1fr 50px 95px;
+  gap: 12px;
+  font-size: 0.75rem; /* 12px */
+  font-weight: 700;
+  color: #cbd5e1; /* High-contrast */
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.nx-dark-inv-table-head .col-qty {
+  text-align: center;
+}
+
+.nx-dark-inv-table-head .col-price {
+  text-align: right;
+}
+
+.nx-dark-inv-item-row {
+  display: grid;
+  grid-template-columns: 1fr 50px 95px;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.nx-dark-inv-item-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.nx-dark-inv-item-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: #1e283c;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nx-dark-inv-item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+/* Let item names wrap to 2 lines (§2: never cut off key words) */
+.nx-dark-inv-item-name {
+  font-size: 0.875rem; /* 14px */
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+.nx-dark-inv-item-specs {
+  font-size: 0.75rem; /* 12px */
+  color: #94a3b8;
+  line-height: 1.3;
+}
+
+/* Seller label on item row (§4) */
+.nx-dark-inv-item-seller {
+  font-size: 0.6875rem; /* 11px */
+  font-weight: 600;
+  color: #93c5fd;
+  margin-top: 1px;
+}
+
+.nx-dark-inv-item-qty {
+  font-size: 0.875rem;
+  color: #cbd5e1;
+  font-weight: 600;
+  text-align: center;
+  padding-top: 2px;
+}
+
+/* Tabular figures (§5) */
+.nx-dark-inv-item-price {
+  font-size: 0.875rem;
+  color: #ffffff;
+  font-weight: 700;
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  padding-top: 2px;
+}
+
+/* Breakdown rows (Subtotal, GST, Shipping) */
+.nx-dark-inv-breakdown-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  color: #cbd5e1;
+  padding: 3px 0;
+}
+
+.nx-dark-inv-breakdown-val {
+  color: #ffffff;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+.nx-dark-inv-breakdown-divider {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin: 6px 0;
+}
+
+.nx-dark-inv-total-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0 2px 0;
+}
+
+.nx-dark-inv-total-label {
+  font-size: 1.0625rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.nx-dark-inv-total-val {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* --------------------------------------------------------------------------
+   Bottom Action Buttons (§6 Hierarchy, §7 Motion & Feedback, §12 Materials)
+   -------------------------------------------------------------------------- */
+.nx-dark-inv-footer {
+  padding: 14px 20px 18px 20px;
+  background: rgba(11, 15, 23, 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+}
+
+/* Primary Action: Download PDF (§6 deliberate primary) */
+.nx-dark-inv-btn-primary {
+  flex: 1.2;
+  height: 52px;
+  border-radius: 999px;
+  background: #2563eb;
+  border: none;
+  color: #ffffff;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.4);
+  transition: background 0.18s ease, box-shadow 0.18s ease, transform 0.08s ease-out;
+}
+
+.nx-dark-inv-btn-primary:hover {
+  background: #1d4ed8;
+  box-shadow: 0 6px 22px rgba(37, 99, 235, 0.55);
+}
+
+.nx-dark-inv-btn-primary:active {
+  transform: scale(0.97);
+}
+
+/* Secondary Action: Share */
+.nx-dark-inv-btn-secondary {
+  flex: 0.9;
+  height: 52px;
+  border-radius: 999px;
+  background: #161e2e;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.08s ease-out;
+}
+
+.nx-dark-inv-btn-secondary:hover {
+  background: #202b40;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.nx-dark-inv-btn-secondary:active {
+  transform: scale(0.97);
+}
+
+/* Floating Toast Notification (§7) */
+.nx-dark-inv-toast {
+  position: absolute;
+  top: 72px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: nxInvFadeIn 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* --------------------------------------------------------------------------
+   Reduced Motion Accessibility (§7)
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .nx-dark-inv-backdrop,
+  .nx-dark-inv-modal,
+  .nx-dark-timeline-pulse-dot,
+  .nx-dark-inv-toast {
+    animation: none !important;
+  }
+  .nx-dark-inv-nav-btn,
+  .nx-dark-inv-btn-primary,
+  .nx-dark-inv-btn-secondary,
+  .nx-dark-timeline-tab {
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Print Styles (Clean Invoice when user clicks Download / Print PDF)
+   -------------------------------------------------------------------------- */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  .nx-dark-inv-modal,
+  .nx-dark-inv-modal * {
+    visibility: visible !important;
+  }
+  .nx-dark-inv-backdrop {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+  }
+  .nx-dark-inv-modal {
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    color: #000000 !important;
+    background: #ffffff !important;
+  }
+  .nx-dark-inv-nav-btn,
+  .nx-dark-inv-footer,
+  .nx-dark-inv-toast {
+    display: none !important;
+  }
+  .nx-dark-inv-card {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+  }
+  .nx-dark-inv-big-amount,
+  .nx-dark-inv-card-title,
+  .nx-dark-inv-total-label,
+  .nx-dark-inv-total-val,
+  .nx-dark-inv-user-name,
+  .nx-dark-inv-item-name,
+  .nx-dark-inv-date-val {
+    color: #000000 !important;
+  }
+  .nx-dark-inv-date-label,
+  .nx-dark-inv-user-contact,
+  .nx-dark-inv-user-addr,
+  .nx-dark-inv-item-specs,
+  .nx-dark-inv-timeline-desc {
+    color: #475569 !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Mobile Responsiveness
+   -------------------------------------------------------------------------- */
+@media (max-width: 580px) {
+  .nx-dark-inv-backdrop {
+    padding: 0;
+    align-items: flex-end;
+  }
+  .nx-dark-inv-modal {
+    max-width: 100%;
+    max-height: 94vh;
+    border-radius: 24px 24px 0 0;
+  }
+  .nx-dark-inv-body {
+    padding: 10px 16px 20px 16px;
+    gap: 14px;
+  }
+  .nx-dark-inv-big-amount {
+    font-size: 2rem;
+  }
+  .nx-dark-inv-card {
+    padding: 16px 16px;
+    border-radius: 18px;
+  }
+  .nx-dark-inv-footer {
+    padding: 12px 16px 16px 16px;
+  }
+}

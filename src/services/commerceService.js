@@ -1,4 +1,4 @@
-import { COLLECTIONS, auth, db, increment, serverTimestamp } from "./firebase";
+import { COLLECTIONS, auth, db, increment, serverTimestamp, deleteField } from "./firebase";
 import { normalizeEvent, normalizeProduct } from "./normalizers";
 import { generateTicketCode, generateTicketSignature } from "../utils/ticketSecurity";
 import { generateWholeOrderId, generateVendorOrderId } from "../payments/placeOrder";
@@ -31,17 +31,31 @@ export const addToCart = async ({ userId, product, quantity = 1, options = {} })
   const item = normalizeProduct(product);
   const id = `${item.id}_${options.size || options.color || "default"}`;
 
+  // Only store fields essential for cart page, transactions, and order placement
   const cartPayload = compact({
     id,
     userId: uid,
-    productId: item.id,
+    productId: item.productId || item.id,
+    name: item.name || item.title || "Product",
+    image: item.image || (Array.isArray(item.images) ? item.images[0] : "") || "",
+    price: Number(item.price || item.mrp || 0),
+    offerPrice: Number(item.offerPrice || item.price || 0),
+    brand: item.brand || item.brandName || "",
+    category: item.category || item.categoryName || "",
+    vendorId: item.vendorId || DEFAULT_VENDOR_ID,
+    vendorName: item.vendorName || "Nitroxx Moto Gear",
     quantity: increment(quantity),
-    options,
-    productSnapshot: item,
-    product: item,
+    options: {
+      size: options.size || "",
+      color: options.color || "",
+    },
     updatedAt: serverTimestamp(),
     createdAt: serverTimestamp(),
   });
+
+  // Ensure legacy bulky duplicate fields are removed if merging with an older cart doc
+  cartPayload.product = deleteField();
+  cartPayload.productSnapshot = deleteField();
 
   // Store in users/userId/cart
   await db()
@@ -92,14 +106,18 @@ export const placeOrder = async ({ user, profile, cartItems, shipping, paymentId
 
   const groupedItems = cartItems.reduce((groups, item) => {
     const product = normalizeProduct(item.productSnapshot || item.product || item);
-    const vendorId = product.vendorId || item.vendorId || DEFAULT_VENDOR_ID;
+    const vendorId = item.vendorId || product.vendorId || DEFAULT_VENDOR_ID;
+    const unitPrice = toNumber(item.offerPrice ?? product.offerPrice ?? item.price ?? product.price ?? 0);
     const normalized = {
       productId: item.productId || product.id,
+      name: item.name || product.name || "Accessory Item",
+      image: item.image || product.image || "",
       vendorId,
+      vendorName: item.vendorName || product.vendorName || "Nitroxx Partner",
       quantity: toNumber(item.quantity, 1),
       options: item.options || {},
-      unitPrice: toNumber(product.offerPrice ?? product.price),
-      productSnapshot: compact(product),
+      unitPrice,
+      price: unitPrice,
     };
     groups[vendorId] = [...(groups[vendorId] || []), normalized];
     return groups;
@@ -239,12 +257,21 @@ export const saveWishlistItem = async ({ userId, product }) => {
     id: docId,
     userId: uid,
     type: "product",
-    productId: item.id,
-    productSnapshot: item,
-    product: item,
+    productId: item.productId || item.id,
+    name: item.name || item.title || "Product",
+    image: item.image || (Array.isArray(item.images) ? item.images[0] : "") || "",
+    price: Number(item.price || item.mrp || 0),
+    offerPrice: Number(item.offerPrice || item.price || 0),
+    brand: item.brand || item.brandName || "",
+    category: item.category || item.categoryName || "",
+    vendorId: item.vendorId || DEFAULT_VENDOR_ID,
+    vendorName: item.vendorName || "Nitroxx Moto Gear",
     updatedAt: serverTimestamp(),
     createdAt: serverTimestamp(),
   });
+
+  wishlistData.product = deleteField();
+  wishlistData.productSnapshot = deleteField();
 
   // Store in users/userId/wishlist
   await db()

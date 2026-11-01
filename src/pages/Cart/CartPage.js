@@ -46,6 +46,8 @@ export default function CartPage() {
     return Array.from(map.values());
   }, [userCartItems, usersPluralCartItems, legacyCartItems]);
 
+  console.log(cartItems)
+
   const loading = userCartLoading && !cartItems.length;
 
   // Fetch saved delivery addresses from users/{userId}/address
@@ -137,8 +139,8 @@ export default function CartPage() {
 
   const summary = useMemo(() => {
     const subtotal = cartItems.reduce((sum, item) => {
-      const product = normalizeProduct(item.productSnapshot || {});
-      return sum + Number(product.offerPrice ?? product.price ?? 0) * Number(item.quantity || 1);
+      const product = normalizeProduct(item.productSnapshot || item);
+      return sum + Number(item.offerPrice ?? product.offerPrice ?? item.price ?? product.price ?? 0) * Number(item.quantity || 1);
     }, 0);
     const gst = Math.round(subtotal * 0.18);
     const shippingFee = deliveryMethod === "express" ? 249 : deliveryMethod === "same-day" ? 499 : subtotal > 2999 ? 0 : 99;
@@ -246,11 +248,12 @@ export default function CartPage() {
         <div className="cart-page__layout">
           <main className="cart-page__items">
             {cartItems.map((item) => {
-              const product = normalizeProduct(item.productSnapshot || {});
+              const product = normalizeProduct(item.productSnapshot || item);
               const quantity = Number(item.quantity || 1);
+              const targetProductId = item.productId || product.productId || product.id;
               return (
                 <article className="cart-item" key={item.id}>
-                  <Link to={`/product/${product.id}`} className="cart-item__image">
+                  <Link to={`/product/${targetProductId}`} className="cart-item__image">
                     {product.image ? <img src={product.image} alt={product.name} /> : <span>No image</span>}
                   </Link>
                   <div className="cart-item__body">

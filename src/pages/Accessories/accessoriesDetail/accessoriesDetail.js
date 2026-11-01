@@ -19,6 +19,7 @@ export default function AccessoriesDetail() {
   const { id } = useParams();
   const { data, loading } = useDocument(COLLECTIONS.products, id);
   const product = data ? normalizeProduct(data) : null;
+  console.log(product)
 
   return (
     <div className="product-detail-page">

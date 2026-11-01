@@ -235,3 +235,42 @@
   color: #ff7675;
   text-decoration: underline;
 }
+
+/* Localhost No-OTP Dev Button */
+.login-btn-no-otp {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  color: #38bdf8;
+  border: 1px dashed rgba(56, 189, 248, 0.45);
+  font-weight: 600;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
+.login-btn-no-otp:hover:not(:disabled) {
+  background: linear-gradient(135deg, #24344d 0%, #172338 100%);
+  border-color: #38bdf8;
+  color: #7dd3fc;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(56, 189, 248, 0.25);
+}
+
+.login-btn-no-otp:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.login-btn-no-otp:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.login-no-otp-badge {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.8px;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}

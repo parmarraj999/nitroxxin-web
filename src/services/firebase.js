@@ -108,3 +108,4 @@ export const COLLECTIONS = {
 export const serverTimestamp = () => getFirebase().firestore.FieldValue.serverTimestamp();
 export const increment = (value) => getFirebase().firestore.FieldValue.increment(value);
 export const documentId = () => getFirebase().firestore.FieldPath.documentId();
+export const deleteField = () => getFirebase().firestore.FieldValue.delete();

@@ -2,7 +2,7 @@ import { firstImage, formatDate, formatDateTime, formatPrice } from "../utils/da
 
 export const normalizeProduct = (doc) => {
   const data = doc.data ? doc.data() : doc;
-  const id = doc.id || data.id;
+  const id = data.productId || doc.id || data.id;
 
   const mrp = Number(data.price ?? data.pricing?.mrp ?? data.mrp ?? data.regularPrice ?? 0);
   const selling = Number(data.pricing?.sellingPrice ?? data.salePrice ?? data.discountPrice ?? 0);

@@ -4,9 +4,24 @@ import { getOrCreateRecaptchaVerifier, resetRecaptchaVerifier, formatAuthError }
 import "./LoginModal.css";
 
 export default function LoginModal() {
-  const { triggerOTP, signInWithGoogle, modalLoading, modalError, setModalError } = useAuth();
+  const {
+    triggerOTP,
+    signInWithGoogle,
+    loginWithPhoneNoOtp,
+    modalLoading,
+    modalError,
+    setModalError,
+  } = useAuth();
   const [phone, setPhone] = useState("");
   const [localError, setLocalError] = useState("");
+  const [noOtpLoading, setNoOtpLoading] = useState(false);
+
+  const isLocalhost =
+    typeof window !== "undefined" &&
+    (window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1" ||
+      window.location.hostname === "::1" ||
+      window.location.hostname.includes("192.168."));
 
   const handlePhoneSubmit = async (e) => {
     e.preventDefault();
@@ -40,6 +55,32 @@ export default function LoginModal() {
       console.error("Failed to send OTP:", err);
       resetRecaptchaVerifier("recaptcha-container");
       setModalError(formatAuthError(err));
+    }
+  };
+
+  const handleNoOtpSubmit = async (e) => {
+    e.preventDefault();
+    setLocalError("");
+    setModalError(null);
+
+    const trimmedPhone = phone.trim();
+    if (!trimmedPhone) {
+      setLocalError("Please enter your mobile number");
+      return;
+    }
+
+    if (!/^\d{10}$/.test(trimmedPhone)) {
+      setLocalError("Please enter a valid 10-digit mobile number");
+      return;
+    }
+
+    setNoOtpLoading(true);
+    try {
+      await loginWithPhoneNoOtp(trimmedPhone);
+    } catch (err) {
+      console.error("Localhost no-OTP login failed:", err);
+    } finally {
+      setNoOtpLoading(false);
     }
   };
 
@@ -78,7 +119,7 @@ export default function LoginModal() {
                 setModalError(null);
                 setPhone(e.target.value.replace(/\D/g, ""));
               }}
-              disabled={modalLoading}
+              disabled={modalLoading || noOtpLoading}
               className="login-phone-input"
               autoFocus
             />
@@ -91,9 +132,9 @@ export default function LoginModal() {
         <button
           type="submit"
           className="login-action-btn login-btn-primary"
-          disabled={modalLoading || phone.length === 0}
+          disabled={modalLoading || noOtpLoading || phone.length === 0}
         >
-          {modalLoading ? (
+          {modalLoading && !noOtpLoading ? (
             <span className="login-btn-loading">
               <span className="login-spinner" />
               <span>Sending code...</span>
@@ -103,12 +144,34 @@ export default function LoginModal() {
           )}
         </button>
 
+        {/* Localhost Dev Testing Option: Login directly without OTP */}
+        {isLocalhost && (
+          <button
+            type="button"
+            className="login-action-btn login-btn-no-otp"
+            onClick={handleNoOtpSubmit}
+            disabled={modalLoading || noOtpLoading || phone.length === 0}
+          >
+            {noOtpLoading ? (
+              <span className="login-btn-loading">
+                <span className="login-spinner" />
+                <span>Logging in...</span>
+              </span>
+            ) : (
+              <>
+                <span className="login-no-otp-badge">DEV</span>
+                <span>Login without OTP (Localhost)</span>
+              </>
+            )}
+          </button>
+        )}
+
         {/* Secondary Action Button: Continue with Google (Dark Pill with Google Icon) */}
         <button
           type="button"
           className="login-action-btn login-btn-google"
           onClick={handleGoogleSignIn}
-          disabled={modalLoading}
+          disabled={modalLoading || noOtpLoading}
         >
           <svg className="google-icon-svg" width="20" height="20" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>

@@ -67,33 +67,28 @@ export const AddOrderToFirestore = async ({
     const normalizedItems = cartItems.map((item) => {
       const prod = normalizeProduct(item.productSnapshot || item.product || item);
       const vendorId =
-        prod.vendorId ||
         item.vendorId ||
-        item.productSnapshot?.vendorId ||
-        item.product?.vendorId ||
+        prod.vendorId ||
         "nitroxx-default-vendor";
       const vendorName =
-        prod.vendorName ||
         item.vendorName ||
-        item.productSnapshot?.vendorName ||
-        item.product?.vendorName ||
+        prod.vendorName ||
         prod.brand ||
         "Nitroxx Moto Gear";
 
       return {
         id: item.id || prod.id,
-        productId: prod.id || item.productId,
-        name: prod.name || prod.title || "Accessory Item",
-        price: Number(prod.offerPrice ?? prod.price ?? 0),
+        productId: item.productId || prod.productId || prod.id,
+        name: item.name || prod.name || prod.title || "Accessory Item",
+        price: Number(item.offerPrice ?? prod.offerPrice ?? item.price ?? prod.price ?? 0),
         quantity: Number(item.quantity || 1),
-        image: prod.image || "",
+        image: item.image || prod.image || "",
         vendorId,
         vendorName,
         specs:
           item.options?.size || item.options?.color
             ? `Size: ${item.options?.size || "Standard"} • Color: ${item.options?.color || "Standard"}`
             : "Standard",
-        productSnapshot: prod,
       };
     });
 

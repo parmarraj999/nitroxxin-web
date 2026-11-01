@@ -263,6 +263,348 @@
   background: #ffffff;
 }
 
+/* ==========================================================================
+   Select a Plan - Reference UI Style
+   ========================================================================== */
+
+.eb-plan-panel {
+  border-radius: 24px;
+  border: 1px solid #eef2f6;
+  background: #ffffff;
+  padding: clamp(20px, 3.5vw, 28px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+}
+
+.eb-plan-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.eb-plan-main-title {
+  margin: 0;
+  font-size: clamp(22px, 2.5vw, 28px);
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: -0.02em;
+}
+
+.eb-plan-toggle-pill {
+  display: inline-flex;
+  align-items: center;
+  background: #f1f3f5;
+  padding: 4px;
+  border-radius: 12px;
+  gap: 4px;
+}
+
+.eb-plan-toggle-btn {
+  border: none;
+  background: transparent;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #4b5563;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.18s ease;
+}
+
+.eb-plan-toggle-btn.is-active {
+  background: #ffffff;
+  color: #111827;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.eb-plan-toggle-discount {
+  background: #e2e8f0;
+  color: #1e293b;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 6px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.eb-plan-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.eb-plan-card {
+  border: 1.5px solid #edf0f5;
+  border-radius: 20px;
+  background: #ffffff;
+  padding: 20px 22px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+  position: relative;
+  outline: none;
+}
+
+.eb-plan-card:hover {
+  border-color: #cbd5e1;
+}
+
+.eb-plan-card.is-selected {
+  border: 2px solid #1d72fe;
+  box-shadow: 0 4px 16px rgba(29, 114, 254, 0.08);
+}
+
+.eb-plan-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.eb-plan-card-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.eb-plan-radio-circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: border-color 0.18s ease;
+}
+
+.eb-plan-radio-circle.is-checked {
+  border-color: #1d72fe;
+}
+
+.eb-plan-radio-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #1d72fe;
+}
+
+.eb-plan-title-box {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.eb-plan-name {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: -0.01em;
+}
+
+.eb-plan-subtitle {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #8c9ba5;
+}
+
+.eb-plan-card-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.eb-plan-price {
+  font-size: 21px;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: -0.02em;
+}
+
+.eb-plan-price-unit {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #8c9ba5;
+}
+
+/* Expanded Content when Selected */
+.eb-plan-expanded-content {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: ebPlanFadeIn 0.22s ease-out;
+}
+
+@keyframes ebPlanFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.eb-plan-features-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-left: 36px;
+}
+
+.eb-plan-feature-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.eb-plan-feature-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.eb-plan-feature-text {
+  line-height: 1.45;
+}
+
+.eb-plan-feature-item.is-exclusion {
+  color: #94a3b8;
+}
+
+.eb-plan-desc-note {
+  font-size: 13px;
+  color: #64748b;
+  margin: 4px 0 0 0;
+  line-height: 1.45;
+  font-style: italic;
+}
+
+.eb-plan-divider {
+  height: 1px;
+  background: #f1f3f6;
+  width: 100%;
+}
+
+.eb-plan-bottom-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 2px;
+}
+
+.eb-plan-users-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.eb-plan-users-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #334155;
+  flex-shrink: 0;
+}
+
+.eb-plan-users-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.eb-plan-users-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.eb-plan-users-sub {
+  font-size: 12px;
+  font-weight: 500;
+  color: #8c9ba5;
+}
+
+.eb-plan-counter-pill {
+  display: inline-flex;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 4px 10px;
+  gap: 12px;
+}
+
+.eb-plan-counter-btn {
+  border: none;
+  background: transparent;
+  font-size: 17px;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.eb-plan-counter-btn:hover:not(:disabled) {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.eb-plan-counter-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.eb-plan-counter-value {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+  min-width: 18px;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .eb-plan-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .eb-plan-features-list {
+    padding-left: 0;
+  }
+  .eb-plan-card {
+    padding: 16px 16px;
+    border-radius: 16px;
+  }
+  .eb-plan-price {
+    font-size: 18px;
+  }
+}
+
 .eb-ticket {
   display: flex;
   flex-direction: column;
