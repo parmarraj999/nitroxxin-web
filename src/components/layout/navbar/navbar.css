@@ -12,6 +12,21 @@
     z-index: 1000;
 }
 
+/* Elevate navbar and keep it solid & sharp when search popup is open */
+.navbar.has-search-open {
+    z-index: 100000;
+    background: #0e1015;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.navbar.has-search-open .navbar-search-bar {
+    background: #181b22;
+    border-color: #ff1f1f;
+    box-shadow: 0 0 0 2px rgba(255, 31, 31, 0.3), 0 4px 18px rgba(0, 0, 0, 0.5);
+}
+
 .navbar-container {
     display: flex;
     align-items: center;

@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import './navbar.css';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthModal } from '../../AuthModal/useAuthModal';
 import { useAuth } from '../../../context/AuthContext';
 import { useEventsContext } from '../../../context/EventsContext';
@@ -17,6 +17,7 @@ const DEFAULT_EVENT_CATEGORIES = [
 
 const Navbar = () => {
     const { pathname, search } = useLocation();
+    const navigate = useNavigate();
     const { openLogin } = useAuthModal();
     const { isAuthenticated, logout } = useAuth();
     const { categories: rawCategories = [] } = useEventsContext();
@@ -25,6 +26,7 @@ const Navbar = () => {
     const currentCategory = searchParams.get('category');
     const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
     const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+    const searchInputRef = useRef(null);
 
     useEffect(() => {
         setSearchQuery(searchParams.get('q') || '');
@@ -42,11 +44,13 @@ const Navbar = () => {
     }, []);
 
     const handleOpenSearchModal = (e) => {
-        if (e) {
+        if (e && e.target && e.target.tagName !== 'INPUT') {
             e.preventDefault();
-            e.stopPropagation();
         }
         setIsSearchModalOpen(true);
+        if (searchInputRef.current) {
+            searchInputRef.current.focus();
+        }
     };
 
     const eventCategories = useMemo(() => {
@@ -81,7 +85,7 @@ const Navbar = () => {
         pathname.startsWith('/combo');
 
     return (
-        <nav className="navbar" style={isHidden ? { display: 'none' } : {}}>
+        <nav className={`navbar ${isSearchModalOpen ? 'has-search-open' : ''}`} style={isHidden ? { display: 'none' } : {}}>
             <div className="navbar-container">
                 <div className="navbar-left">
                     <Link to="/" className="navbar-logo-link" aria-label="Nitroxx Home">
@@ -135,13 +139,28 @@ const Navbar = () => {
                             </svg>
                         </button>
                         <input
+                            ref={searchInputRef}
                             type="text"
                             className="navbar-search-bar__input"
                             placeholder="Search events, rides, meetups..."
                             value={searchQuery}
                             onFocus={handleOpenSearchModal}
                             onClick={handleOpenSearchModal}
-                            readOnly
+                            onChange={(e) => {
+                                setSearchQuery(e.target.value);
+                                if (!isSearchModalOpen) setIsSearchModalOpen(true);
+                            }}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    const term = searchQuery.trim();
+                                    setIsSearchModalOpen(false);
+                                    if (term) {
+                                        navigate(`/events/all?search=${encodeURIComponent(term)}`);
+                                    } else {
+                                        navigate("/events/all");
+                                    }
+                                }
+                            }}
                             autoComplete="off"
                             spellCheck="false"
                         />
@@ -152,6 +171,7 @@ const Navbar = () => {
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     setSearchQuery('');
+                                    if (searchInputRef.current) searchInputRef.current.focus();
                                 }}
                                 aria-label="Clear search"
                             >
@@ -196,7 +216,18 @@ const Navbar = () => {
             <EventSearchModal
                 isOpen={isSearchModalOpen}
                 onClose={() => setIsSearchModalOpen(false)}
-                initialQuery={searchQuery}
+                searchQuery={searchQuery}
+                onSearchChange={(val) => setSearchQuery(val)}
+                inputRef={searchInputRef}
+                onSearchSubmit={(val) => {
+                    const term = (val !== undefined ? val : searchQuery).trim();
+                    setIsSearchModalOpen(false);
+                    if (term) {
+                        navigate(`/events/all?search=${encodeURIComponent(term)}`);
+                    } else {
+                        navigate('/events/all');
+                    }
+                }}
             />
         </nav>
     );

@@ -1,217 +1,234 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useEventsContext } from "../../context/EventsContext";
+import { useAuth } from "../../context/AuthContext";
+import { useAuthModal } from "../AuthModal/useAuthModal";
 import { toDate } from "../../utils/dataFormatters";
 import "./EventSearchModal.css";
 
-// Filter options tailored for Nitroxx motorcycling & adventure events
-const EVENT_FILTER_OPTIONS = [
-  { id: "All", label: "All" },
-  { id: "Rides", label: "Rides" },
-  { id: "Track & Race", label: "Track & Race" },
-  { id: "Off-Road", label: "Off-Road" },
-  { id: "Workshops", label: "Workshops" },
-  { id: "Meetups", label: "Meetups" },
-  { id: "Free Entry", label: "Free Entry" },
-];
-
-const SEARCH_PLACEHOLDER_SUGGESTIONS = [
-  "Namit Malhotra's Ramayana",
-  "The Halloween Social",
-  "Day Ride to Matheran",
-  "Sunday Chai & Chains",
-  "Bhimashankar Offroad Ride",
-  "DIY Maintenance Workshop",
-  "Midnight Expressway Ride",
+// ── POPULAR EVENT SEARCHES (Curated top trending motorcycle events) ──
+const POPULAR_EVENT_SEARCHES = [
   "Kari Motor Speedway Track Day",
+  "The Halloween Social Biker Night",
+  "Day Ride to Matheran",
+  "Sunday Chai & Chains Meetup",
+  "Bhimashankar Offroad Trail",
+  "DIY Maintenance & Chain Care Clinic",
+  "Midnight Expressway Cruise",
+  "Apex Cornering Academy",
+  "Western Ghats Monsoon Tour",
+  "Free Entry Meetups",
 ];
 
-// Curated fallback events matching dark theme and 16:9 banner card aesthetic
-const CURATED_FALLBACK_EVENTS = [
+// ── CURATED FALLBACK EVENTS (Motorcycle & Adventure events matching 1:1 card style) ──
+const FALLBACK_POPUP_EVENTS = [
   {
-    id: "trending-1",
-    title: "The Halloween Social — Biker Night",
-    type: "Meetup",
-    categoryTab: "Meetups",
-    dateText: "Sat, 31 Oct, 4:00 PM",
-    venue: "District Arena, Sector 3A",
-    city: "Pune",
-    image: "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=600&auto=format&fit=crop&q=80",
-    priceText: "₹499",
-    throttledText: "19k+ are Throttled!",
-  },
-  {
-    id: "trending-2",
-    title: "Namit Malhotra's Ramayana Ride",
-    type: "Rides",
-    categoryTab: "Rides",
-    dateText: "Sun, 08 Nov, 6:00 AM",
-    venue: "Western Ghats Escarpment",
-    city: "Mumbai",
-    image: "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=600&auto=format&fit=crop&q=80",
-    priceText: "Free",
-    throttledText: "24k+ are Throttled!",
-  },
-  {
-    id: "trending-3",
-    title: "Sunday Chai & Chains — Monthly Biker Meetup",
-    type: "Meetup",
-    categoryTab: "Meetups",
-    dateText: "Sun, 02 Aug, 7:00 AM",
-    venue: "Vaishali Cafe, FC Road",
-    city: "Pune",
-    image: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600&auto=format&fit=crop&q=80",
-    priceText: "Free",
-    throttledText: "16k+ are Throttled!",
-  },
-  {
-    id: "trending-4",
-    title: "Bhimashankar Gravel & Offroad Trail",
-    type: "Off-Road",
-    categoryTab: "Off-Road",
-    dateText: "Sat, 14 Nov, 6:30 AM",
-    venue: "Manchar Naka Foothills",
-    city: "Pune",
-    image: "https://images.unsplash.com/photo-1508974239320-0a029497e820?w=600&auto=format&fit=crop&q=80",
-    priceText: "₹1,499",
-    throttledText: "14k+ are Throttled!",
-  },
-  {
-    id: "trending-5",
-    title: "DIY Maintenance & Chain Care Clinic",
-    type: "Workshop",
-    categoryTab: "Workshops",
-    dateText: "Sun, 22 Nov, 11:00 AM",
-    venue: "Nitroxx Garage Hub, Baner",
-    city: "Pune",
-    image: "https://images.unsplash.com/photo-1486006920555-c77dce18193b?w=600&auto=format&fit=crop&q=80",
-    priceText: "₹399",
-    throttledText: "11k+ are Throttled!",
-  },
-  {
-    id: "trending-6",
+    id: "pop-ev-1",
     title: "Apex Track Day & Cornering Academy",
-    type: "Track & Race",
-    categoryTab: "Track & Race",
+    organizer: "Nitroxx Racing",
+    category: "Track & Race",
+    price: 3999,
+    priceText: "₹3,999",
     dateText: "Sat, 05 Dec, 8:00 AM",
     venue: "Kari Motor Speedway",
     city: "Coimbatore",
-    image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80",
-    priceText: "₹3,999",
-    throttledText: "28k+ are Throttled!",
+    image: "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=600&auto=format&fit=crop&q=80",
   },
   {
-    id: "trending-7",
-    title: "Sinhagad Summit Scramble Hill Climb",
-    type: "Off-Road",
-    categoryTab: "Off-Road",
-    dateText: "Sun, 13 Dec, 6:00 AM",
-    venue: "Sinhagad Fort Base",
+    id: "pop-ev-2",
+    title: "The Halloween Social — Biker Night",
+    organizer: "Nitroxx Moto",
+    category: "Meetups",
+    price: 499,
+    priceText: "₹499",
+    dateText: "Sat, 31 Oct, 4:00 PM",
+    venue: "District Arena, Sector 3A",
     city: "Pune",
-    image: "https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?w=600&auto=format&fit=crop&q=80",
-    priceText: "₹350",
-    throttledText: "12k+ are Throttled!",
+    image: "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=600&auto=format&fit=crop&q=80",
   },
   {
-    id: "trending-8",
+    id: "pop-ev-3",
+    title: "Namit Malhotra's Ramayana Ride",
+    organizer: "Nitroxx Touring",
+    category: "Rides",
+    price: 0,
+    priceText: "Free",
+    dateText: "Sun, 08 Nov, 6:00 AM",
+    venue: "Western Ghats Escarpment",
+    city: "Mumbai",
+    image: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600&auto=format&fit=crop&q=80",
+  },
+  {
+    id: "pop-ev-4",
+    title: "Sunday Chai & Chains — Monthly Biker Meetup",
+    organizer: "Nitroxx Pune Club",
+    category: "Meetups",
+    price: 0,
+    priceText: "Free",
+    dateText: "Sun, 02 Aug, 7:00 AM",
+    venue: "Vaishali Cafe, FC Road",
+    city: "Pune",
+    image: "https://images.unsplash.com/photo-1508974239320-0a029497e820?w=600&auto=format&fit=crop&q=80",
+  },
+  {
+    id: "pop-ev-5",
+    title: "Bhimashankar Gravel & Offroad Trail",
+    organizer: "Mud Thrashers",
+    category: "Off-Road",
+    price: 1499,
+    priceText: "₹1,499",
+    dateText: "Sat, 14 Nov, 6:30 AM",
+    venue: "Manchar Naka Foothills",
+    city: "Pune",
+    image: "https://images.unsplash.com/photo-1486006920555-c77dce18193b?w=600&auto=format&fit=crop&q=80",
+  },
+  {
+    id: "pop-ev-6",
+    title: "DIY Maintenance & Chain Care Clinic",
+    organizer: "Nitroxx Garage",
+    category: "Workshops",
+    price: 399,
+    priceText: "₹399",
+    dateText: "Sun, 22 Nov, 11:00 AM",
+    venue: "Nitroxx Garage Hub, Baner",
+    city: "Pune",
+    image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80",
+  },
+  {
+    id: "pop-ev-7",
     title: "Midnight Expressway Night Cruise",
-    type: "Rides",
-    categoryTab: "Rides",
+    organizer: "Night Riders Mumbai",
+    category: "Rides",
+    price: 0,
+    priceText: "Free",
     dateText: "Fri, 18 Dec, 10:30 PM",
     venue: "Vashi Toll Plaza to Lonavala",
     city: "Mumbai",
     image: "https://images.unsplash.com/photo-1506015391300-4802dc74de2e?w=600&auto=format&fit=crop&q=80",
+  },
+  {
+    id: "pop-ev-8",
+    title: "Sinhagad Summit Scramble Hill Climb",
+    organizer: "Sahyadri Riders",
+    category: "Off-Road",
+    price: 350,
+    priceText: "₹350",
+    dateText: "Sun, 13 Dec, 6:00 AM",
+    venue: "Sinhagad Fort Base",
+    city: "Pune",
+    image: "https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?w=600&auto=format&fit=crop&q=80",
+  },
+  {
+    id: "pop-ev-9",
+    title: "Monsoon Mist Ride to Lavasa Hills",
+    organizer: "Nitroxx Moto",
+    category: "Rides",
+    price: 0,
     priceText: "Free",
-    throttledText: "21k+ are Throttled!",
+    dateText: "Sun, 20 Dec, 6:00 AM",
+    venue: "Chandani Chowk to Lavasa",
+    city: "Pune",
+    image: "https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=600&auto=format&fit=crop&q=80",
+  },
+  {
+    id: "pop-ev-10",
+    title: "Pro Braking & Trail Braking Masterclass",
+    organizer: "Nitroxx Academy",
+    category: "Workshops",
+    price: 1899,
+    priceText: "₹1,899",
+    dateText: "Sat, 26 Dec, 9:00 AM",
+    venue: "Aruani Grid Circuit",
+    city: "Bangalore",
+    image: "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=600&auto=format&fit=crop&q=80",
+  },
+  {
+    id: "pop-ev-11",
+    title: "Rann of Kutch Winter Expedition",
+    organizer: "Nomad Bikers",
+    category: "Rides",
+    price: 18499,
+    priceText: "₹18,499",
+    dateText: "10-15 Jan 2027",
+    venue: "White Desert",
+    city: "Bhuj",
+    image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=600&auto=format&fit=crop&q=80",
+  },
+  {
+    id: "pop-ev-12",
+    title: "Throttle Thursday Bikers Coffee Meet",
+    organizer: "Nitroxx Club",
+    category: "Meetups",
+    price: 0,
+    priceText: "Free",
+    dateText: "Thu, 07 Jan, 8:00 PM",
+    venue: "Starbucks, Bandra",
+    city: "Mumbai",
+    image: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600&auto=format&fit=crop&q=80",
   },
 ];
-
-function FlameIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="#f97316" stroke="#f97316" strokeWidth="1.5">
-      <path d="M8.5 14.5A2.5 2.5 0 0 0 11 17c1.38 0 2.5-1.12 2.5-2.5 0-.61-.22-1.17-.59-1.61L12 11.5l-.91 1.39c-.37.44-.59 1-.59 1.61z" />
-      <path d="M12 2c-1.5 2.5-3 5.5-3 9 0 3.31 2.69 6 6 6 1.48 0 2.83-.54 3.88-1.43C18.66 18.15 16.5 22 12 22 6.48 22 2 17.52 2 12c0-4.5 3.5-8.5 6-10 0 2 1 3.5 2 4.5 0-1.5 1-3.5 2-4.5z" />
-    </svg>
-  );
-}
 
 export default function EventSearchModal({
   isOpen,
   onClose,
+  searchQuery: propQuery,
   initialQuery = "",
-  initialCategory = "All",
+  onSearchChange,
+  onSearchSubmit,
+  inputRef,
 }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { events = [] } = useEventsContext();
+  const { user } = useAuth();
+  const { openAuthModal } = useAuthModal();
 
-  const [query, setQuery] = useState(initialQuery);
-  const [activeFilter, setActiveFilter] = useState(initialCategory);
-  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const [localQuery, setLocalQuery] = useState(propQuery !== undefined ? propQuery : initialQuery);
+  const [wishlist, setWishlist] = useState(() => {
+    try {
+      const stored = localStorage.getItem("nitroxx_event_wishlist");
+      return stored ? JSON.parse(stored) : {};
+    } catch {
+      return {};
+    }
+  });
+  const [addedEvents, setAddedEvents] = useState({});
+  const popupRef = useRef(null);
+  const internalInputRef = useRef(null);
 
+  // Sync propQuery or initialQuery
+  useEffect(() => {
+    if (propQuery !== undefined) {
+      setLocalQuery(propQuery);
+    } else if (initialQuery) {
+      setLocalQuery(initialQuery);
+    }
+  }, [propQuery, initialQuery]);
+
+  const activeQuery = propQuery !== undefined ? propQuery : localQuery;
+
+  // Recent searches state persisted to localStorage
   const [recentSearches, setRecentSearches] = useState(() => {
     try {
       const stored = localStorage.getItem("nitroxx_recent_event_searches");
-      return stored ? JSON.parse(stored) : ["Day Ride to Matheran", "Track Day", "Sunday Chai & Chains"];
+      return stored
+        ? JSON.parse(stored)
+        : ["Track Day", "Day Ride to Matheran", "Sunday Chai & Chains"];
     } catch {
-      return ["Day Ride to Matheran", "Track Day", "Sunday Chai & Chains"];
+      return ["Track Day", "Day Ride to Matheran", "Sunday Chai & Chains"];
     }
   });
 
-  const inputRef = useRef(null);
-
-  // Sync initial query when opened
-  useEffect(() => {
-    if (isOpen) {
-      if (initialQuery) setQuery(initialQuery);
-      if (initialCategory) setActiveFilter(initialCategory);
-
-      // Lock body scroll
-      document.body.style.overflow = "hidden";
-
-      // Focus input with slight delay for modal mount transition
-      const timer = setTimeout(() => {
-        if (inputRef.current) {
-          inputRef.current.focus();
-        }
-      }, 50);
-
-      return () => {
-        clearTimeout(timer);
-        document.body.style.overflow = "";
-      };
-    } else {
-      document.body.style.overflow = "";
-    }
-  }, [isOpen, initialQuery, initialCategory]);
-
-  // Rotate animated placeholder when input is empty
-  useEffect(() => {
-    if (!isOpen || query) return;
-    const interval = setInterval(() => {
-      setPlaceholderIndex((prev) => (prev + 1) % SEARCH_PLACEHOLDER_SUGGESTIONS.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [isOpen, query]);
-
-  // Escape key handler
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e) => {
-      if (e.key === "Escape") {
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
-
-  // Save recent search
+  // Save recent search term
   const saveRecentSearch = (text) => {
     if (!text || !text.trim()) return;
     const clean = text.trim();
     setRecentSearches((prev) => {
-      const updated = [clean, ...prev.filter((item) => item.toLowerCase() !== clean.toLowerCase())].slice(0, 8);
+      const updated = [
+        clean,
+        ...prev.filter((k) => k.toLowerCase() !== clean.toLowerCase()),
+      ].slice(0, 8);
       try {
         localStorage.setItem("nitroxx_recent_event_searches", JSON.stringify(updated));
       } catch {}
@@ -219,221 +236,293 @@ export default function EventSearchModal({
     });
   };
 
-  const handleClearRecentSearches = () => {
+  // Auto-save user's typed search query after typing pause
+  useEffect(() => {
+    const trimmed = (activeQuery || "").trim();
+    if (trimmed.length < 2) return;
+
+    const timer = setTimeout(() => {
+      saveRecentSearch(trimmed);
+    }, 900);
+
+    return () => clearTimeout(timer);
+  }, [activeQuery]);
+
+  const removeRecentSearch = (e, textToRemove) => {
+    e.stopPropagation();
+    setRecentSearches((prev) => {
+      const updated = prev.filter((k) => k.toLowerCase() !== textToRemove.toLowerCase());
+      try {
+        localStorage.setItem("nitroxx_recent_event_searches", JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  };
+
+  const clearAllRecentSearches = (e) => {
+    e.stopPropagation();
     setRecentSearches([]);
     try {
       localStorage.removeItem("nitroxx_recent_event_searches");
     } catch {}
   };
 
-  const handleRemoveRecentTerm = (e, termToRemove) => {
+  const handleQueryChange = (val) => {
+    setLocalQuery(val);
+    if (onSearchChange) {
+      onSearchChange(val);
+    }
+  };
+
+  // Close on Escape or click outside
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
+    const handleClickOutside = (e) => {
+      if (popupRef.current && popupRef.current.contains(e.target)) {
+        return;
+      }
+      if (inputRef?.current && inputRef.current.contains(e.target)) {
+        return;
+      }
+      if (e.target.closest && e.target.closest(".navbar-search-bar")) {
+        return;
+      }
+      onClose();
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("mousedown", handleClickOutside);
+
+    // Prevent background scrolling on mobile when open
+    const prevOverflow = document.body.style.overflow;
+    if (window.innerWidth <= 840) {
+      document.body.style.overflow = "hidden";
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isOpen, onClose, inputRef]);
+
+  // Focus internal mobile search input when opened on mobile
+  useEffect(() => {
+    if (isOpen && window.innerWidth <= 840) {
+      const timer = setTimeout(() => {
+        if (internalInputRef.current) {
+          internalInputRef.current.focus();
+        }
+      }, 80);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
+
+  // Normalize live Firestore events
+  const normalizedEvents = useMemo(() => {
+    const live = (events || []).filter((e) => {
+      const st = String(e.status || "published").toLowerCase();
+      return st === "published" || st === "active" || st === "approved";
+    });
+
+    const mapped = live.map((e) => {
+      const title = e.title || e.name || "Motorcycle Event";
+      const organizer =
+        e.organizer || e.host || e.vendorName || e.clubName || e.brand || "Nitroxx Moto";
+      const category = e.category || e.categoryName || e.type || "Rides";
+      const price = Number(e.price ?? e.ticketPrice ?? e.startingPrice ?? 0);
+      const priceText =
+        e.priceText || (price === 0 ? "Free" : `₹${price.toLocaleString("en-IN")}`);
+      const image =
+        e.banner ||
+        e.bannerImage ||
+        e.image ||
+        e.media?.galleryImages?.[0] ||
+        FALLBACK_POPUP_EVENTS[0].image;
+
+      let dateText = e.dateTimeText || e.dateText || "";
+      if (!dateText && e.date) {
+        const d = toDate(e.date);
+        if (d && !Number.isNaN(d.getTime())) {
+          dateText = new Intl.DateTimeFormat("en-IN", {
+            weekday: "short",
+            day: "numeric",
+            month: "short",
+          }).format(d);
+        }
+      }
+
+      return {
+        id: e.id,
+        title,
+        name: title,
+        organizer,
+        category,
+        price,
+        priceText,
+        dateText: dateText || "Upcoming",
+        venue: e.venue || e.location || "",
+        city: e.city || "",
+        image,
+        isLive: true,
+      };
+    });
+
+    const liveIds = new Set(mapped.map((m) => m.id));
+    const fallbackFiltered = FALLBACK_POPUP_EVENTS.filter((f) => !liveIds.has(f.id));
+    return [...mapped, ...fallbackFiltered];
+  }, [events]);
+
+  // Filter events based on activeQuery (strictly max 20 events)
+  const filteredEvents = useMemo(() => {
+    const q = (activeQuery || "").trim().toLowerCase();
+    let list = normalizedEvents;
+
+    if (q) {
+      const words = q.split(/\s+/).filter(Boolean);
+      list = list.filter((item) => {
+        const text = [
+          item.title,
+          item.name,
+          item.organizer,
+          item.category,
+          item.venue,
+          item.city,
+          item.dateText,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        return words.every((w) => text.includes(w));
+      });
+    }
+
+    return list.slice(0, 20);
+  }, [normalizedEvents, activeQuery]);
+
+  // Navigate to full events search or page
+  const handleGoToEvents = (queryToUse) => {
+    const term = (queryToUse !== undefined ? queryToUse : activeQuery).trim();
+    if (term) {
+      saveRecentSearch(term);
+    }
+    if (onSearchSubmit) {
+      onSearchSubmit(term);
+    } else {
+      if (term) {
+        navigate(`/events/all?search=${encodeURIComponent(term)}`);
+      } else {
+        navigate("/events/all");
+      }
+      onClose();
+    }
+  };
+
+  const handleSelectEvent = (event) => {
+    saveRecentSearch(event.title || event.name);
+    onClose();
+    if (event.isLive && event.id && !String(event.id).startsWith("pop-ev-")) {
+      navigate(`/event/${event.id}`);
+    } else {
+      navigate(`/events/all?search=${encodeURIComponent(event.title || event.name)}`);
+    }
+  };
+
+  const toggleWishlist = (e, eventId) => {
     e.stopPropagation();
-    setRecentSearches((prev) => {
-      const updated = prev.filter((t) => t !== termToRemove);
+    setWishlist((prev) => {
+      const updated = { ...prev, [eventId]: !prev[eventId] };
       try {
-        localStorage.setItem("nitroxx_recent_event_searches", JSON.stringify(updated));
+        localStorage.setItem("nitroxx_event_wishlist", JSON.stringify(updated));
       } catch {}
       return updated;
     });
   };
 
-  const handleRecentTermClick = (term) => {
-    setQuery(term);
-    saveRecentSearch(term);
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
-  };
-
-  // Helper for throttled text
-  const getThrottledText = (event) => {
-    if (event.throttledText) return event.throttledText;
-    if (event.throttledCount) return `${event.throttledCount} are Throttled!`;
-    if (event.throttleCount) return `${event.throttleCount} are Throttled!`;
-    if (event.attendeesCount) return `${event.attendeesCount} are Throttled!`;
-    const seed = String(event.id || event.title || event.name || "nx")
-      .split("")
-      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const count = (seed % 18) + 2;
-    return `${count}k+ are Throttled!`;
-  };
-
-  const getPriceDisplay = (event) => {
-    if (event.priceText) return event.priceText;
-    if (event.price === 0) return "Free";
-    if (event.price) return `₹${event.price}`;
-    return "Free";
-  };
-
-  const getLocationDisplay = (event) => {
-    return event.venue || event.location || event.city || event.dateText || "India";
-  };
-
-  // Normalize live Firestore events
-  const normalizedLiveEvents = useMemo(() => {
-    if (!events || !events.length) return [];
-
-    return events.map((ev) => {
-      const title = ev.title || ev.name || "Event";
-      const location = ev.venue || ev.location || ev.city || "";
-      const image = ev.banner || ev.bannerImage || ev.image || "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=600&auto=format&fit=crop&q=80";
-
-      let dateFormatted = "";
-      if (ev.dateTimeText && typeof ev.dateTimeText === "string" && !ev.dateTimeText.includes("T00:00")) {
-        dateFormatted = ev.dateTimeText;
-      } else {
-        const rawDate = ev.date || ev.eventDate || ev.startsAt || ev.startDate;
-        if (rawDate) {
-          const d = toDate(rawDate);
-          if (d && !Number.isNaN(d.getTime())) {
-            const hasTime = d.getHours() !== 0 || d.getMinutes() !== 0;
-            dateFormatted = new Intl.DateTimeFormat("en-IN", {
-              weekday: "short",
-              day: "numeric",
-              month: "short",
-              ...(hasTime ? { hour: "numeric", minute: "2-digit" } : {}),
-            }).format(d);
-          }
-        }
-      }
-      if (!dateFormatted && ev.dateText) {
-        dateFormatted = ev.dateText;
-      }
-
-      const catLower = String(ev.category || ev.categoryName || ev.type || "").toLowerCase();
-      let categoryTab = "Rides";
-      let type = "Ride";
-
-      if (catLower.includes("track") || catLower.includes("race") || catLower.includes("stunt")) {
-        categoryTab = "Track & Race";
-        type = "Track & Race";
-      } else if (catLower.includes("offroad") || catLower.includes("gravel") || catLower.includes("dirt") || catLower.includes("trail")) {
-        categoryTab = "Off-Road";
-        type = "Off-Road";
-      } else if (catLower.includes("workshop") || catLower.includes("clinic") || catLower.includes("maintenance") || catLower.includes("diy")) {
-        categoryTab = "Workshops";
-        type = "Workshop";
-      } else if (catLower.includes("meetup") || catLower.includes("chai") || catLower.includes("social")) {
-        categoryTab = "Meetups";
-        type = "Meetup";
-      } else if (catLower.includes("night")) {
-        categoryTab = "Rides";
-        type = "Night Ride";
-      } else {
-        categoryTab = "Rides";
-        type = "Ride";
-      }
-
-      const price = Number(ev.price || ev.ticketPrice || ev.startingPrice || 0);
-      const priceText = ev.priceText || (price === 0 ? "Free" : `₹${price.toLocaleString("en-IN")}`);
-
-      return {
-        id: ev.id,
-        title,
-        type,
-        categoryTab,
-        dateText: dateFormatted || "Upcoming",
-        venue: location,
-        city: ev.city || location,
-        image,
-        price,
-        priceText,
-        isLive: true,
-      };
-    });
-  }, [events]);
-
-  // Combine live events and curated items
-  const allEventsPool = useMemo(() => {
-    const liveIds = new Set(normalizedLiveEvents.map((e) => e.id));
-    const curatedFiltered = CURATED_FALLBACK_EVENTS.filter((c) => !liveIds.has(c.id));
-    return [...normalizedLiveEvents, ...curatedFiltered];
-  }, [normalizedLiveEvents]);
-
-  // Filtered events based on query and activeFilter
-  const filteredEvents = useMemo(() => {
-    let list = allEventsPool;
-
-    // Filter by active pill
-    if (activeFilter !== "All") {
-      list = list.filter((item) => {
-        if (activeFilter === "Free Entry") {
-          return item.price === 0 || String(item.priceText || "").toLowerCase().includes("free");
-        }
-        return (
-          item.categoryTab === activeFilter ||
-          String(item.type).toLowerCase() === activeFilter.toLowerCase()
-        );
-      });
-    }
-
-    // Filter by search query
-    if (query.trim()) {
-      const q = query.trim().toLowerCase();
-      list = list.filter((item) => {
-        const titleMatch = item.title.toLowerCase().includes(q);
-        const venueMatch = String(item.venue || "").toLowerCase().includes(q);
-        const typeMatch = String(item.type || "").toLowerCase().includes(q);
-        const cityMatch = String(item.city || "").toLowerCase().includes(q);
-        return titleMatch || venueMatch || typeMatch || cityMatch;
-      });
-    }
-
-    return list;
-  }, [allEventsPool, activeFilter, query]);
-
-  const handleSelectEvent = (event) => {
-    saveRecentSearch(event.title);
-    onClose();
-    if (event.isLive && event.id && !String(event.id).startsWith("trending-")) {
-      navigate(`/event/${event.id}`);
-    } else {
-      navigate(`/events/all?search=${encodeURIComponent(event.title)}`);
-    }
-  };
-
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    if (query.trim()) {
-      saveRecentSearch(query.trim());
-      onClose();
-      const catParam = activeFilter !== "All" ? `&category=${encodeURIComponent(activeFilter)}` : "";
-      navigate(`/events/all?search=${encodeURIComponent(query.trim())}${catParam}`);
-    }
+  const handleQuickAction = (e, event) => {
+    e.stopPropagation();
+    setAddedEvents((prev) => ({ ...prev, [event.id]: true }));
+    saveRecentSearch(event.title || event.name);
+    setTimeout(() => {
+      setAddedEvents((prev) => ({ ...prev, [event.id]: false }));
+    }, 1800);
   };
 
   if (!isOpen) return null;
   if (typeof document === "undefined") return null;
 
-  const isQueryEmpty = !query.trim();
+  const hasQuery = Boolean(activeQuery && activeQuery.trim());
 
-  // Render modal directly into document.body using Portal for guaranteed center positioning
+  // Determine if Navbar is visible on this route
+  const isNavbarVisible =
+    !location.pathname.startsWith("/events/search") &&
+    !location.pathname.startsWith("/event/") &&
+    !location.pathname.includes("/accessories") &&
+    !location.pathname.includes("/shop") &&
+    !location.pathname.includes("/events/upcoming") &&
+    !location.pathname.includes("/events/near-you") &&
+    !location.pathname.includes("/profile") &&
+    !location.pathname.includes("/product") &&
+    !location.pathname.includes("/cart");
+
   return createPortal(
-    <div className="nx-search-popup__backdrop" onClick={onClose} role="dialog" aria-modal="true">
-      <div className="nx-search-popup__card" onClick={(e) => e.stopPropagation()}>
-        {/* Close Button at top right */}
-        <button
-          type="button"
-          className="nx-search-popup__close-btn"
-          onClick={onClose}
-          aria-label="Close search"
-          title="Close (Esc)"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
+    <>
+      {/* ── Fixed Backdrop (Dark theme glassmorphism) ── */}
+      <div
+        className={`esp-backdrop ${!isNavbarVisible ? "is-standalone" : ""}`}
+        onClick={onClose}
+        aria-hidden="true"
+      />
 
-        {/* ── Fixed Header Container (Input Bar + Filter Pills) ── */}
-        <div className="nx-search-popup__header">
-          {/* ── Search Input Bar (Dark Glassmorphic) ── */}
-          <form className="nx-search-popup__search-bar" onSubmit={handleSearchSubmit}>
-            <div className="nx-search-popup__input-wrap">
+      {/* ── Main Popup Modal: 90vw width, 86vh height, Dark Theme ── */}
+      <div
+        className={`esp-popup-container ${hasQuery ? "has-query" : "is-empty-query"} ${
+          !isNavbarVisible ? "is-standalone" : ""
+        }`}
+        ref={popupRef}
+        role="dialog"
+        aria-modal="true"
+      >
+        {/* Mobile Top Header (Screens <= 840px) or Standalone Desktop Header */}
+        <div className="esp-topbar">
+          <button
+            type="button"
+            className="esp-topbar__back-btn"
+            onClick={onClose}
+            aria-label="Close search"
+          >
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M19 12H5" />
+              <path d="m12 19-7-7 7-7" />
+            </svg>
+          </button>
+
+          <div className="esp-topbar__input-wrap">
+            <span
+              className="esp-topbar__search-icon"
+              onClick={() => handleGoToEvents(activeQuery)}
+              title="Search in Events"
+            >
               <svg
-                className="nx-search-popup__search-icon"
-                width="20"
-                height="20"
+                width="18"
+                height="18"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -442,229 +531,384 @@ export default function EventSearchModal({
                 strokeLinejoin="round"
               >
                 <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                <path d="m21 21-4.34-4.34" />
               </svg>
-              <input
-                ref={inputRef}
-                type="text"
-                className="nx-search-popup__input"
-                placeholder={`Search for '${SEARCH_PLACEHOLDER_SUGGESTIONS[placeholderIndex]}'`}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                autoComplete="off"
-                spellCheck="false"
-              />
-              {query && (
-                <button
-                  type="button"
-                  className="nx-search-popup__clear-btn"
-                  onClick={() => {
-                    setQuery("");
-                    if (inputRef.current) inputRef.current.focus();
-                  }}
-                  aria-label="Clear query"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </button>
-              )}
-            </div>
-          </form>
-
-          {/* ── Filter Pills Row (Dark Theme) ── */}
-          <div className="nx-search-popup__filters-row">
-            {EVENT_FILTER_OPTIONS.map((opt) => {
-              const isActive = activeFilter === opt.id;
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  className={`nx-search-popup__filter-pill ${isActive ? "is-active" : ""}`}
-                  onClick={() => setActiveFilter(opt.id)}
-                >
-                  {opt.label}
-                </button>
-              );
-            })}
+            </span>
+            <input
+              ref={internalInputRef}
+              type="text"
+              className="esp-topbar__input"
+              value={activeQuery}
+              onChange={(e) => handleQueryChange(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleGoToEvents(activeQuery);
+              }}
+              placeholder="Search events, rides, meetups..."
+              autoFocus
+            />
+            {activeQuery && (
+              <button
+                type="button"
+                className="esp-topbar__clear-btn"
+                onClick={() => handleQueryChange("")}
+                aria-label="Clear query"
+              >
+                ✕
+              </button>
+            )}
           </div>
+
+          <button
+            type="button"
+            className="esp-topbar__close-btn"
+            onClick={onClose}
+            aria-label="Close search"
+          >
+            ✕
+          </button>
         </div>
 
-        {/* ── Scrollable Body ── */}
-        <div className="nx-search-popup__body">
-          {/* When search input is empty and filter is 'All': Show ONLY Recent Searches & Suggestions (Do NOT show events) */}
-          {isQueryEmpty && activeFilter === "All" ? (
-            <div className="nx-search-popup__recent-block">
-              <div className="nx-search-popup__recent-header">
-                <span className="nx-search-popup__section-title">Recent Searches</span>
+        {/* Desktop Close Button (Floating top-right) */}
+        <button
+          type="button"
+          className="esp-desktop-close-btn"
+          onClick={onClose}
+          aria-label="Close search"
+          title="Close (Esc)"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+
+        {/* Desktop & Mobile Responsive Body */}
+        <div className="esp-body">
+          {/* ════ LEFT COLUMN: RECENT & POPULAR SEARCHES (310px width) ════ */}
+          <div className="esp-left-col">
+            {/* 1. RECENT SEARCHES */}
+            <div className="esp-section">
+              <div className="esp-section__header esp-section__header--flex">
+                <span className="esp-section__title">RECENT SEARCHES</span>
                 {recentSearches.length > 0 && (
                   <button
                     type="button"
-                    className="nx-search-popup__clear-all-link"
-                    onClick={handleClearRecentSearches}
+                    className="esp-clear-all-link"
+                    onClick={clearAllRecentSearches}
                   >
                     Clear All
                   </button>
                 )}
               </div>
+              <div className="esp-recent-chips">
+                {recentSearches.length > 0 ? (
+                  recentSearches.map((chip, idx) => (
+                    <div key={idx} className="esp-chip-wrap">
+                      <button
+                        type="button"
+                        className="esp-chip"
+                        onClick={() => {
+                          handleQueryChange(chip);
+                          saveRecentSearch(chip);
+                        }}
+                      >
+                        <span>{chip}</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="esp-chip-delete"
+                        onClick={(e) => removeRecentSearch(e, chip)}
+                        title="Remove"
+                        aria-label="Remove search term"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <span className="esp-empty-recents">No recent searches yet</span>
+                )}
+              </div>
+            </div>
 
-              {recentSearches.length > 0 ? (
-                <div className="nx-search-popup__recent-chips">
-                  {recentSearches.map((term) => (
-                    <div
-                      key={term}
-                      className="nx-search-popup__recent-chip"
-                      onClick={() => handleRecentTermClick(term)}
-                    >
+            {/* 2. POPULAR SEARCHES */}
+            <div className="esp-section esp-section--popular">
+              <div className="esp-section__header">
+                <span className="esp-section__title">POPULAR SEARCHES</span>
+              </div>
+              <div className="esp-popular-list">
+                {POPULAR_EVENT_SEARCHES.map((queryText, idx) => (
+                  <div
+                    key={idx}
+                    className="esp-popular-row"
+                    onClick={() => {
+                      handleQueryChange(queryText);
+                      saveRecentSearch(queryText);
+                    }}
+                  >
+                    <div className="esp-popular-row__left">
                       <svg
-                        className="nx-search-popup__clock-icon"
-                        width="13"
-                        height="13"
+                        width="15"
+                        height="15"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
                         strokeWidth="2.2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
+                        className="esp-popular-row__icon"
                       >
-                        <circle cx="12" cy="12" r="10" />
-                        <polyline points="12 6 12 12 16 14" />
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.34-4.34" />
                       </svg>
-                      <span className="nx-search-popup__recent-chip-text">{term}</span>
-                      <button
-                        type="button"
-                        className="nx-search-popup__chip-remove"
-                        onClick={(e) => handleRemoveRecentTerm(e, term)}
-                        title="Remove"
-                      >
-                        ×
-                      </button>
+                      <span className="esp-popular-row__text">{queryText}</span>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <p style={{ color: "#64748b", fontSize: "13.5px", margin: "4px 0 12px 0" }}>
-                  No recent searches yet. Search for rallies, tracks, or explore popular topics below.
-                </p>
-              )}
-
-              {/* Popular Search Suggestions to quickly tap */}
-              <div style={{ marginTop: "16px" }}>
-                <span className="nx-search-popup__section-title" style={{ fontSize: "14px", color: "#94a3b8" }}>
-                  Trending Searches
-                </span>
-                <div className="nx-search-popup__recent-chips" style={{ marginTop: "8px" }}>
-                  {SEARCH_PLACEHOLDER_SUGGESTIONS.slice(0, 5).map((sugg) => (
-                    <div
-                      key={sugg}
-                      className="nx-search-popup__recent-chip"
-                      onClick={() => handleRecentTermClick(sugg)}
-                      style={{ background: "rgba(99, 102, 241, 0.08)", borderColor: "rgba(99, 102, 241, 0.25)" }}
+                    <svg
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="esp-popular-row__arrow"
                     >
-                      <span className="nx-search-popup__recent-chip-text" style={{ color: "#c7d2fe" }}>
-                        🔍 {sugg}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                      <path d="M5 12h14" />
+                      <path d="m12 5 7 7-7 7" />
+                    </svg>
+                  </div>
+                ))}
               </div>
             </div>
-          ) : (
-            /* When user has typed in search input OR clicked a specific category filter, show filtered events */
-            <>
-              <div className="nx-search-popup__grid-header">
-                <h3 className="nx-search-popup__section-title">
-                  {query.trim() ? (
-                    <>Results for "{query}" ({filteredEvents.length})</>
-                  ) : (
-                    <>Category: {activeFilter} ({filteredEvents.length})</>
-                  )}
-                </h3>
-              </div>
 
-              {/* ── 2-Column Grid of Filtered Events ── */}
-              {filteredEvents.length > 0 ? (
-                <div className="nx-search-popup__grid">
-                  {filteredEvents.map((event) => (
+            {/* Mobile-only shortcut banner to browse all events */}
+            <div className="esp-mobile-browse-card">
+              <div className="esp-mobile-browse-info">
+                <span className="esp-mobile-browse-badge">NITROXX EXPERIENCES</span>
+                <h4 className="esp-mobile-browse-title">Explore All Live Events & Rides</h4>
+              </div>
+              <button
+                type="button"
+                className="esp-mobile-browse-btn"
+                onClick={() => handleGoToEvents("")}
+              >
+                Browse All →
+              </button>
+            </div>
+          </div>
+
+          {/* ════ RIGHT COLUMN: 4-COLUMN EVENT GRID (MAX 20 EVENTS) ════ */}
+          <div className="esp-right-col">
+            <div className="esp-right-header">
+              <span className="esp-section__title">
+                {hasQuery
+                  ? `SEARCH RESULTS (${filteredEvents.length})`
+                  : "RECOMMENDED EVENTS"}
+              </span>
+
+              {/* View all in Events button */}
+              <button
+                type="button"
+                className="esp-see-all-btn"
+                onClick={() => handleGoToEvents(activeQuery)}
+                title="View all in Events"
+              >
+                <span>View all in Events</span>
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M5 12h14" />
+                  <path d="m12 5 7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+
+            {filteredEvents.length > 0 ? (
+              <div className="esp-event-grid">
+                {filteredEvents.map((event) => {
+                  const isWishlisted = Boolean(wishlist[event.id]);
+                  const isAdded = Boolean(addedEvents[event.id]);
+
+                  return (
                     <div
                       key={event.id}
-                      className="nx-search-popup__event-card"
+                      className="esp-event-card"
                       onClick={() => handleSelectEvent(event)}
                     >
-                      {/* 16:9 Image Container matching ep-event-card */}
-                      <div className="nx-search-popup__card-image-wrap">
+                      {/* Event Image Box: Square 1:1, centered cover image */}
+                      <div className="esp-event-card__img-box">
                         <img
                           src={event.image}
                           alt={event.title}
-                          className="nx-search-popup__card-image"
+                          className="esp-event-card__img"
                           loading="lazy"
                         />
-                        {event.type && (
-                          <span className="nx-search-popup__card-badge">
-                            {event.type}
-                          </span>
-                        )}
+
+                        {/* Heart Wishlist Icon (Top-right) */}
+                        <button
+                          type="button"
+                          className={`esp-event-card__heart${
+                            isWishlisted ? " is-active" : ""
+                          }`}
+                          onClick={(e) => toggleWishlist(e, event.id)}
+                          aria-label="Save Event"
+                          title="Bookmark Event"
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill={isWishlisted ? "#ff1f1f" : "none"}
+                            stroke={isWishlisted ? "#ff1f1f" : "#ffffff"}
+                            strokeWidth="2.2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+                          </svg>
+                        </button>
+
+                        {/* Quick Action (+) Button in bottom-right */}
+                        <button
+                          type="button"
+                          className={`esp-event-card__add-btn${
+                            isAdded ? " is-added" : ""
+                          }`}
+                          onClick={(e) => handleQuickAction(e, event)}
+                          aria-label="Quick Action"
+                          title="Save or RSVP"
+                        >
+                          {isAdded ? (
+                            <svg
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="#10b981"
+                              strokeWidth="3"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          ) : (
+                            <svg
+                              width="15"
+                              height="15"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="#111111"
+                              strokeWidth="2.4"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M12 5v14" />
+                              <path d="M5 12h14" />
+                            </svg>
+                          )}
+                        </button>
                       </div>
 
-                      {/* Info Block matching ep-event-card */}
-                      <div className="nx-search-popup__card-info">
-                        <div className="nx-search-popup__card-title-row">
-                          <h4 className="nx-search-popup__card-title" title={event.title}>
-                            {event.title}
-                          </h4>
-                          <span className="nx-search-popup__card-price">
-                            {getPriceDisplay(event)}
+                      {/* Event Info below image */}
+                      <div className="esp-event-card__info">
+                        <span
+                          className="esp-event-card__brand"
+                          title={event.organizer || event.category}
+                        >
+                          {event.organizer || event.category}
+                        </span>
+
+                        <h4 className="esp-event-card__name" title={event.title}>
+                          {event.title}
+                        </h4>
+
+                        <div className="esp-event-card__price-row">
+                          <span
+                            className={`esp-event-card__price ${
+                              event.price === 0 ? "is-free" : ""
+                            }`}
+                          >
+                            {event.priceText || (event.price === 0 ? "Free" : `₹${event.price}`)}
                           </span>
-                        </div>
 
-                        <div className="nx-search-popup__card-location">
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="nx-search-popup__loc-pin">
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                            <circle cx="12" cy="10" r="3" />
-                          </svg>
-                          <span className="nx-search-popup__loc-text">{getLocationDisplay(event)}</span>
-                          {event.dateText && <span className="nx-search-popup__dot-sep">•</span>}
-                          {event.dateText && <span className="nx-search-popup__date-text">{event.dateText}</span>}
-                        </div>
-
-                        <div className="nx-search-popup__card-throttled">
-                          <FlameIcon />
-                          <span>{getThrottledText(event)}</span>
+                          {event.dateText && (
+                            <span className="esp-event-card__date" title={event.dateText}>
+                              {event.dateText.split(",")[0]}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="nx-search-popup__empty">
-                  <div className="nx-search-popup__empty-icon">
-                    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="rgba(255, 255, 255, 0.4)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="11" cy="11" r="8" />
-                      <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                      <line x1="8" y1="11" x2="14" y2="11" />
-                    </svg>
-                  </div>
-                  <h4>No events found for "{query || activeFilter}"</h4>
-                  <p>Try searching with another keyword or explore categories like Rides or Track Days.</p>
-                  <button
-                    type="button"
-                    className="nx-search-popup__empty-reset-btn"
-                    onClick={() => {
-                      setQuery("");
-                      setActiveFilter("All");
-                      if (inputRef.current) inputRef.current.focus();
-                    }}
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="esp-no-results">
+                <div className="esp-no-results__icon">
+                  <svg
+                    width="42"
+                    height="42"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#71717a"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   >
-                    Reset Search
-                  </button>
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
                 </div>
-              )}
-            </>
-          )}
+                <h3 className="esp-no-results__title">
+                  No events found matching "{activeQuery}"
+                </h3>
+                <p className="esp-no-results__desc">
+                  Try searching with different keywords like 'Track Day', 'Night Ride', or 'Pune'.
+                </p>
+                <button
+                  type="button"
+                  className="esp-no-results__btn"
+                  onClick={() => handleGoToEvents("")}
+                >
+                  Explore All Events →
+                </button>
+              </div>
+            )}
+
+            {/* Prompt when 20 events reached */}
+            {filteredEvents.length >= 20 && (
+              <div className="esp-right-footer">
+                <span>Showing top 20 event matches.</span>
+                <button
+                  type="button"
+                  className="esp-footer-link"
+                  onClick={() => handleGoToEvents(activeQuery)}
+                >
+                  Click here or press Enter to view all in Events →
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>,
+    </>,
     document.body
   );
 }
