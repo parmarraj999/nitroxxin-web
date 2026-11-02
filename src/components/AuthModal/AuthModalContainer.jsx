@@ -3,11 +3,19 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import LoginModal from "./LoginModal";
 import OTPModal from "./OTPModal";
+import GooglePhoneModal from "./GooglePhoneModal";
 import ProfileSetupModal from "./ProfileSetupModal";
 import "./AuthModalContainer.css";
 
 export default function AuthModalContainer() {
-  const { isAuthOpen, activeView, closeAuth, openLogin } = useAuth();
+  const {
+    isAuthOpen,
+    activeView,
+    setActiveView,
+    closeAuth,
+    openLogin,
+    pendingGoogleUser,
+  } = useAuth();
 
   // Close on Escape key press
   useEffect(() => {
@@ -31,6 +39,14 @@ export default function AuthModalContainer() {
       document.body.style.overflow = "";
     };
   }, [isAuthOpen]);
+
+  const handleBack = () => {
+    if (activeView === "otp" && pendingGoogleUser) {
+      setActiveView("googlePhone");
+    } else {
+      openLogin();
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -59,13 +75,13 @@ export default function AuthModalContainer() {
               />
               <div className="auth-modal-banner-gradient" />
 
-              {/* Back button (on OTP view) */}
-              {activeView === "otp" && (
+              {/* Back button (on OTP and googlePhone views) */}
+              {(activeView === "otp" || activeView === "googlePhone") && (
                 <button
                   type="button"
                   className="auth-modal-nav-btn auth-modal-back-btn"
-                  onClick={openLogin}
-                  aria-label="Back to login"
+                  onClick={handleBack}
+                  aria-label="Back"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="19" y1="12" x2="5" y2="12"></line>
@@ -90,7 +106,13 @@ export default function AuthModalContainer() {
               {/* Title overlaying banner bottom matching screenshot */}
               <div className="auth-modal-banner-text">
                 <h1 className="auth-modal-main-title">
-                  {activeView === "login" ? "Welcome back" : activeView === "otp" ? "Verify Code" : "Setup Profile"}
+                  {activeView === "login"
+                    ? "Welcome back"
+                    : activeView === "otp"
+                    ? "Verify Code"
+                    : activeView === "googlePhone"
+                    ? "Verify Mobile"
+                    : "Setup Profile"}
                 </h1>
               </div>
             </div>
@@ -99,6 +121,7 @@ export default function AuthModalContainer() {
             <div className="auth-modal-body">
               <div className="auth-modal-view-wrapper">
                 {activeView === "login" && <LoginModal />}
+                {activeView === "googlePhone" && <GooglePhoneModal />}
                 {activeView === "otp" && <OTPModal />}
                 {activeView === "profileSetup" && <ProfileSetupModal />}
               </div>

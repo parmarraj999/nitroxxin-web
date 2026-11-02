@@ -13,14 +13,10 @@ export default function OTPModal() {
     modalError,
     setModalError,
     openLogin,
+    pendingGoogleUser,
+    setActiveView,
   } = useAuth();
 
-  const isLocalhost =
-    typeof window !== "undefined" &&
-    (window.location.hostname === "localhost" ||
-      window.location.hostname === "127.0.0.1" ||
-      window.location.hostname === "::1" ||
-      window.location.hostname.includes("192.168."));
 
   const [otp, setOtp] = useState(new Array(6).fill(""));
   const [timer, setTimer] = useState(30);
@@ -128,7 +124,7 @@ export default function OTPModal() {
           <button
             type="button"
             className="otp-change-number-btn"
-            onClick={openLogin}
+            onClick={() => (pendingGoogleUser ? setActiveView("googlePhone") : openLogin())}
             disabled={modalLoading}
           >
             Edit
@@ -190,33 +186,31 @@ export default function OTPModal() {
         )}
       </div>
 
-      {isLocalhost && (
-        <div style={{ marginTop: "14px", textAlign: "center" }}>
-          <button
-            type="button"
-            className="otp-bypass-btn"
-            onClick={async () => {
-              try {
-                await loginWithPhoneNoOtp(phoneNumber);
-              } catch (err) {
-                console.error("Localhost OTP bypass failed:", err);
-              }
-            }}
-            disabled={modalLoading}
-          >
-            ⚡ Login without OTP (Localhost Dev)
-          </button>
-        </div>
-      )}
+      <div style={{ marginTop: "14px", textAlign: "center" }}>
+        <button
+          type="button"
+          className="otp-bypass-btn"
+          onClick={async () => {
+            try {
+              await loginWithPhoneNoOtp(phoneNumber);
+            } catch (err) {
+              console.error("OTP bypass failed:", err);
+            }
+          }}
+          disabled={modalLoading}
+        >
+          ⚡ Login without OTP (Dev Bypass)
+        </button>
+      </div>
 
       <div className="otp-back-row">
         <button
           type="button"
           className="otp-back-link-btn"
-          onClick={openLogin}
+          onClick={() => (pendingGoogleUser ? setActiveView("googlePhone") : openLogin())}
           disabled={modalLoading}
         >
-          ← Back to Phone Login
+          {pendingGoogleUser ? "← Change Phone Number" : "← Back to Phone Login"}
         </button>
       </div>
     </div>

@@ -1,7 +1,17 @@
-import { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { firestoreInstance } from "../services/firebase";
-import { doc, onSnapshot, setDoc, serverTimestamp } from "firebase/firestore";
-import { subscribeToAuth, sendOTP, verifyOTP, logoutUser, loginWithGoogle } from "../services/authService";
+import { doc, getDoc, onSnapshot, setDoc, serverTimestamp } from "firebase/firestore";
+import {
+  subscribeToAuth,
+  sendOTP,
+  verifyOTP,
+  logoutUser,
+  loginWithGoogle,
+  sendOTPForUser,
+  getOrCreateRecaptchaVerifier,
+  resetRecaptchaVerifier,
+  formatAuthError,
+} from "../services/authService";
 import { createUserProfile, updateUserProfile, ensureUserProfile, findExistingUser } from "../services/userService";
 import { uploadProfileImage, uploadDrivingLicenseImage } from "../services/storageService";
 
@@ -44,11 +54,15 @@ export const FirebaseAuthProvider = ({ children }) => {
 
   // Modal flow state
   const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [activeView, setActiveView] = useState("login"); // "login" | "otp" | "profileSetup"
+  const [activeView, setActiveView] = useState("login"); // "login" | "otp" | "googlePhone" | "profileSetup"
   const [phoneNumber, setPhoneNumber] = useState("");
   const [confirmationResult, setConfirmationResult] = useState(null);
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState(null);
+
+  // Google Sign-In pending verification state
+  const [pendingGoogleUser, setPendingGoogleUser] = useState(null);
+  const pendingGoogleLoginRef = useRef(false);
 
   // Subscribe to Firebase Auth and sync with Firestore profile (supports both real Auth & Dev Test UID)
   useEffect(() => {
@@ -56,6 +70,11 @@ export const FirebaseAuthProvider = ({ children }) => {
 
     const unsubscribeAuth = subscribeToAuth(async (firebaseUser) => {
       if (unsubscribeProfile) unsubscribeProfile();
+
+      if (pendingGoogleLoginRef.current) {
+        setLoading(false);
+        return;
+      }
 
       if (firebaseUser) {
         localStorage.removeItem("nitroxxin_dev_test_uid");
@@ -170,36 +189,84 @@ export const FirebaseAuthProvider = ({ children }) => {
   }, []);
 
   const openLogin = useCallback(() => {
+    if (pendingGoogleUser && pendingGoogleLoginRef.current) {
+      logoutUser().catch((e) => console.warn("Cleanup logout on openLogin:", e));
+      setPendingGoogleUser(null);
+      pendingGoogleLoginRef.current = false;
+    }
     setModalError(null);
     setPhoneNumber("");
     setConfirmationResult(null);
     setActiveView("login");
     setIsAuthOpen(true);
-  }, []);
+  }, [pendingGoogleUser]);
 
   const closeAuth = useCallback(() => {
+    if (pendingGoogleUser && pendingGoogleLoginRef.current) {
+      logoutUser().catch((e) => console.warn("Cleanup logout on closeAuth:", e));
+      setPendingGoogleUser(null);
+      pendingGoogleLoginRef.current = false;
+    }
     setIsAuthOpen(false);
     setPhoneNumber("");
     setConfirmationResult(null);
     setModalError(null);
-  }, []);
+  }, [pendingGoogleUser]);
 
   const triggerOTP = useCallback(async (phoneVal, recaptchaVerifier) => {
     setModalLoading(true);
     setModalError(null);
     try {
-      const confirmResult = await sendOTP(phoneVal, recaptchaVerifier);
+      const confirmResult = pendingGoogleUser
+        ? await sendOTPForUser(pendingGoogleUser, phoneVal, recaptchaVerifier)
+        : await sendOTP(phoneVal, recaptchaVerifier);
       setConfirmationResult(confirmResult);
       setPhoneNumber(phoneVal);
       setActiveView("otp");
     } catch (err) {
       console.error("Trigger OTP error:", err);
-      setModalError(err.message || "Failed to send verification code. Please try again.");
+      setModalError(formatAuthError(err));
       throw err;
     } finally {
       setModalLoading(false);
     }
-  }, []);
+  }, [pendingGoogleUser]);
+
+  const submitGooglePhone = useCallback(async (rawPhone) => {
+    const cleanDigits = (rawPhone || "").trim().replace(/\D/g, "");
+    if (!cleanDigits || cleanDigits.length !== 10) {
+      const err = new Error("Please enter a valid 10-digit mobile number");
+      setModalError(err.message);
+      throw err;
+    }
+
+    const fullPhoneNumber = `+91${cleanDigits}`;
+    setModalLoading(true);
+    setModalError(null);
+
+    try {
+      const verifier = getOrCreateRecaptchaVerifier("recaptcha-container", () => {
+        setModalError("reCAPTCHA expired. Please request OTP again.");
+      });
+
+      if (!verifier) {
+        throw new Error("Unable to initialize verification service. Please reload the page.");
+      }
+
+      const confirmResult = await sendOTPForUser(pendingGoogleUser, fullPhoneNumber, verifier);
+      setConfirmationResult(confirmResult);
+      setPhoneNumber(fullPhoneNumber);
+      setActiveView("otp");
+      return confirmResult;
+    } catch (err) {
+      console.error("Failed to send OTP for Google user:", err);
+      resetRecaptchaVerifier("recaptcha-container");
+      setModalError(formatAuthError(err));
+      throw err;
+    } finally {
+      setModalLoading(false);
+    }
+  }, [pendingGoogleUser]);
 
   const confirmOTP = useCallback(async (code) => {
     setModalLoading(true);
@@ -208,39 +275,62 @@ export const FirebaseAuthProvider = ({ children }) => {
       if (!confirmationResult) throw new Error("No verification context found. Please request OTP again.");
       const firebaseUser = await verifyOTP(confirmationResult, code);
 
-      localStorage.setItem("userId", firebaseUser.uid);
-      localStorage.setItem("nitroxxin_auth_uid", firebaseUser.uid);
+      const finalUser = pendingGoogleUser || firebaseUser;
+      const targetUid = finalUser.uid;
+      const verifiedPhone = phoneNumber || firebaseUser.phoneNumber || "";
+
+      localStorage.setItem("userId", targetUid);
+      localStorage.setItem("nitroxxin_auth_uid", targetUid);
       const userPayload = {
-        uid: firebaseUser.uid,
-        phoneNumber: firebaseUser.phoneNumber || phoneNumber || "",
-        phone: firebaseUser.phoneNumber || phoneNumber || "",
+        uid: targetUid,
+        phoneNumber: verifiedPhone,
+        phone: verifiedPhone,
+        fullName: finalUser.displayName || finalUser.fullName || "",
+        displayName: finalUser.displayName || finalUser.fullName || "",
+        email: finalUser.email || "",
+        profilePhoto: finalUser.photoURL || "",
+        photoURL: finalUser.photoURL || "",
+        isPhoneVerified: true,
       };
       localStorage.setItem("nitroxxin_user", JSON.stringify(userPayload));
-      setUser(firebaseUser);
+      setUser(userPayload);
 
-      // Ensure basic user profile exists in Firestore without blocking on full detail setup
+      // Ensure / update basic user profile in Firestore
       try {
-        const ensured = await ensureUserProfile(firebaseUser.uid, {
-          phone: firebaseUser.phoneNumber || phoneNumber || "",
-        });
-        setProfile(ensured);
-        localStorage.setItem("nitroxxin_profile", JSON.stringify(ensured));
+        const userRef = doc(firestoreInstance, "users", targetUid);
+        const profileUpdate = {
+          uid: targetUid,
+          phone: verifiedPhone,
+          phoneNumber: verifiedPhone,
+          fullName: finalUser.displayName || finalUser.fullName || "",
+          displayName: finalUser.displayName || finalUser.fullName || "",
+          email: finalUser.email || "",
+          profilePhoto: finalUser.photoURL || "",
+          photoURL: finalUser.photoURL || "",
+          isPhoneVerified: true,
+          updatedAt: serverTimestamp(),
+        };
+        await setDoc(userRef, profileUpdate, { merge: true });
+        const finalProfile = { id: targetUid, ...profileUpdate };
+        setProfile(finalProfile);
+        localStorage.setItem("nitroxxin_profile", JSON.stringify(finalProfile));
       } catch (profileErr) {
-        console.warn("Could not ensure profile document:", profileErr);
+        console.warn("Could not save profile document:", profileErr);
       }
 
-      // Close auth modal directly upon successful OTP verification
+      setPendingGoogleUser(null);
+      pendingGoogleLoginRef.current = false;
       setIsAuthOpen(false);
       setConfirmationResult(null);
-      return firebaseUser;
+      return finalUser;
     } catch (err) {
       console.error("Confirm OTP error:", err);
-      setModalError(err.message || "Invalid OTP code. Please enter the correct code.");
+      setModalError(formatAuthError(err));
       throw err;
     } finally {
       setModalLoading(false);
     }
-  }, [confirmationResult, phoneNumber]);
+  }, [confirmationResult, phoneNumber, pendingGoogleUser]);
 
   const completeProfileSetup = useCallback(async (userData) => {
     if (!user) throw new Error("No authenticated session found.");
@@ -322,7 +412,7 @@ export const FirebaseAuthProvider = ({ children }) => {
   }, []);
 
   const loginWithPhoneNoOtp = useCallback(async (rawPhone) => {
-    const trimmed = (rawPhone || "").trim().replace(/\D/g, "");
+    const trimmed = (rawPhone || phoneNumber || "").trim().replace(/\D/g, "");
     if (!trimmed || trimmed.length !== 10) {
       const err = new Error("Please enter a valid 10-digit mobile number.");
       setModalError(err.message);
@@ -334,6 +424,46 @@ export const FirebaseAuthProvider = ({ children }) => {
     setModalError(null);
 
     try {
+      if (pendingGoogleUser) {
+        const targetUid = pendingGoogleUser.uid;
+        localStorage.setItem("userId", targetUid);
+        localStorage.setItem("nitroxxin_auth_uid", targetUid);
+
+        const profileUpdate = {
+          id: targetUid,
+          uid: targetUid,
+          phone: fullPhoneNumber,
+          phoneNumber: fullPhoneNumber,
+          fullName: pendingGoogleUser.displayName || `Rider ${trimmed.slice(-4)}`,
+          displayName: pendingGoogleUser.displayName || `Rider ${trimmed.slice(-4)}`,
+          email: pendingGoogleUser.email || "",
+          profilePhoto: pendingGoogleUser.photoURL || "",
+          photoURL: pendingGoogleUser.photoURL || "",
+          isPhoneVerified: true,
+          isProfileComplete: true,
+          updatedAt: serverTimestamp(),
+        };
+
+        const userRef = doc(firestoreInstance, "users", targetUid);
+        await setDoc(userRef, profileUpdate, { merge: true });
+
+        const mockUser = {
+          ...pendingGoogleUser,
+          ...profileUpdate,
+        };
+
+        localStorage.setItem("nitroxxin_user", JSON.stringify(mockUser));
+        localStorage.setItem("nitroxxin_profile", JSON.stringify(profileUpdate));
+
+        setUser(mockUser);
+        setProfile(profileUpdate);
+        setPendingGoogleUser(null);
+        pendingGoogleLoginRef.current = false;
+        setIsAuthOpen(false);
+        setConfirmationResult(null);
+        return mockUser;
+      }
+
       // 1. Check if user already exists with this phone number in Firestore
       let existing = await findExistingUser(fullPhoneNumber);
       if (!existing) {
@@ -355,6 +485,7 @@ export const FirebaseAuthProvider = ({ children }) => {
           displayName: `Rider ${trimmed.slice(-4)}`,
           email: `rider${trimmed.slice(-4)}@test.nitroxxin.com`,
           isProfileComplete: true,
+          isPhoneVerified: true,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         };
@@ -375,6 +506,7 @@ export const FirebaseAuthProvider = ({ children }) => {
         email: existing.email || `rider${trimmed.slice(-4)}@test.nitroxxin.com`,
         ...existing,
         isDevMock: true,
+        isPhoneVerified: true,
       };
 
       localStorage.setItem("nitroxxin_user", JSON.stringify(mockUser));
@@ -387,55 +519,68 @@ export const FirebaseAuthProvider = ({ children }) => {
       setConfirmationResult(null);
       return mockUser;
     } catch (err) {
-      console.error("Localhost No-OTP login failed:", err);
+      console.error("No-OTP login failed:", err);
       setModalError(err.message || "Failed to log in without OTP");
       throw err;
     } finally {
       setModalLoading(false);
     }
-  }, []);
+  }, [pendingGoogleUser, phoneNumber]);
 
   const signInWithGoogle = useCallback(async () => {
     setModalLoading(true);
     setModalError(null);
+    pendingGoogleLoginRef.current = true;
     try {
-      const firebaseUser = await loginWithGoogle();
-      if (firebaseUser) {
-        localStorage.setItem("userId", firebaseUser.uid);
-        localStorage.setItem("nitroxxin_auth_uid", firebaseUser.uid);
-        const userPayload = {
-          uid: firebaseUser.uid,
-          fullName: firebaseUser.displayName || "",
-          displayName: firebaseUser.displayName || "",
-          email: firebaseUser.email || "",
-          profilePhoto: firebaseUser.photoURL || "",
-          photoURL: firebaseUser.photoURL || "",
-          phone: firebaseUser.phoneNumber || "",
-        };
-        localStorage.setItem("nitroxxin_user", JSON.stringify(userPayload));
-        setUser(firebaseUser);
+      const result = await loginWithGoogle();
+      const firebaseUser = result.user;
+      let targetPhone = result.googlePhone || "";
 
+      // Check existing Firestore profile for saved phone number
+      if (!targetPhone) {
         try {
-          const ensured = await ensureUserProfile(firebaseUser.uid, {
-            fullName: firebaseUser.displayName || "",
-            email: firebaseUser.email || "",
-            profilePhoto: firebaseUser.photoURL || "",
-            phone: firebaseUser.phoneNumber || "",
-          });
-          setProfile(ensured);
-          localStorage.setItem("nitroxxin_profile", JSON.stringify(ensured));
-        } catch (profileErr) {
-          console.warn("Could not ensure profile document:", profileErr);
+          const docRef = doc(firestoreInstance, "users", firebaseUser.uid);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists() && docSnap.data().phone) {
+            targetPhone = docSnap.data().phone;
+          }
+        } catch (e) {
+          console.warn("Could not check existing user profile:", e);
         }
-        setIsAuthOpen(false);
-        setConfirmationResult(null);
-        return firebaseUser;
       }
+
+      setPendingGoogleUser(firebaseUser);
+
+      const digits = (targetPhone || "").replace(/\D/g, "");
+      if (digits.length >= 10) {
+        // Phone number obtained from Google data -> Auto send OTP!
+        const fullPhone = digits.length === 10 ? `+91${digits}` : `+${digits}`;
+        setPhoneNumber(fullPhone);
+
+        const verifier = getOrCreateRecaptchaVerifier("recaptcha-container", () => {
+          setModalError("reCAPTCHA expired. Please request OTP again.");
+        });
+
+        if (!verifier) {
+          throw new Error("Unable to initialize verification service. Please reload the page.");
+        }
+
+        const confirmResult = await sendOTPForUser(firebaseUser, fullPhone, verifier);
+        setConfirmationResult(confirmResult);
+        setActiveView("otp");
+      } else {
+        // No phone number available from Google data -> Ask user for their number
+        setActiveView("googlePhone");
+      }
+      return firebaseUser;
     } catch (err) {
       console.error("Google sign-in error in context:", err);
+      pendingGoogleLoginRef.current = false;
+      setPendingGoogleUser(null);
       if (err.code !== "auth/popup-closed-by-user") {
-        setModalError(err.message || "Failed to sign in with Google.");
+        setModalError(formatAuthError(err));
       }
+      resetRecaptchaVerifier("recaptcha-container");
       throw err;
     } finally {
       setModalLoading(false);
@@ -559,6 +704,7 @@ export const FirebaseAuthProvider = ({ children }) => {
     // Modal state
     isAuthOpen,
     activeView,
+    setActiveView,
     phoneNumber,
     modalLoading,
     modalError,
@@ -570,6 +716,10 @@ export const FirebaseAuthProvider = ({ children }) => {
     signInWithGoogle,
     loginWithGoogle: signInWithGoogle,
     completeProfileSetup,
+
+    // Google flow
+    pendingGoogleUser,
+    submitGooglePhone,
   }), [
     user,
     profile,
@@ -593,6 +743,8 @@ export const FirebaseAuthProvider = ({ children }) => {
     confirmOTP,
     signInWithGoogle,
     completeProfileSetup,
+    pendingGoogleUser,
+    submitGooglePhone,
   ]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

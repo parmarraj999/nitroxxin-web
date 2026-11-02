@@ -16,12 +16,6 @@ export default function LoginModal() {
   const [localError, setLocalError] = useState("");
   const [noOtpLoading, setNoOtpLoading] = useState(false);
 
-  const isLocalhost =
-    typeof window !== "undefined" &&
-    (window.location.hostname === "localhost" ||
-      window.location.hostname === "127.0.0.1" ||
-      window.location.hostname === "::1" ||
-      window.location.hostname.includes("192.168."));
 
   const handlePhoneSubmit = async (e) => {
     e.preventDefault();
@@ -144,27 +138,25 @@ export default function LoginModal() {
           )}
         </button>
 
-        {/* Localhost Dev Testing Option: Login directly without OTP */}
-        {isLocalhost && (
-          <button
-            type="button"
-            className="login-action-btn login-btn-no-otp"
-            onClick={handleNoOtpSubmit}
-            disabled={modalLoading || noOtpLoading || phone.length === 0}
-          >
-            {noOtpLoading ? (
-              <span className="login-btn-loading">
-                <span className="login-spinner" />
-                <span>Logging in...</span>
-              </span>
-            ) : (
-              <>
-                <span className="login-no-otp-badge">DEV</span>
-                <span>Login without OTP (Localhost)</span>
-              </>
-            )}
-          </button>
-        )}
+        {/* Dev Testing Option: Login directly without OTP (Available on Mobile & Desktop) */}
+        <button
+          type="button"
+          className="login-action-btn login-btn-no-otp"
+          onClick={handleNoOtpSubmit}
+          disabled={modalLoading || noOtpLoading || phone.length === 0}
+        >
+          {noOtpLoading ? (
+            <span className="login-btn-loading">
+              <span className="login-spinner" />
+              <span>Logging in...</span>
+            </span>
+          ) : (
+            <>
+              <span className="login-no-otp-badge">DEV</span>
+              <span>Login without OTP</span>
+            </>
+          )}
+        </button>
 
         {/* Secondary Action Button: Continue with Google (Dark Pill with Google Icon) */}
         <button

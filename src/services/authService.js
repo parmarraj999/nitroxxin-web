@@ -1,6 +1,7 @@
 import { authInstance } from "./firebase";
 import {
   signInWithPhoneNumber,
+  linkWithPhoneNumber,
   signOut,
   onAuthStateChanged,
   RecaptchaVerifier,
@@ -153,18 +154,96 @@ export const subscribeToAuth = (callback) => {
 };
 
 /**
+ * Attempts to retrieve phone number from Google People API using the OAuth access token.
+ * @param {string} accessToken
+ * @returns {Promise<string|null>}
+ */
+export const getPhoneNumberFromGoogle = async (accessToken) => {
+  if (!accessToken) return null;
+  try {
+    const res = await fetch("https://people.googleapis.com/v1/people/me?personFields=phoneNumbers", {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const phoneList = data.phoneNumbers || [];
+    for (const item of phoneList) {
+      const val = item.canonicalForm || item.value;
+      if (val) return val;
+    }
+  } catch (e) {
+    console.warn("Could not fetch phone number from Google People API:", e);
+  }
+  return null;
+};
+
+/**
  * Initiates Google Sign-In using Firebase Auth popup.
- * @returns {Promise<object>} Firebase User
+ * Also requests phone number scope and attempts to retrieve phone from Google account.
+ * @returns {Promise<{ user: object, accessToken: string|null, googlePhone: string|null }>}
  */
 export const loginWithGoogle = async () => {
   try {
     const provider = new GoogleAuthProvider();
+    provider.addScope("https://www.googleapis.com/auth/user.phonenumbers.read");
     provider.setCustomParameters({ prompt: "select_account" });
     const result = await signInWithPopup(authInstance, provider);
-    return result.user;
+
+    const credential = GoogleAuthProvider.credentialFromResult(result);
+    const accessToken = credential?.accessToken || null;
+
+    let googlePhone = result.user?.phoneNumber || null;
+    if (!googlePhone) {
+      const providerPhone = result.user?.providerData?.find((p) => p.phoneNumber)?.phoneNumber;
+      if (providerPhone) googlePhone = providerPhone;
+    }
+
+    if (!googlePhone && accessToken) {
+      googlePhone = await getPhoneNumberFromGoogle(accessToken);
+    }
+
+    return {
+      user: result.user,
+      accessToken,
+      googlePhone,
+    };
   } catch (error) {
     console.error("Google sign-in error:", error);
     throw error;
   }
+};
+
+/**
+ * Sends OTP for a user already signed in (e.g. Google user), attempting to link the phone number.
+ * Falls back to regular sendOTP if linkWithPhoneNumber fails or throws.
+ * @param {object} currentUser - Firebase auth user
+ * @param {string} phoneNumber - E.164 formatted number (+91...)
+ * @param {object} recaptchaVerifier - RecaptchaVerifier instance
+ * @returns {Promise<object>} confirmationResult
+ */
+export const sendOTPForUser = async (currentUser, phoneNumber, recaptchaVerifier) => {
+  if (currentUser) {
+    try {
+      const confirmationResult = await linkWithPhoneNumber(
+        currentUser,
+        phoneNumber,
+        recaptchaVerifier
+      );
+      return confirmationResult;
+    } catch (err) {
+      console.warn("linkWithPhoneNumber error, falling back to sendOTP:", err);
+      if (
+        err.code === "auth/credential-already-in-use" ||
+        err.code === "auth/provider-already-linked" ||
+        err.code === "auth/invalid-verification-id"
+      ) {
+        return await sendOTP(phoneNumber, recaptchaVerifier);
+      }
+      throw err;
+    }
+  }
+  return await sendOTP(phoneNumber, recaptchaVerifier);
 };
 

@@ -102,6 +102,28 @@
   color: #ffffff;
 }
 
+.ep-search-topnav__cart-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f1f5f9;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ep-search-topnav__cart-btn:hover {
+  background: #ff1f1f;
+  border-color: #ff1f1f;
+  color: #ffffff;
+  transform: scale(1.05);
+}
+
 /* ── MAIN CONTENT CONTAINER ── */
 .ep-search-page__inner {
   width: 90%;
@@ -430,11 +452,12 @@
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* .ep-search-visited-card:hover {
+.ep-search-visited-card:hover {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 31, 31, 0.5);
   transform: translateY(-3px);
-} */
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+}
 
 .ep-search-visited-card__remove {
   position: absolute;
@@ -601,14 +624,23 @@
 
 /* ── EVENT CARD (matching MarketplaceSearch product card structure in dark theme) ── */
 .ep-event-card {
-  /* background: rgba(255, 255, 255, 0.035);
-  border: 1px solid rgba(255, 255, 255, 0.08); */
+  background: #121419;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 18px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   cursor: pointer;
   position: relative;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+}
+
+.ep-event-card:hover {
+  background: #171b24;
+  border-color: rgba(255, 31, 31, 0.45);
+  transform: translateY(-4px);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55), 0 0 20px rgba(255, 31, 31, 0.12);
 }
 
 /* Thumbnail Wrap */
