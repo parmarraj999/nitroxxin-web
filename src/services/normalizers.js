@@ -1,4 +1,5 @@
 import { firstImage, formatDate, formatDateTime, formatPrice } from "../utils/dataFormatters";
+import { extractVendorIdFromData, extractVendorNameFromData } from "./vendorResolver";
 
 export const normalizeProduct = (doc) => {
   const data = doc.data ? doc.data() : doc;
@@ -14,7 +15,8 @@ export const normalizeProduct = (doc) => {
   const category = data.categoryName || data.category || data.categoryId || "";
   const subcategory = data.subcategory || data.subCategory || data.subCategoryName || data.subcategoryId || "";
   const brand = data.brandName || data.brand || data.brandId || "";
-  const vendorName = data.vendorName || data.vendor?.name || data.shopName || data.businessName || "";
+  const vendorId = extractVendorIdFromData(data);
+  const vendorName = extractVendorNameFromData(data, brand || "Authorized Vendor");
   const manufacturer = data.manufacturer || data.maker || "";
 
   const keywords = [
@@ -37,7 +39,7 @@ export const normalizeProduct = (doc) => {
     subCategory: subcategory,
     brand,
     brandName: brand,
-    vendorId: data.vendorId || data.vendor?.id || "",
+    vendorId,
     vendorName,
     manufacturer,
     keywords,

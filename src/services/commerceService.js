@@ -2,6 +2,7 @@ import { COLLECTIONS, auth, db, increment, serverTimestamp, deleteField } from "
 import { normalizeEvent, normalizeProduct } from "./normalizers";
 import { generateTicketCode, generateTicketSignature } from "../utils/ticketSecurity";
 import { generateWholeOrderId, generateVendorOrderId } from "../payments/placeOrder";
+import { resolveRealVendorForItem, resolveRealVendorsForItems, isPlaceholderVendorId } from "./vendorResolver";
 
 const DEFAULT_VENDOR_ID = "nitroxx-default-vendor";
 
@@ -29,6 +30,24 @@ export const addToCart = async ({ userId, product, quantity = 1, options = {} })
   const uid = userId || auth().currentUser?.uid;
   if (!uid) throw new Error("Please log in to add items to cart.");
   const item = normalizeProduct(product);
+
+  let vendorId = item.vendorId;
+  let vendorName = item.vendorName;
+
+  if (!vendorId || isPlaceholderVendorId(vendorId)) {
+    try {
+      const resolved = await resolveRealVendorForItem(item, db());
+      if (resolved.vendorId && !isPlaceholderVendorId(resolved.vendorId)) {
+        vendorId = resolved.vendorId;
+      }
+      if (resolved.vendorName) {
+        vendorName = resolved.vendorName;
+      }
+    } catch (e) {
+      console.warn("Error resolving vendor during addToCart:", e);
+    }
+  }
+
   const id = `${item.id}_${options.size || options.color || "default"}`;
 
   // Only store fields essential for cart page, transactions, and order placement
@@ -42,8 +61,8 @@ export const addToCart = async ({ userId, product, quantity = 1, options = {} })
     offerPrice: Number(item.offerPrice || item.price || 0),
     brand: item.brand || item.brandName || "",
     category: item.category || item.categoryName || "",
-    vendorId: item.vendorId || DEFAULT_VENDOR_ID,
-    vendorName: item.vendorName || "Nitroxx Moto Gear",
+    vendorId: vendorId || DEFAULT_VENDOR_ID,
+    vendorName: vendorName || item.brand || "Authorized Vendor",
     quantity: increment(quantity),
     options: {
       size: options.size || "",
@@ -104,16 +123,25 @@ export const placeOrder = async ({ user, profile, cartItems, shipping, paymentId
     paymentId ||
     `pay_${Date.now().toString(36)}${Math.random().toString(36).substring(2, 7)}`;
 
-  const groupedItems = cartItems.reduce((groups, item) => {
+  // Resolve genuine marketplace vendors for all cart items
+  const resolvedCartItems = await resolveRealVendorsForItems(cartItems, db());
+
+  const groupedItems = resolvedCartItems.reduce((groups, item) => {
     const product = normalizeProduct(item.productSnapshot || item.product || item);
-    const vendorId = item.vendorId || product.vendorId || DEFAULT_VENDOR_ID;
+    const vendorId =
+      item.vendorId && !isPlaceholderVendorId(item.vendorId)
+        ? item.vendorId
+        : product.vendorId && !isPlaceholderVendorId(product.vendorId)
+        ? product.vendorId
+        : DEFAULT_VENDOR_ID;
+
     const unitPrice = toNumber(item.offerPrice ?? product.offerPrice ?? item.price ?? product.price ?? 0);
     const normalized = {
       productId: item.productId || product.id,
       name: item.name || product.name || "Accessory Item",
       image: item.image || product.image || "",
       vendorId,
-      vendorName: item.vendorName || product.vendorName || "Nitroxx Partner",
+      vendorName: item.vendorName || product.vendorName || product.brand || "Authorized Vendor",
       quantity: toNumber(item.quantity, 1),
       options: item.options || {},
       unitPrice,
@@ -251,6 +279,24 @@ export const saveWishlistItem = async ({ userId, product }) => {
   const uid = userId || auth().currentUser?.uid;
   if (!uid) throw new Error("Please log in to save items.");
   const item = normalizeProduct(product);
+
+  let vendorId = item.vendorId;
+  let vendorName = item.vendorName;
+
+  if (!vendorId || isPlaceholderVendorId(vendorId)) {
+    try {
+      const resolved = await resolveRealVendorForItem(item, db());
+      if (resolved.vendorId && !isPlaceholderVendorId(resolved.vendorId)) {
+        vendorId = resolved.vendorId;
+      }
+      if (resolved.vendorName) {
+        vendorName = resolved.vendorName;
+      }
+    } catch (e) {
+      console.warn("Error resolving vendor during saveWishlistItem:", e);
+    }
+  }
+
   const docId = String(item.id);
 
   const wishlistData = compact({
@@ -264,8 +310,8 @@ export const saveWishlistItem = async ({ userId, product }) => {
     offerPrice: Number(item.offerPrice || item.price || 0),
     brand: item.brand || item.brandName || "",
     category: item.category || item.categoryName || "",
-    vendorId: item.vendorId || DEFAULT_VENDOR_ID,
-    vendorName: item.vendorName || "Nitroxx Moto Gear",
+    vendorId: vendorId || DEFAULT_VENDOR_ID,
+    vendorName: vendorName || item.brand || "Authorized Vendor",
     updatedAt: serverTimestamp(),
     createdAt: serverTimestamp(),
   });
@@ -752,12 +798,24 @@ export const submitReview = async ({ productId, productName, vendorId, user, pro
   const userReviewDoc = db().collection("users").doc(user.uid).collection("reviews").doc();
   const reviewId = userReviewDoc.id;
 
+  let resolvedVendorId = vendorId;
+  if (!resolvedVendorId || isPlaceholderVendorId(resolvedVendorId)) {
+    try {
+      const resolved = await resolveRealVendorForItem({ productId }, db());
+      if (resolved.vendorId && !isPlaceholderVendorId(resolved.vendorId)) {
+        resolvedVendorId = resolved.vendorId;
+      }
+    } catch (e) {
+      console.warn("Could not resolve vendor for review:", e);
+    }
+  }
+
   const payload = compact({
     id: reviewId,
     reviewId,
     productId,
     productName: productName || "Product",
-    vendorId: vendorId || DEFAULT_VENDOR_ID,
+    vendorId: resolvedVendorId || DEFAULT_VENDOR_ID,
     userId: user.uid,
     customer: profile?.fullName || profile?.name || profile?.displayName || user.fullName || user.displayName || user.email?.split("@")[0] || "Verified Customer",
     customerPhoto: profile?.profilePhoto || profile?.photoURL || user.photoURL || "",

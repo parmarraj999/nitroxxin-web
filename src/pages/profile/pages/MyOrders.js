@@ -180,8 +180,8 @@ export default function MyOrders() {
 
         return {
           id: doc.id,
-          vendorId: doc.vendorId || "nitroxx-default-vendor",
-          vendorName: doc.vendorName || "Nitroxx Partner",
+          vendorId: doc.vendorId || doc.primaryVendorId || "",
+          vendorName: doc.vendorName || doc.primaryVendorName || "Authorized Vendor",
           vendorOrderId: vendorOrderId,
           status,
           statusMessage,

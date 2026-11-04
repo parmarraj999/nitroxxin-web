@@ -1,5 +1,6 @@
 import { db, COLLECTIONS, serverTimestamp } from "../services/firebase";
 import { normalizeProduct } from "../services/normalizers";
+import { resolveRealVendorsForItems, isPlaceholderVendorId } from "../services/vendorResolver";
 
 /**
  * Generates whole-order ID (e.g. NTX123456789ORD)
@@ -63,18 +64,23 @@ export const AddOrderToFirestore = async ({
     const database = db();
     const batch = database.batch();
 
-    // 2. Normalize items for order records
-    const normalizedItems = cartItems.map((item) => {
+    // 2. Resolve genuine marketplace vendors for all cart items
+    const resolvedCartItems = await resolveRealVendorsForItems(cartItems, database);
+
+    // Normalize items for order records
+    const normalizedItems = resolvedCartItems.map((item) => {
       const prod = normalizeProduct(item.productSnapshot || item.product || item);
       const vendorId =
-        item.vendorId ||
-        prod.vendorId ||
-        "nitroxx-default-vendor";
+        item.vendorId && !isPlaceholderVendorId(item.vendorId)
+          ? item.vendorId
+          : prod.vendorId && !isPlaceholderVendorId(prod.vendorId)
+          ? prod.vendorId
+          : "nitroxx-default-vendor";
+
       const vendorName =
-        item.vendorName ||
-        prod.vendorName ||
-        prod.brand ||
-        "Nitroxx Moto Gear";
+        item.vendorName && item.vendorName !== "Nitroxx Moto Gear"
+          ? item.vendorName
+          : prod.vendorName || prod.brand || "Authorized Vendor";
 
       return {
         id: item.id || prod.id,
@@ -99,7 +105,7 @@ export const AddOrderToFirestore = async ({
       if (!vendorMap[vId]) {
         vendorMap[vId] = {
           vendorId: vId,
-          vendorName: item.vendorName || "Nitroxx Moto Gear",
+          vendorName: item.vendorName || "Authorized Vendor",
           items: [],
           totalAmount: 0,
         };
@@ -181,6 +187,23 @@ export const AddOrderToFirestore = async ({
         .collection("orders")
         .doc(orderRef.id);
       batch.set(vendorSubcollectionRef, vendorOrderDoc);
+
+      // D. Vendor notification in 'notifications' collection
+      const notificationRef = database.collection(COLLECTIONS.notifications || "notifications").doc();
+      batch.set(notificationRef, {
+        vendorId: vId,
+        userId: vId,
+        type: "order-created",
+        title: "New order received",
+        body: `${customerData.name || "Customer"} placed order ${vendorOrderId}.`,
+        orderId: orderRef.id,
+        publicOrderId: vendorOrderId,
+        wholeOrderId: wholeOrderId,
+        vendorOrderId: vendorOrderId,
+        read: false,
+        isRead: false,
+        createdAt: serverTimestamp(),
+      });
 
       createdVendorOrders.push({
         docId: orderRef.id,

@@ -18,7 +18,7 @@ import { normalizeProduct } from "../../../services/normalizers";
 export default function AccessoriesDetail() {
   const { id } = useParams();
   const { data, loading } = useDocument(COLLECTIONS.products, id);
-  const product = data ? normalizeProduct(data) : null;
+  const product = data ? normalizeProduct(data) : null; 
   console.log(product)
 
   return (

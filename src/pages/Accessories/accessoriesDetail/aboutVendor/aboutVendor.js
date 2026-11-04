@@ -1,11 +1,34 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import "./aboutVendor.css";
 import { useDocument } from "../../../../hooks/useFirestore";
 import { COLLECTIONS } from "../../../../services/firebase";
+import { resolveRealVendorForItem, isPlaceholderVendorId } from "../../../../services/vendorResolver";
 
 export function AboutVendor({ product }) {
-  const vendorId = product?.vendorId || "";
-  const { data: vendorDoc } = useDocument(COLLECTIONS.vendors, vendorId);
+  const initialVendorId = product?.vendorId || "";
+  const [resolvedVendorId, setResolvedVendorId] = useState(initialVendorId);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (product && (!product.vendorId || isPlaceholderVendorId(product.vendorId))) {
+      resolveRealVendorForItem(product)
+        .then((res) => {
+          if (isMounted && res.vendorId && !isPlaceholderVendorId(res.vendorId)) {
+            setResolvedVendorId(res.vendorId);
+          }
+        })
+        .catch(() => {});
+    } else if (product?.vendorId) {
+      setResolvedVendorId(product.vendorId);
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [product]);
+
+  const activeVendorId = resolvedVendorId || initialVendorId;
+  const vendorId = activeVendorId;
+  const { data: vendorDoc } = useDocument(COLLECTIONS.vendors, activeVendorId);
 
   // Derive vendor attributes with graceful fallbacks
   const businessName =

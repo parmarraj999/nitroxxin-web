@@ -132,7 +132,7 @@ export default function OrderDetailModal({ order, onClose, user }) {
       ? order.vendorPackages
       : [
           {
-            vendorName: "Nitroxx Partner",
+            vendorName: order.vendorName || order.primaryVendorName || "Authorized Vendor",
             vendorOrderId: orderId,
             status: order.status,
             statusMessage: order.statusMessage,
@@ -668,7 +668,7 @@ export default function OrderDetailModal({ order, onClose, user }) {
                         <span className="nx-dark-inv-item-specs">{item.specs}</span>
                       )}
                       <span className="nx-dark-inv-item-seller">
-                        Sold by: {item.vendorName || currentPkg.vendorName || "Nitroxx Partner"}
+                        Sold by: {item.vendorName || currentPkg.vendorName || order.vendorName || "Authorized Vendor"}
                       </span>
                     </div>
                   </div>
