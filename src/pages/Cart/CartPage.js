@@ -12,6 +12,25 @@ import "./CartPage.css";
 
 const money = (value) => `Rs. ${Math.round(Number(value || 0)).toLocaleString("en-IN")}`;
 
+const formatCartVariant = (options) => {
+  if (!options || typeof options !== "object") return "Standard";
+  const parts = [];
+  if (options.color) parts.push(`Color: ${options.color}`);
+  if (options.size) parts.push(`Size: ${options.size}`);
+
+  Object.entries(options).forEach(([k, v]) => {
+    const lk = k.toLowerCase();
+    if (
+      !["size", "color", "variantid", "sku", "price", "stock", "comboid", "combotitle", "bundleid", "bundletitle"].includes(lk) &&
+      v
+    ) {
+      parts.push(`${k.charAt(0).toUpperCase() + k.slice(1)}: ${v}`);
+    }
+  });
+
+  return parts.length ? parts.join(" • ") : (options.size || options.color || "Standard");
+};
+
 export default function CartPage() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
@@ -224,11 +243,23 @@ export default function CartPage() {
     );
   }
 
+  const handleBack = () => {
+    if (!cartItems.length) {
+      navigate("/accessories");
+      return;
+    }
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/accessories");
+    }
+  };
+
   return (
     <div className="cart-page">
       <header className="cart-page__header">
         <div className="cart-page__title-group">
-          <button className="cart-page__back-btn" onClick={() => navigate(-1)} aria-label="Go back">
+          <button className="cart-page__back-btn" onClick={handleBack} aria-label="Go back">
             <FiArrowLeft size={24} />
           </button>
           <div>
@@ -243,6 +274,9 @@ export default function CartPage() {
         <div className="nx-empty-state nx-empty-state--light">
           <h3>Your cart is empty</h3>
           <p>Add products from Accessories and they will stay synced here in real time.</p>
+          <Link to="/accessories" className="cart-empty-explore-btn">
+            Explore Accessories
+          </Link>
         </div>
       ) : (
         <div className="cart-page__layout">
@@ -259,8 +293,9 @@ export default function CartPage() {
                   <div className="cart-item__body">
                     <p>{product.brand || product.category}</p>
                     <h2>{product.name}</h2>
-                    <span>Variant: {item.options?.size || item.options?.color || "Standard"}</span>
-                    <strong>{product.offerPriceText || product.priceText || money(product.offerPrice || product.price)}</strong>
+                    <span>Variant: {formatCartVariant(item.options)}</span>
+                    {item.sku && <span className="cart-item__sku" style={{ fontSize: "12px", color: "#64748b", margin: "2px 0" }}>SKU: {item.sku}</span>}
+                    <strong>{money(item.offerPrice || item.price || product.offerPrice || product.price)}</strong>
                     <div className="cart-item__actions">
                       <button onClick={() => updateCartQuantity(item.id, Math.max(1, quantity - 1), user?.uid)}>-</button>
                       <span>{quantity}</span>

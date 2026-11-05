@@ -82,19 +82,37 @@ export const AddOrderToFirestore = async ({
           ? item.vendorName
           : prod.vendorName || prod.brand || "Authorized Vendor";
 
+      const formatOrderSpecs = (options) => {
+        if (!options || typeof options !== "object") return "Standard";
+        const parts = [];
+        if (options.color) parts.push(`Color: ${options.color}`);
+        if (options.size) parts.push(`Size: ${options.size}`);
+        Object.entries(options).forEach(([k, v]) => {
+          const lk = k.toLowerCase();
+          if (
+            !["size", "color", "variantid", "sku", "price", "stock", "comboid", "combotitle", "bundleid", "bundletitle"].includes(lk) &&
+            v
+          ) {
+            parts.push(`${k.charAt(0).toUpperCase() + k.slice(1)}: ${v}`);
+          }
+        });
+        if (options.sku) parts.push(`SKU: ${options.sku}`);
+        return parts.length ? parts.join(" • ") : "Standard";
+      };
+
       return {
         id: item.id || prod.id,
         productId: item.productId || prod.productId || prod.id,
+        variantId: item.options?.variantId || item.variantId || "",
+        sku: item.options?.sku || item.sku || prod.sku || "",
         name: item.name || prod.name || prod.title || "Accessory Item",
         price: Number(item.offerPrice ?? prod.offerPrice ?? item.price ?? prod.price ?? 0),
         quantity: Number(item.quantity || 1),
         image: item.image || prod.image || "",
         vendorId,
         vendorName,
-        specs:
-          item.options?.size || item.options?.color
-            ? `Size: ${item.options?.size || "Standard"} • Color: ${item.options?.color || "Standard"}`
-            : "Standard",
+        specs: formatOrderSpecs(item.options),
+        options: item.options || {},
       };
     });
 
@@ -159,12 +177,14 @@ export const AddOrderToFirestore = async ({
         // Shipping & delivery
         deliveryAddress: deliveryAddressStr,
         shipping: shipping,
-        // Status & payment info
+        // Status & payment info (All newly placed vendor orders default to pending)
         paymentMethod: "Razorpay Online",
         paymentMode: "Prepaid (Razorpay)",
         paymentStatus: "paid",
-        status: "confirmed",
-        statusMessage: `Your order has been confirmed and is being processed by ${vData.vendorName}.`,
+        status: "pending",
+        orderStatus: "pending",
+        vendorOrderStatus: "pending",
+        statusMessage: `Your order has been placed and is pending confirmation by ${vData.vendorName}.`,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
@@ -194,8 +214,8 @@ export const AddOrderToFirestore = async ({
         vendorId: vId,
         userId: vId,
         type: "order-created",
-        title: "New order received",
-        body: `${customerData.name || "Customer"} placed order ${vendorOrderId}.`,
+        title: "New order received (Pending)",
+        body: `${customerData.name || "Customer"} placed order ${vendorOrderId} (Pending confirmation).`,
         orderId: orderRef.id,
         publicOrderId: vendorOrderId,
         wholeOrderId: wholeOrderId,
@@ -212,6 +232,7 @@ export const AddOrderToFirestore = async ({
         vendorName: vData.vendorName,
         itemCount: vendorItemCount,
         total: vData.totalAmount,
+        status: "pending",
       });
     }
 

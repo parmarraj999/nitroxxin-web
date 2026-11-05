@@ -259,6 +259,12 @@
   border: 1px solid rgba(37, 99, 235, 0.32);
 }
 
+.nx-dark-inv-status-pill.is-pending {
+  background: rgba(245, 158, 11, 0.16);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.32);
+}
+
 .nx-dark-inv-status-pill.is-cancelled {
   background: rgba(239, 68, 68, 0.16);
   color: #f87171;

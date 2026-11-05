@@ -42,24 +42,48 @@ function InfoSection({ title, rows }) {
 }
 
 export function AdditionalInfo({ product }) {
+  // Extract custom attributes provided by the vendor
+  const rawCustom = product?.customAttributes;
+  const customRows = Array.isArray(rawCustom)
+    ? rawCustom
+        .map((item) => [labelize(item?.key || item?.name || item?.label || ""), item?.value ?? item?.val ?? ""])
+        .filter(([k, v]) => k && notEmpty(v))
+    : rawCustom && typeof rawCustom === "object"
+    ? Object.entries(rawCustom)
+        .map(([k, v]) => [labelize(k), v])
+        .filter(([k, v]) => k && notEmpty(v))
+    : [];
+
+  // Extract variants options summary if variants array is present
+  const variantColors = [];
+  const variantSizes = [];
+  const variantSkus = [];
+  if (Array.isArray(product?.variants)) {
+    product.variants.forEach((v) => {
+      if (v?.options?.color && !variantColors.includes(v.options.color)) variantColors.push(v.options.color);
+      if (v?.options?.size && !variantSizes.includes(v.options.size)) variantSizes.push(v.options.size);
+      if (v?.sku && !variantSkus.includes(v.sku)) variantSkus.push(v.sku);
+    });
+  }
+
   // Product identity
   const identityRows = [
     ["Brand", product?.brand],
     ["Manufacturer", product?.manufacturer],
     ["Vendor", product?.vendorName],
-    ["SKU", product?.sku],
+    ["SKU", product?.sku || (variantSkus.length ? variantSkus.join(", ") : "")],
     ["Product Type", product?.productType],
     ["Collection", product?.collection],
     ["Country of Manufacture", product?.countryOfManufacture],
   ];
 
-  // Physical specs
+  // Physical specs (with fallbacks to custom attributes)
   const physicalRows = [
     ["Dimensions", product?.dimensions],
-    ["Weight", product?.weight],
-    ["Material", product?.attributes?.material],
-    ["Color Options", product?.colorOptions],
-    ["Size Options", product?.sizeOptions],
+    ["Weight", product?.weight || customRows.find(([k]) => k.toLowerCase() === "weight")?.[1]],
+    ["Material", product?.attributes?.material || customRows.find(([k]) => k.toLowerCase() === "material")?.[1]],
+    ["Color Options", product?.colorOptions?.length ? product.colorOptions : (variantColors.length ? variantColors : null)],
+    ["Size Options", product?.sizeOptions?.length ? product.sizeOptions : (variantSizes.length ? variantSizes : null)],
   ];
 
   // Safety & certifications
@@ -73,15 +97,18 @@ export function AdditionalInfo({ product }) {
     ["Reflective Panels", product?.attributes?.reflectivePanels],
     ["CE Armour", product?.attributes?.ceArmour],
     ["Waterproof", product?.attributes?.waterproof],
-    ...Object.entries(safety).filter(([k]) => !["CELevel1","CELevel2","ECE","DOT","BIS"].includes(k)).map(([k,v]) => [labelize(k), v]),
+    ...Object.entries(safety)
+      .filter(([k]) => !["CELevel1", "CELevel2", "ECE", "DOT", "BIS"].includes(k))
+      .map(([k, v]) => [labelize(k), v]),
   ];
 
-  // Policies
+  // Policies (with warranty fallback to custom attributes like 'warrenty' or 'warranty')
   const shipping = product?.shipping || {};
+  const warrantyVal = product?.warranty || customRows.find(([k]) => k.toLowerCase().includes("warr"))?.[1];
   const policyRows = [
     ["Return Policy", product?.returnPolicy || shipping.returnPolicy],
     ["Replacement Policy", product?.replacementPolicy],
-    ["Warranty", product?.warranty],
+    ["Warranty", warrantyVal],
     ["Dispatch Time", shipping.dispatchTime],
     ["Care Instructions", product?.careInstructions],
   ];
@@ -92,7 +119,9 @@ export function AdditionalInfo({ product }) {
     ["Bike Brand", compat.bikeBrand],
     ["Universal Product", compat.universalProduct],
     ["Compatible Bikes", product?.seo?.compatibleBikes],
-    ...Object.entries(compat).filter(([k]) => !["bikeBrand","universalProduct"].includes(k)).map(([k,v]) => [labelize(k), v]),
+    ...Object.entries(compat)
+      .filter(([k]) => !["bikeBrand", "universalProduct"].includes(k))
+      .map(([k, v]) => [labelize(k), v]),
   ];
 
   // Extra specs from Firestore fields
@@ -108,6 +137,11 @@ export function AdditionalInfo({ product }) {
 
       <InfoSection title="Identity" rows={identityRows} />
       <InfoSection title="Physical Specs" rows={physicalRows} />
+
+      {/* Vendor Custom Attributes & Specifications */}
+      {customRows.length > 0 && (
+        <InfoSection title="Custom Attributes & Specifications" rows={customRows} />
+      )}
 
       {specsRows.length > 0 && <InfoSection title="Specifications" rows={specsRows} />}
 

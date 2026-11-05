@@ -55,10 +55,10 @@ code {
 .nx-empty-state {
   width: min(760px, calc(100% - 40px));
   margin: 110px auto 40px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  /* border: 1px solid rgba(255, 255, 255, 0.14); */
   border-radius: 8px;
   padding: 34px;
-  background: rgba(20, 22, 25, 0.78);
+  /* background: rgba(20, 22, 25, 0.78); */
   color: #fff;
   text-align: center;
 }

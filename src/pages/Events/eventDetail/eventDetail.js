@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 import React, { useEffect, useMemo, useState } from "react";
 import "./eventDetail.css";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useDocument } from "../../../hooks/useFirestore";
 import { COLLECTIONS, db } from "../../../services/firebase";
 import { normalizeEvent } from "../../../services/normalizers";
@@ -15,6 +15,7 @@ import {
 import { useAuth } from "../../../context/AuthContext";
 import { useAuthModal } from "../../../components/AuthModal/useAuthModal";
 import { formatCategoryValue, getCategoryDetails } from "../eventCategoryConfig";
+import { getEventStatusInfo } from "../../../utils/eventStatus";
 
 const listFrom = (...values) =>
   values.flatMap((value) => {
@@ -45,6 +46,7 @@ const ExpandableText = ({ text, maxLength = 150 }) => {
 
 export default function EventDetail() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams();
 
   const { events, eventsLoading } = useEventsContext();
@@ -122,6 +124,8 @@ export default function EventDetail() {
 
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
+
+  const statusInfo = useMemo(() => getEventStatusInfo(event), [event]);
 
   const { priceKicker, priceDisplay, priceSub } = useMemo(() => {
     if (!event) return { priceKicker: "Starts from", priceDisplay: "₹0", priceSub: "Paid" };
@@ -277,11 +281,47 @@ export default function EventDetail() {
     }
   }, [user?.uid, event?.id]);
 
+  // Prevent browser back button loop to booking or profile if user recently booked this event
+  useEffect(() => {
+    const bookedEventId = sessionStorage.getItem("nx_booked_event_id");
+    if (
+      location.state?.fromBooking ||
+      location.state?.fromProfile ||
+      (bookedEventId && bookedEventId === String(id))
+    ) {
+      const handlePopState = () => {
+        const lastList = sessionStorage.getItem("nx_last_events_list") || "/events";
+        sessionStorage.removeItem("nx_booked_event_id");
+        sessionStorage.removeItem("nx_last_site_path");
+        navigate(lastList, { replace: true });
+      };
+
+      window.addEventListener("popstate", handlePopState);
+      return () => {
+        window.removeEventListener("popstate", handlePopState);
+      };
+    }
+  }, [id, location.state, navigate]);
+
   const handleBack = () => {
+    const bookedEventId = sessionStorage.getItem("nx_booked_event_id");
+    const lastList = sessionStorage.getItem("nx_last_events_list") || "/events";
+
+    if (
+      location.state?.fromBooking ||
+      location.state?.fromProfile ||
+      (bookedEventId && bookedEventId === String(id))
+    ) {
+      sessionStorage.removeItem("nx_booked_event_id");
+      sessionStorage.removeItem("nx_last_site_path");
+      navigate(lastList, { replace: true });
+      return;
+    }
+
     if (window.history.length > 1) {
       navigate(-1);
     } else {
-      navigate("/events");
+      navigate(lastList);
     }
   };
 
@@ -539,11 +579,19 @@ export default function EventDetail() {
           </div>
 
           <p className="ed-event-title">{event.title || event.name}</p>
-          <p className="ed-event-meta">
-            {event.category && <span className="ed-event-category">{event.category}</span>}
-            <span className="ed-event-date">{event.dateTimeText || event.dateText}</span>
-            <span className="ed-event-location"> | {event.location}</span>
-          </p>
+          <div className="ed-event-meta-wrap">
+            <p className="ed-event-meta">
+              {event.category && <span className="ed-event-category">{event.category}</span>}
+              <span className="ed-event-date">{event.dateTimeText || event.dateText}</span>
+              <span className="ed-event-location"> | {event.location}</span>
+            </p>
+            {!statusInfo.canBook && (
+              <span className={`ed-header-status-badge ${statusInfo.badgeClass}`}>
+                <span className="ed-status-tag-dot" />
+                {statusInfo.badgeText}
+              </span>
+            )}
+          </div>
 
           <div className="ed-body-row">
             <div className="ed-body-left">
@@ -728,8 +776,13 @@ export default function EventDetail() {
                     <div className="ed-info-row">
                       <div className="ed-info-icon-box"><svg xmlns="http://www.w3.org/2000/svg" color="white" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg></div>
                       <div className="ed-info-text">
-                        <p className="ed-info-label">Registration</p>
-                        <p className="ed-info-sub">{event.registrationStart} → {event.registrationEnd}</p>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                          <p className="ed-info-label" style={{ margin: 0 }}>Registration</p>
+                          <span className={`ed-reg-pill ${statusInfo.isRegistrationClosed || statusInfo.isCompleted ? 'ed-reg-pill--closed' : statusInfo.isRegistrationUpcoming ? 'ed-reg-pill--upcoming' : 'ed-reg-pill--open'}`}>
+                            {statusInfo.isCompleted ? 'Concluded' : statusInfo.isRegistrationClosed ? 'Closed' : statusInfo.isRegistrationUpcoming ? 'Opens Soon' : 'Open'}
+                          </span>
+                        </div>
+                        <p className="ed-info-sub">{event.registrationStart || 'Now'} → {event.registrationEnd || 'Event Day'}</p>
                       </div>
                     </div>
                   </>
@@ -740,20 +793,60 @@ export default function EventDetail() {
                     <p className="ed-price">{event.ticketPrice ? `₹${event.ticketPrice}` : (event.priceText || "Free")}</p>
                     {event.ticketType && <p className="ed-info-sub" style={{ marginTop: 2 }}>{event.ticketType}</p>}
                   </div>
-                  <button
-                    className="ed-book-btn"
-                    onClick={() => navigate(`/event/${event.id}/book`, {
-                      state: { event, ticketTemplateUrl: event.ticketTemplateUrl }
-                    })}
-                  >
-                    Book Ticket
-                  </button>
+                  {statusInfo.canBook ? (
+                    <button
+                      className="ed-book-btn"
+                      onClick={() => navigate(`/event/${event.id}/book`, {
+                        state: {
+                          event,
+                          ticketTemplateUrl: event.ticketTemplateUrl,
+                          fromDetail: true,
+                          fromPath: location.pathname,
+                        }
+                      })}
+                    >
+                      Book Ticket
+                    </button>
+                  ) : (
+                    <div className={`ed-status-tag ${statusInfo.badgeClass}`} title={statusInfo.message}>
+                      <span className="ed-status-tag-dot" />
+                      {statusInfo.badgeText}
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Organizer Card */}
-              <div className="ed-organizer-card">
-                <p className="ed-organizer-heading">Organizer</p>
+              <div
+                className="ed-organizer-card"
+                onClick={() => {
+                  const orgName = event.organizerName || event.hostName || "Nitroxx Partner";
+                  const targetSlug = String(event.organizerId || event.hostId || orgName)
+                    .toLowerCase()
+                    .replace(/[^\w\s-]/g, '')
+                    .replace(/[\s_-]+/g, '-')
+                    .replace(/^-+|-+$/g, '');
+                  navigate(`/organizer/${targetSlug}`, {
+                    state: {
+                      organizer: {
+                        id: targetSlug,
+                        name: orgName,
+                        logoUrl: event.hostPhotoURL || event.organizerPhoto,
+                        city: event.city || event.location,
+                      },
+                      fromPath: location.pathname,
+                    },
+                  });
+                }}
+                style={{ cursor: "pointer" }}
+                title="View Organizer Details"
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <p className="ed-organizer-heading" style={{ margin: 0 }}>Organizer</p>
+                  <span style={{ fontSize: '12px', color: '#ff2244', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    View Profile →
+                  </span>
+                </div>
                 <div className="ed-organizer-profile">
                   {(event.hostPhotoURL || event.organizerPhoto) ? (
                     <img src={event.hostPhotoURL || event.organizerPhoto} alt={event.hostName || event.organizerName} className="ed-organizer-avatar" />
@@ -893,16 +986,28 @@ export default function EventDetail() {
             <span className="ed-mobile-bar-price">{priceDisplay}</span>
             {/* <span className="ed-mobile-bar-type">{priceSub}</span> */}
           </div>
-          <button
-            type="button"
-            className="ed-mobile-bar-btn"
-            onClick={() => navigate(`/event/${event.id}/book`, {
-              state: { event, ticketTemplateUrl: event.ticketTemplateUrl }
-            })}
-            aria-label="Book Ticket"
-          >
-            <span className="ed-mobile-bar-btn-line">Book Ticket</span>
-          </button>
+          {statusInfo.canBook ? (
+            <button
+              type="button"
+              className="ed-mobile-bar-btn"
+              onClick={() => navigate(`/event/${event.id}/book`, {
+                state: {
+                  event,
+                  ticketTemplateUrl: event.ticketTemplateUrl,
+                  fromDetail: true,
+                  fromPath: location.pathname,
+                }
+              })}
+              aria-label="Book Ticket"
+            >
+              <span className="ed-mobile-bar-btn-line">Book Ticket</span>
+            </button>
+          ) : (
+            <div className={`ed-mobile-bar-tag ${statusInfo.badgeClass}`} title={statusInfo.message}>
+              <span className="ed-status-tag-dot" />
+              <span>{statusInfo.badgeText}</span>
+            </div>
+          )}
         </div>
       )}
     </div>

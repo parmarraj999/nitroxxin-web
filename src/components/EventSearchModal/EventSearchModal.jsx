@@ -302,7 +302,7 @@ export default function EventSearchModal({
 
     // Prevent background scrolling on mobile when open
     const prevOverflow = document.body.style.overflow;
-    if (window.innerWidth <= 840) {
+    if (window.innerWidth <= 960) {
       document.body.style.overflow = "hidden";
     }
 
@@ -315,7 +315,7 @@ export default function EventSearchModal({
 
   // Focus internal mobile search input when opened on mobile
   useEffect(() => {
-    if (isOpen && window.innerWidth <= 840) {
+    if (isOpen && window.innerWidth <= 960) {
       const timer = setTimeout(() => {
         if (internalInputRef.current) {
           internalInputRef.current.focus();
@@ -861,21 +861,12 @@ export default function EventSearchModal({
               </div>
             ) : (
               <div className="esp-no-results">
-                <div className="esp-no-results__icon">
-                  <svg
-                    width="42"
-                    height="42"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#71717a"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <circle cx="11" cy="11" r="8" />
-                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                  </svg>
-                </div>
+                <img
+                  src="/assets/images/no-matching.png"
+                  alt="No events found"
+                  className="esp-no-results__image"
+                  loading="lazy"
+                />
                 <h3 className="esp-no-results__title">
                   No events found matching "{activeQuery}"
                 </h3>

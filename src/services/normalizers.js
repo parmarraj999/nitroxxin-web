@@ -28,6 +28,65 @@ export const normalizeProduct = (doc) => {
     ...(Array.isArray(data.tags) ? data.tags : []),
   ];
 
+  // Normalize customAttributes (e.g. [{ key: "weight", value: "1450g" }, { key: "warrenty", value: "5 year" }])
+  const rawCustomAttributes = data.customAttributes || data.attributes?.custom || [];
+  let customAttributes = [];
+  if (Array.isArray(rawCustomAttributes)) {
+    customAttributes = rawCustomAttributes
+      .map((item) => {
+        if (!item || typeof item !== "object") return null;
+        const key = String(item.key || item.name || item.label || item.attribute || "").trim();
+        const value = item.value !== undefined ? item.value : (item.val !== undefined ? item.val : "");
+        return key ? { key, value } : null;
+      })
+      .filter(Boolean);
+  } else if (rawCustomAttributes && typeof rawCustomAttributes === "object") {
+    customAttributes = Object.entries(rawCustomAttributes)
+      .map(([k, v]) => ({ key: String(k).trim(), value: v }))
+      .filter((item) => item.key && item.value !== "" && item.value !== null && item.value !== undefined);
+  }
+
+  // Normalize variants (array of { id, options: { color, size, ... }, price, sku, stock })
+  const rawVariants = Array.isArray(data.variants)
+    ? data.variants
+    : Array.isArray(data.variantList)
+    ? data.variantList
+    : [];
+
+  const variants = rawVariants.map((v, idx) => ({
+    id: v.id || v.variantId || `var_${idx}_${Date.now()}`,
+    options: (v.options && typeof v.options === "object") ? v.options : {},
+    price: v.price !== undefined && v.price !== null && v.price !== "" ? Number(v.price) : undefined,
+    offerPrice: v.offerPrice !== undefined && v.offerPrice !== null && v.offerPrice !== "" ? Number(v.offerPrice) : undefined,
+    sku: v.sku || "",
+    stock: v.stock !== undefined && v.stock !== null && v.stock !== "" ? Number(v.stock) : (v.quantity !== undefined ? Number(v.quantity) : undefined),
+    image: v.image || v.imageUrl || "",
+  }));
+
+  // Auto-fill warranty and weight if missing from top-level but present in customAttributes
+  let warranty = data.warranty || data.attributes?.warranty || "";
+  if (!warranty && customAttributes.length) {
+    const w = customAttributes.find((a) => a.key.toLowerCase().includes("warr"));
+    if (w) warranty = String(w.value);
+  }
+
+  let weight = data.weight || data.attributes?.weight || "";
+  if (!weight && customAttributes.length) {
+    const wt = customAttributes.find((a) => a.key.toLowerCase() === "weight");
+    if (wt) weight = String(wt.value);
+  }
+
+  // If top-level price is 0 or missing, but variants exist with prices, use min variant price
+  let finalPrice = price;
+  let finalOfferPrice = offerPrice;
+  if (finalPrice <= 0 && variants.length) {
+    const varPrices = variants.map((v) => v.price).filter((p) => p !== undefined && !isNaN(p) && p > 0);
+    if (varPrices.length) {
+      finalPrice = Math.min(...varPrices);
+      finalOfferPrice = finalPrice;
+    }
+  }
+
   return {
     ...data,
     id,
@@ -44,12 +103,16 @@ export const normalizeProduct = (doc) => {
     manufacturer,
     keywords,
     tags,
+    customAttributes,
+    variants,
+    warranty,
+    weight,
     image: firstImage(data),
     images: data.media?.galleryImages || data.images || data.gallery || [firstImage(data)].filter(Boolean),
-    price,
-    offerPrice,
-    priceText: formatPrice(price, data.priceText),
-    offerPriceText: formatPrice(offerPrice, data.offerPriceText),
+    price: finalPrice,
+    offerPrice: finalOfferPrice,
+    priceText: formatPrice(finalPrice, data.priceText),
+    offerPriceText: formatPrice(finalOfferPrice, data.offerPriceText),
     stock: Number(data.inventory?.stockQuantity ?? data.stock ?? data.quantity ?? 0),
     status: String(data.status || "published").toLowerCase(),
     averageRating: Number(data.averageRating ?? data.rating ?? 0),

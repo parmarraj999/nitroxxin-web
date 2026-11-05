@@ -29,11 +29,11 @@ export default function Payments() {
   const transactions = [
     ...(bookings || []).map((b) => ({
       id: b.id,
-      title: b.title || b.eventSnapshot?.title || "Event Registration",
-      amount: b.total || b.price || 0,
+      title: b.eventTitle || b.title || b.eventSnapshot?.title || "Event Registration",
+      amount: b.payment?.amount || b.total || b.price || 0,
       type: "Event Pass",
-      status: b.paymentStatus || "paid",
-      date: b.dateText || b.dates || "Recent",
+      status: b.payment?.status || b.paymentStatus || "paid",
+      date: b.dateText || b.dates || (b.createdAt?.toDate ? b.createdAt.toDate().toLocaleDateString("en-IN") : "Recent"),
     })),
     ...(orders || []).map((o) => ({
       id: o.id,

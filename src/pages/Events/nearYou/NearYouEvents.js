@@ -429,33 +429,35 @@ export default function NearYouEvents() {
                 Log In
               </button>
             )}
-            <Link
-              to="/profile"
-              className="ep-top-nav__profile-btn"
-              aria-label="Profile"
-              title={user?.displayName || "Profile"}
-            >
-              {user?.photoURL ? (
-                <img src={user.photoURL} alt="Profile" className="ep-top-nav__avatar" />
-              ) : (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="lucide lucide-circle-user-icon lucide-circle-user"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <circle cx="12" cy="10" r="3" />
-                  <path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662" />
-                </svg>
-              )}
-            </Link>
+            {user && (
+              <Link
+                to="/profile"
+                className="ep-top-nav__profile-btn"
+                aria-label="Profile"
+                title={user?.displayName || "Profile"}
+              >
+                {user?.photoURL ? (
+                  <img src={user.photoURL} alt="Profile" className="ep-top-nav__avatar" />
+                ) : (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="lucide lucide-circle-user-icon lucide-circle-user"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <circle cx="12" cy="10" r="3" />
+                    <path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662" />
+                  </svg>
+                )}
+              </Link>
+            )}
           </div>
         </div>
       </header>
@@ -676,7 +678,12 @@ export default function NearYouEvents() {
           </div>
         ) : (
           <div className="ny-empty-card">
-            <PinIcon size={48} color="#ff3344" />
+            <img
+              src="/assets/images/no-matching.png"
+              alt="No events found"
+              className="ny-empty-card__image"
+              loading="lazy"
+            />
             <h3>No events found in {selectedCity || "this area"}</h3>
             <p>
               We couldn't find matching events in {selectedCity || "your city"}. Try exploring other locations or view all events nationwide.

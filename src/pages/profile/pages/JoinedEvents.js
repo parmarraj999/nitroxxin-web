@@ -313,7 +313,7 @@ export default function JoinedEvents() {
       const event = item.eventSnapshot || item;
       const merged = contextMatch ? { ...event, ...contextMatch, ...item } : { ...event, ...item };
 
-      const title = merged.title || merged.name || "Motorcycle Event";
+      const title = merged.eventTitle || merged.title || merged.name || "Motorcycle Event";
       const location = merged.location || merged.venue || "Location TBA";
       const isOnline =
         merged.isOnline ||

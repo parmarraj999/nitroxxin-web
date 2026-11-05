@@ -313,12 +313,20 @@ export default function AccessoriesHeader({ showBack = false, search = '', onSea
     }
   };
 
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/accessories');
+    }
+  };
+
   return (
     <header className={`ap-header${isSearchOpen ? ' has-search-open' : ''}`}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0px', flexShrink: 0 }}>
         {showBack && (
           <div
-            onClick={() => navigate(-1)}
+            onClick={handleBack}
             style={{
               width: '38px',
               height: '38px',
@@ -496,37 +504,31 @@ export default function AccessoriesHeader({ showBack = false, search = '', onSea
           </button>
         )}
 
-        {/* Profile icon: clicking when authenticated opens profile; when not authenticated opens login */}
-        <Link
-          to="/profile"
-          className="ap-header__icon-btn"
-          aria-label="Profile"
-          onClick={
-            !isAuthenticated
-              ? (e) => {
-                e.preventDefault();
-                openLogin();
-              }
-              : undefined
-          }
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="22"
-            height="22"
-            color="#000"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        {/* Profile icon: only display when authenticated */}
+        {isAuthenticated && (
+          <Link
+            to="/profile"
+            className="ap-header__icon-btn"
+            aria-label="Profile"
           >
-            <circle cx="12" cy="12" r="10" />
-            <circle cx="12" cy="10" r="3" />
-            <path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662" />
-          </svg>
-        </Link>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="22"
+              height="22"
+              color="#000"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <circle cx="12" cy="10" r="3" />
+              <path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662" />
+            </svg>
+          </Link>
+        )}
       </div>
 
       {/* Search Popup Dropdown (Culture Circle Inspired) */}

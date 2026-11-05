@@ -24,7 +24,7 @@
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   z-index: 100;
-  padding: 12px 0;
+  padding: 12px 0;  
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
 }
 
@@ -624,8 +624,8 @@
 
 /* ── EVENT CARD (matching MarketplaceSearch product card structure in dark theme) ── */
 .ep-event-card {
-  background: #121419;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  /* background: #121419;
+  border: 1px solid rgba(255, 255, 255, 0.08); */
   border-radius: 18px;
   overflow: hidden;
   display: flex;
@@ -633,14 +633,7 @@
   cursor: pointer;
   position: relative;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
-}
-
-.ep-event-card:hover {
-  background: #171b24;
-  border-color: rgba(255, 31, 31, 0.45);
-  transform: translateY(-4px);
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55), 0 0 20px rgba(255, 31, 31, 0.12);
+  /* box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35); */
 }
 
 /* Thumbnail Wrap */
@@ -844,6 +837,16 @@
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 20px;
   margin-top: 12px;
+}
+
+.ep-search-empty__image {
+  width: 100%;
+  max-width: 240px;
+  height: auto;
+  aspect-ratio: 660 / 378;
+  object-fit: contain;
+  margin-bottom: 20px;
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.4));
 }
 
 .ep-search-empty__icon {

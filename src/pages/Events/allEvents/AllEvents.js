@@ -718,9 +718,12 @@ export default function AllEvents() {
           </div>
         ) : (
           <div className="allev-empty-state">
-            <div className="allev-empty-icon">
-              <SearchIcon size={48} color="#9ca3af" />
-            </div>
+            <img
+              src="/assets/images/no-matching.png"
+              alt="No events found"
+              className="allev-empty-image"
+              loading="lazy"
+            />
             <h3 className="allev-empty-title">No events found matching your criteria</h3>
             <p className="allev-empty-desc">
               We couldn't find any events matching

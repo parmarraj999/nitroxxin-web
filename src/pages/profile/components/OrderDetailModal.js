@@ -52,6 +52,7 @@ export default function OrderDetailModal({ order, onClose, user }) {
   const isDelivered = rawStatus.includes("deliver");
   const isShipping = rawStatus.includes("ship");
   const isCancelled = rawStatus.includes("cancel");
+  const isPending = rawStatus.includes("pend");
 
   const statusLabel = isCancelled
     ? "Cancelled"
@@ -59,6 +60,8 @@ export default function OrderDetailModal({ order, onClose, user }) {
     ? "Delivered"
     : isShipping
     ? "In Transit"
+    : isPending
+    ? "Pending"
     : "Paid";
 
   const statusClass = isCancelled
@@ -67,6 +70,8 @@ export default function OrderDetailModal({ order, onClose, user }) {
     ? "is-delivered"
     : isShipping
     ? "is-shipping"
+    : isPending
+    ? "is-pending"
     : "is-paid";
 
   // Realistic Estimated Delivery calculation (§3: eliminate suspicious same-day delivery)
@@ -173,6 +178,11 @@ export default function OrderDetailModal({ order, onClose, user }) {
     // Step 3: Delivered
     if (isCancelled) {
       if (stepIndex === 0) return "done";
+      return "upcoming";
+    }
+
+    if (currentPkgStatus.includes("pend")) {
+      if (stepIndex === 0) return "current";
       return "upcoming";
     }
 

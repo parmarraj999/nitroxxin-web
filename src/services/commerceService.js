@@ -48,25 +48,38 @@ export const addToCart = async ({ userId, product, quantity = 1, options = {} })
     }
   }
 
-  const id = `${item.id}_${options.size || options.color || "default"}`;
+  const variantKey =
+    options.variantId ||
+    options.sku ||
+    [options.color, options.size].filter(Boolean).join("_") ||
+    "default";
+  const id = `${item.id}_${variantKey}`;
+
+  const cartPrice = Number(options.price || item.offerPrice || item.price || item.mrp || 0);
+  const cartMrp = Number(item.price || item.mrp || cartPrice);
 
   // Only store fields essential for cart page, transactions, and order placement
   const cartPayload = compact({
     id,
     userId: uid,
     productId: item.productId || item.id,
+    variantId: options.variantId || "",
+    sku: options.sku || item.sku || "",
     name: item.name || item.title || "Product",
     image: item.image || (Array.isArray(item.images) ? item.images[0] : "") || "",
-    price: Number(item.price || item.mrp || 0),
-    offerPrice: Number(item.offerPrice || item.price || 0),
+    price: cartMrp,
+    offerPrice: cartPrice,
     brand: item.brand || item.brandName || "",
     category: item.category || item.categoryName || "",
     vendorId: vendorId || DEFAULT_VENDOR_ID,
     vendorName: vendorName || item.brand || "Authorized Vendor",
     quantity: increment(quantity),
     options: {
+      ...options,
       size: options.size || "",
       color: options.color || "",
+      variantId: options.variantId || "",
+      sku: options.sku || item.sku || "",
     },
     updatedAt: serverTimestamp(),
     createdAt: serverTimestamp(),
@@ -531,9 +544,29 @@ export const bookEvent = async ({
     joinAs: att.joinAs || (idx === 0 ? (joinAs || "biker") : "pillion"),
     ticketTier: att.ticketTier || (ticketPlan?.tiers && ticketPlan.tiers[idx]?.name) || "",
     ticketTierKey: att.ticketTierKey || (ticketPlan?.tiers && ticketPlan.tiers[idx]?.key) || "",
-    userPhoto: (idx === 0 ? userProfilePhoto : "") || att.userPhoto || att.photoURL || att.avatar || "",
     photoURL: (idx === 0 ? userProfilePhoto : "") || att.photoURL || att.userPhoto || att.avatar || "",
   }));
+
+  // Only keep bookingContact if it differs from the primary attendee
+  const primaryAttendee = sanitizedAttendees[0] || {};
+  const isBookingContactDifferent = Boolean(
+    bookingContact &&
+    typeof bookingContact === "object" &&
+    (
+      (bookingContact.name && bookingContact.name.trim().toLowerCase() !== (primaryAttendee.name || "").trim().toLowerCase()) ||
+      (bookingContact.email && bookingContact.email.trim().toLowerCase() !== (primaryAttendee.email || "").trim().toLowerCase()) ||
+      (bookingContact.phone && bookingContact.phone.trim() !== (primaryAttendee.phone || "").trim())
+    )
+  );
+  const finalBookingContact = isBookingContactDifferent ? bookingContact : undefined;
+
+  // Normalized payment object containing method, status, amount
+  const normalizedPayment = compact({
+    ...payment,
+    method: payment?.method || payment?.paymentMethod || "Razorpay Online",
+    status: payment?.status || payment?.paymentStatus || "paid",
+    amount: Number(payment?.amount || total || 0),
+  });
 
   await db().runTransaction(async (transaction) => {
     const eventRef = db().collection(COLLECTIONS.events).doc(eventId);
@@ -545,48 +578,33 @@ export const bookEvent = async ({
       throw new Error("This event does not have enough tickets available.");
     }
 
-    // 1. Root bookings collection with essential event metadata only (no full eventSnapshot)
+    // 1. Root bookings collection with essential booking metadata only
     const payload = compact({
       bookingId,
       bookingDocId: bookingRef.id,
       userId: user.uid,
       hostId,
       eventId,
-      userPhoto: userProfilePhoto,
-      photoURL: userProfilePhoto,
-      participantPhoto: userProfilePhoto,
-      avatar: userProfilePhoto,
-      customerPhoto: userProfilePhoto,
       eventTitle: eventSnapshot.title || eventSnapshot.name || "Nitroxx Motorsports Event",
-      title: eventSnapshot.title || eventSnapshot.name || "Nitroxx Motorsports Event",
-      bannerImage: eventSnapshot.bannerImage || eventSnapshot.banner || eventSnapshot.image || (eventSnapshot.images && eventSnapshot.images[0]) || "",
-      dateText: eventSnapshot.dateText || eventSnapshot.dateTimeText || eventSnapshot.date || eventSnapshot.dates || "",
-      venue: eventSnapshot.venue || eventSnapshot.location || eventSnapshot.address || "",
-      city: eventSnapshot.city || "",
       ticketCode,
       qrPayload,
       signature,
-      total,
       totalTickets,
       attendeeCounts,
       attendees: sanitizedAttendees,
-      bookingContact,
+      bookingContact: finalBookingContact,
       emergencyContact,
       bikeDetails,
-      ticketPlan,
       addOns,
       fees,
       preferences,
-      payment,
+      payment: normalizedPayment,
       notes,
-      paymentStatus: "paid",
-      paymentMethod: payment?.method || "online",
       status: "pending",
       approvalStatus: "pending",
       attendanceStatus: "Not Checked In",
       gateStatus: "Pending",
       statusHistory: [{ status: "pending", at: new Date().toISOString(), note: "Booking created" }],
-      ticketTemplateUrl: eventSnapshot.ticketTemplateUrl || event?.ticketTemplateUrl || "",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
@@ -598,32 +616,20 @@ export const bookEvent = async ({
       bookingId,
       bookingRefId: bookingRef.id,
       userId: user.uid,
-      userPhoto: userProfilePhoto,
-      photoURL: userProfilePhoto,
-      avatar: userProfilePhoto,
-      title: eventSnapshot.title || eventSnapshot.name || "",
-      bannerImage: eventSnapshot.bannerImage || eventSnapshot.banner || eventSnapshot.image || (eventSnapshot.images && eventSnapshot.images[0]) || "",
-      dateText: eventSnapshot.dateText || eventSnapshot.dateTimeText || eventSnapshot.date || eventSnapshot.dates || "",
-      venue: eventSnapshot.venue || eventSnapshot.location || eventSnapshot.address || "",
-      city: eventSnapshot.city || "",
-      price: eventSnapshot.price ?? 0,
-      total,
+      eventTitle: eventSnapshot.title || eventSnapshot.name || "Nitroxx Motorsports Event",
       totalTickets,
       ticketCode,
       qrPayload,
       signature,
-      ticketTemplateUrl: eventSnapshot.ticketTemplateUrl || event?.ticketTemplateUrl || "",
       attendees: sanitizedAttendees,
-      bookingContact,
+      bookingContact: finalBookingContact,
       emergencyContact,
       bikeDetails,
-      ticketPlan,
       addOns,
+      payment: normalizedPayment,
       status: "pending",
       gateStatus: "Pending",
       attendanceStatus: "Not Checked In",
-      paymentStatus: "paid",
-      paymentMethod: payment?.method || "online",
       joinedAt: serverTimestamp(),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -652,17 +658,12 @@ export const bookEvent = async ({
         name: bookingContact?.name || sanitizedAttendees[0]?.name || "",
         email: bookingContact?.email || sanitizedAttendees[0]?.email || "",
         phone: bookingContact?.phone || sanitizedAttendees[0]?.phone || "",
-        userPhoto: userProfilePhoto,
-        photoURL: userProfilePhoto,
-        avatar: userProfilePhoto,
       },
-      amount: total,
+      amount: Number(payment?.amount || total || 0),
       currency: "INR",
       status: "captured",
-      paymentStatus: "paid",
       paymentMethod: payment?.method || "Razorpay Online",
       totalTickets,
-      ticketPlan,
       attendees: sanitizedAttendees,
       bikeDetails,
       type: "event_booking",
@@ -683,7 +684,7 @@ export const bookEvent = async ({
       title: `Event Pass - ${eventSnapshot.title || eventSnapshot.name || "Nitroxx Event"}`,
       category: "event",
       type: "debit",
-      amount: total,
+      amount: Number(payment?.amount || total || 0),
       currency: "INR",
       status: "success",
       paymentMethod: payment?.method || "Razorpay Online",
@@ -706,21 +707,14 @@ export const bookEvent = async ({
       participantName: bookingContact?.name || sanitizedAttendees[0]?.name || profile?.fullName || user?.fullName || "",
       participantEmail: attendeeEmailForTicket,
       participantPhone: userPhoneForTicket,
-      participantPhoto: userProfilePhoto,
-      userPhoto: userProfilePhoto,
-      photoURL: userProfilePhoto,
-      avatar: userProfilePhoto,
       participant: {
         fullName: bookingContact?.name || sanitizedAttendees[0]?.name || profile?.fullName || user?.fullName || "",
         name: bookingContact?.name || sanitizedAttendees[0]?.name || profile?.fullName || user?.fullName || "",
         email: attendeeEmailForTicket,
         phone: userPhoneForTicket,
-        photoURL: userProfilePhoto,
-        userPhoto: userProfilePhoto,
-        avatar: userProfilePhoto,
       },
       attendees: sanitizedAttendees,
-      primaryContact: bookingContact,
+      primaryContact: finalBookingContact,
       registrationDate: serverTimestamp(),
       status: "Pending",
       attendanceStatus: "Not Checked In",
@@ -728,7 +722,6 @@ export const bookEvent = async ({
       ticketCode,
       qrPayload,
       signature,
-      ticketPrice: total,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     }));

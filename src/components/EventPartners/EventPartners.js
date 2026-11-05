@@ -177,18 +177,18 @@ export default function EventPartners({
   };
 
   const handlePartnerClick = (partner) => {
-    if (partner.url) {
-      if (partner.url.startsWith('http://') || partner.url.startsWith('https://')) {
-        window.open(partner.url, '_blank', 'noopener,noreferrer');
-        return;
-      }
-      navigate(partner.url);
+    if (partner.url && (partner.url.startsWith('http://') || partner.url.startsWith('https://'))) {
+      window.open(partner.url, '_blank', 'noopener,noreferrer');
       return;
     }
-    const query = partner.name || partner.id;
-    if (query) {
-      navigate(`/events/search?q=${encodeURIComponent(query)}`);
-    }
+    const targetSlug = String(partner.id || partner.name || 'partner')
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_-]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    navigate(`/organizer/${targetSlug}`, {
+      state: { organizer: partner }
+    });
   };
 
   return (

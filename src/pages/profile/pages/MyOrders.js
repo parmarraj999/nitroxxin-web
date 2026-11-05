@@ -138,19 +138,25 @@ export default function MyOrders() {
 
       // Parse individual vendor packages
       const vendorPackages = docs.map((doc) => {
-        const rawStatus = String(doc.status || doc.orderStatus || "confirmed").toLowerCase();
-        let status = "confirmed";
+        const rawStatus = String(doc.status || doc.orderStatus || doc.vendorOrderStatus || "pending").toLowerCase();
+        let status = "pending";
         let statusMessage =
-          doc.statusMessage || `Your items are confirmed with ${doc.vendorName || "vendor"}.`;
+          doc.statusMessage || `Your items are pending confirmation with ${doc.vendorName || "vendor"}.`;
         if (rawStatus.includes("cancel")) {
           status = "cancelled";
           statusMessage = "Order package was cancelled.";
-        } else if (rawStatus.includes("ship")) {
-          status = "shipping";
-          statusMessage = "Package is in transit with courier partner.";
         } else if (rawStatus.includes("deliver")) {
           status = "delivered";
           statusMessage = "Package has been delivered.";
+        } else if (rawStatus.includes("ship")) {
+          status = "shipping";
+          statusMessage = "Package is in transit with courier partner.";
+        } else if (rawStatus.includes("confirm")) {
+          status = "confirmed";
+          statusMessage = `Your items are confirmed with ${doc.vendorName || "vendor"}.`;
+        } else if (rawStatus.includes("pend")) {
+          status = "pending";
+          statusMessage = doc.statusMessage || `Your order is pending confirmation with ${doc.vendorName || "vendor"}.`;
         }
 
         const items = (doc.items || []).map((it) => ({
@@ -225,18 +231,21 @@ export default function MyOrders() {
       const allDelivered = vendorPackages.every((p) => p.status === "delivered");
       const allCancelled = vendorPackages.every((p) => p.status === "cancelled");
       const anyShipping = vendorPackages.some((p) => p.status === "shipping");
+      const anyConfirmed = vendorPackages.some((p) => p.status === "confirmed");
       const overallStatus = allDelivered
         ? "delivered"
         : allCancelled
         ? "cancelled"
         : anyShipping
         ? "shipping"
-        : "confirmed";
+        : anyConfirmed
+        ? "confirmed"
+        : "pending";
 
       const overallStatusMessage =
         vendorPackages.length > 1
           ? `${vendorPackages.length} packages processed from ${vendorPackages.length} vendors.`
-          : vendorPackages[0]?.statusMessage || primary.statusMessage || "Your order has been confirmed.";
+          : vendorPackages[0]?.statusMessage || primary.statusMessage || "Your order has been placed and is pending confirmation.";
 
       const getMillis = (v) =>
         v?.toDate
@@ -341,6 +350,7 @@ export default function MyOrders() {
     return parsedFirestoreOrders.filter((ord) => {
       // Filter tab
       if (activeFilter === "delivered" && ord.status !== "delivered") return false;
+      if (activeFilter === "pending" && ord.status !== "pending") return false;
       if (activeFilter === "shipping" && ord.status !== "shipping" && ord.status !== "confirmed")
         return false;
       if (activeFilter === "cancelled" && ord.status !== "cancelled") return false;
@@ -437,10 +447,10 @@ export default function MyOrders() {
         </button>
         <button
           type="button"
-          className={`nx-orders-chip ${activeFilter === "delivered" ? "is-active" : ""}`}
-          onClick={() => setActiveFilter("delivered")}
+          className={`nx-orders-chip ${activeFilter === "pending" ? "is-active" : ""}`}
+          onClick={() => setActiveFilter("pending")}
         >
-          Delivered
+          Pending
         </button>
         <button
           type="button"
@@ -448,6 +458,13 @@ export default function MyOrders() {
           onClick={() => setActiveFilter("shipping")}
         >
           In Transit / Shipped
+        </button>
+        <button
+          type="button"
+          className={`nx-orders-chip ${activeFilter === "delivered" ? "is-active" : ""}`}
+          onClick={() => setActiveFilter("delivered")}
+        >
+          Delivered
         </button>
         <button
           type="button"
@@ -487,6 +504,7 @@ export default function MyOrders() {
             const isDelivered = ord.status === "delivered";
             const isCancelled = ord.status === "cancelled";
             const isShipping = ord.status === "shipping" || ord.status === "confirmed";
+            const isPending = ord.status === "pending";
 
             return (
               <div className="nx-order-horizontal-card" key={ord.id}>
@@ -564,13 +582,16 @@ export default function MyOrders() {
                             ? "dot-delivered"
                             : isCancelled
                             ? "dot-cancelled"
+                            : isPending
+                            ? "dot-pending"
                             : "dot-shipping"
                         }`}
                       />
                       <span className="nx-order-status-text">
                         {isDelivered && `Delivered on ${ord.dateText}`}
                         {isCancelled && `Cancelled on ${ord.dateText}`}
-                        {isShipping && `Expected by ${ord.dateText}`}
+                        {isPending && `Order Placed (Pending Confirmation)`}
+                        {isShipping && !isPending && `Expected by ${ord.dateText}`}
                       </span>
                     </div>
 

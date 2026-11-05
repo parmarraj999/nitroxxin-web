@@ -3985,6 +3985,11 @@
   box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
 }
 
+.nx-order-status-dot.dot-pending {
+  background: #f59e0b;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
+}
+
 .nx-order-status-text {
   font-size: 14.5px;
   font-weight: 700;

@@ -10,11 +10,11 @@
 /* Starts below the navbar so the navbar and search bar are NEVER covered or blurred */
 .esp-backdrop {
   position: fixed;
-  top: clamp(64px, 8vh, 84px);
+  top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.62);
+  background: rgba(0, 0, 0, 0.42);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   z-index: 99990;
@@ -40,9 +40,9 @@
   top: calc(clamp(64px, 8vh, 84px) + 8px);
   left: 50%;
   transform: translateX(-50%);
-  width: 90vw;
-  max-width: 1360px;
-  height: calc(90vh - clamp(64px, 8vh, 84px));
+  width: 75vw;
+  max-width: 75vw;
+  height: calc(80vh - clamp(64px, 8vh, 84px));
   max-height: calc(90vh - clamp(64px, 8vh, 84px));
   background: #0e1015;
   border-radius: 20px;
@@ -591,6 +591,16 @@
   margin: auto;
 }
 
+.esp-no-results__image {
+  width: 100%;
+  max-width: 200px;
+  height: auto;
+  aspect-ratio: 660 / 378;
+  object-fit: contain;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4));
+}
+
 .esp-no-results__icon {
   margin-bottom: 16px;
   opacity: 0.8;
@@ -662,40 +672,64 @@
    - When Query is Empty: Left column full-width (Recent + Popular)
    - When Query is Active: Right column full-width (2-Column Event Grid)
    ══════════════════════════════════════════════════════════════════ */
-@media (max-width: 840px) {
+@media (max-width: 960px) {
   .esp-backdrop {
-    display: none;
+    display: block !important;
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: rgba(0, 0, 0, 0.75) !important;
+    z-index: 100000 !important;
   }
 
-  .esp-popup-container {
+  .esp-popup-container,
+  .esp-popup-container.is-standalone {
     position: fixed !important;
     inset: 0 !important;
     top: 0 !important;
     left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
     transform: none !important;
+    width: 100% !important;
     width: 100vw !important;
+    max-width: 100% !important;
+    max-width: 100vw !important;
+    min-width: 100% !important;
+    min-width: 100vw !important;
+    height: 100% !important;
     height: 100vh !important;
+    height: 100dvh !important;
+    max-height: 100% !important;
     max-height: 100vh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 !important;
     border-radius: 0 !important;
     border: none !important;
     box-shadow: none !important;
     background: #0c0e13 !important;
-    z-index: 99999 !important;
+    z-index: 100005 !important;
     animation: espMobileSlide 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
   }
 
   @keyframes espMobileSlide {
     from {
       opacity: 0;
-      transform: translateY(12px);
+      transform: translateY(10px);
     }
     to {
       opacity: 1;
-      transform: translateY(0);
+      transform: none;
     }
   }
 
-  /* Desktop close button hidden on mobile (use topbar back button instead) */
+  /* Desktop close button hidden on mobile (topbar back button handles close) */
   .esp-desktop-close-btn {
     display: none;
   }
@@ -705,19 +739,20 @@
     display: flex !important;
     align-items: center;
     gap: 12px;
-    padding: 12px 16px;
-    background: #0c0e13;
+    padding: max(12px, env(safe-area-inset-top, 12px)) max(16px, env(safe-area-inset-right, 16px)) 12px max(14px, env(safe-area-inset-left, 14px));
+    background: #0e1016;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     position: sticky;
     top: 0;
-    z-index: 10;
+    z-index: 20;
+    flex-shrink: 0;
   }
 
   .esp-topbar__back-btn {
-    width: 38px;
-    height: 38px;
-    background: none;
-    border: none;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -726,11 +761,12 @@
     padding: 0;
     flex-shrink: 0;
     border-radius: 50%;
-    transition: background-color 0.15s ease;
+    transition: background-color 0.15s ease, transform 0.15s ease;
   }
 
-  .esp-topbar__back-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
+  .esp-topbar__back-btn:active {
+    transform: scale(0.92);
+    background: rgba(255, 255, 255, 0.14);
   }
 
   .esp-topbar__input-wrap {
@@ -738,29 +774,29 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    background: #171922;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
+    background: #181b24;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
     padding: 0 14px;
     height: 44px;
     box-sizing: border-box;
-    transition: border-color 0.18s ease;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
   }
 
   .esp-topbar__input-wrap:focus-within {
     border-color: #ff1f1f;
-    box-shadow: 0 0 0 2px rgba(255, 31, 31, 0.2);
+    box-shadow: 0 0 0 2px rgba(255, 31, 31, 0.25);
   }
 
   .esp-topbar__search-icon {
     display: flex;
     align-items: center;
-    color: #8c92a4;
+    color: #94a3b8;
     cursor: pointer;
     flex-shrink: 0;
   }
 
-  .esp-topbar__search-icon:hover {
+  .esp-topbar__search-icon:active {
     color: #ff3333;
   }
 
@@ -778,53 +814,162 @@
 
   .esp-topbar__input::placeholder {
     color: #71717a;
+    font-weight: 400;
   }
 
   .esp-topbar__clear-btn {
     background: rgba(255, 255, 255, 0.15);
-    color: #e4e4e7;
+    color: #ffffff;
     border: none;
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 11px;
+    font-size: 12px;
     cursor: pointer;
     padding: 0;
     flex-shrink: 0;
     transition: background-color 0.15s ease;
   }
 
-  .esp-topbar__clear-btn:hover {
+  .esp-topbar__clear-btn:active {
     background: #ff1f1f;
-    color: #ffffff;
   }
 
   .esp-topbar__close-btn {
     display: none;
   }
 
-  /* Body stacks vertically on mobile */
+  /* Single fluid scroll container for mobile */
   .esp-body {
-    flex-direction: column;
-    height: calc(100vh - 68px);
-    overflow-y: auto;
+    flex: 1 1 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: max(32px, env(safe-area-inset-bottom, 32px)) !important;
+    box-sizing: border-box !important;
   }
 
-  /* ── Mobile State 1: When Query is Empty (Show Left Column: Recent + Popular) ── */
+  /* ── Mobile State 1: When Query is Empty ── */
+  .esp-left-col,
   .esp-popup-container.is-empty-query .esp-left-col {
-    display: flex;
-    width: 100%;
-    border-right: none;
-    padding: 20px 16px 40px;
-    gap: 26px;
-    background: #0c0e13;
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    border-right: none !important;
+    padding: 18px 16px 14px !important;
+    gap: 20px !important;
+    background: #0c0e13 !important;
+    height: auto !important;
+    overflow: visible !important;
+    flex-shrink: 0 !important;
+    box-sizing: border-box !important;
   }
 
+  .esp-right-col,
   .esp-popup-container.is-empty-query .esp-right-col {
-    display: none;
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding: 14px 16px 36px !important;
+    background: #0c0e13 !important;
+    height: auto !important;
+    overflow: visible !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+    box-sizing: border-box !important;
+  }
+
+  /* ── Mobile State 2: When Query is Active (Search Results) ── */
+  .esp-popup-container.has-query .esp-left-col {
+    display: none !important;
+  }
+
+  .esp-popup-container.has-query .esp-right-col {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding: 16px 16px 36px !important;
+    background: #0c0e13 !important;
+    height: auto !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+    border-top: none !important;
+  }
+
+  /* Popular searches as full-width modern pill rows on mobile */
+  .esp-popular-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 7px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .esp-popular-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 10px 14px !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 12px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    cursor: pointer !important;
+    transition: background-color 0.15s ease, border-color 0.15s ease !important;
+  }
+
+  .esp-popular-row:active {
+    background: rgba(255, 31, 31, 0.18) !important;
+    border-color: rgba(255, 31, 31, 0.4) !important;
+  }
+
+  .esp-popular-row__left {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+  }
+
+  .esp-popular-row__icon {
+    width: 14px !important;
+    height: 14px !important;
+    color: #ff3333 !important;
+    flex-shrink: 0 !important;
+  }
+
+  .esp-popular-row__text {
+    font-size: 13.5px !important;
+    font-weight: 500 !important;
+    color: #f1f5f9 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .esp-popular-row__arrow {
+    display: block !important;
+    width: 14px !important;
+    height: 14px !important;
+    color: #71717a !important;
+    flex-shrink: 0 !important;
   }
 
   /* Shortcut banner on mobile */
@@ -832,11 +977,11 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: linear-gradient(135deg, rgba(255, 31, 31, 0.15) 0%, rgba(20, 22, 28, 0.95) 100%);
-    border: 1px solid rgba(255, 31, 31, 0.3);
+    background: linear-gradient(135deg, rgba(255, 31, 31, 0.14) 0%, rgba(20, 22, 28, 0.95) 100%);
+    border: 1px solid rgba(255, 31, 31, 0.28);
     border-radius: 14px;
-    padding: 14px 16px;
-    margin-top: 8px;
+    padding: 13px 16px;
+    margin-top: 4px;
     gap: 12px;
   }
 
@@ -846,11 +991,11 @@
     letter-spacing: 0.6px;
     color: #ff3333;
     display: block;
-    margin-bottom: 3px;
+    margin-bottom: 2px;
   }
 
   .esp-mobile-browse-title {
-    font-size: 13.5px;
+    font-size: 13px;
     font-weight: 600;
     color: #ffffff;
     margin: 0;
@@ -869,71 +1014,125 @@
     flex-shrink: 0;
   }
 
-  /* ── Mobile State 2: When Query is Active (Show Right Column: 2-Column Event Grid) ── */
-  .esp-popup-container.has-query .esp-left-col {
-    display: none;
-  }
-
-  .esp-popup-container.has-query .esp-right-col {
-    display: flex;
-    width: 100%;
-    padding: 16px 16px 40px;
-    background: #0c0e13;
-  }
-
   .esp-right-header {
     margin-bottom: 14px;
     padding-right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
 
   .esp-right-header .esp-section__title {
     font-size: 12px;
     letter-spacing: 0.6px;
-    color: #8c92a4;
+    color: #94a3b8;
   }
 
-  /* 2-column event grid on mobile */
+  /* 2-column responsive event grid on mobile */
   .esp-event-grid {
+    display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 14px 10px;
   }
 
-  .esp-event-card__img-box {
+  .esp-event-card {
     border-radius: 12px;
+    background: #11141c;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    overflow: hidden;
+    padding-bottom: 8px;
+    transition: transform 0.15s ease;
+  }
+
+  .esp-event-card:active {
+    transform: scale(0.98);
+  }
+
+  .esp-event-card__img-box {
+    border-radius: 12px 12px 0 0;
+    min-height: 0 !important;
+    aspect-ratio: 16 / 10;
+    border: none;
+    background: #181c25;
+  }
+
+  .esp-event-card__heart {
+    width: 32px;
+    height: 32px;
+    top: 6px;
+    right: 6px;
+  }
+
+  .esp-event-card__add-btn {
+    width: 32px;
+    height: 32px;
+    bottom: 6px;
+    right: 6px;
+  }
+
+  .esp-event-card__info {
+    padding: 8px 8px 4px;
+    gap: 3px;
   }
 
   .esp-event-card__brand {
-    font-size: 10.5px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #ff3333;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
 
   .esp-event-card__name {
     font-size: 12px;
-    line-height: 1.3;
+    line-height: 1.35;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 0;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .esp-event-card__price-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-top: 4px;
   }
 
   .esp-event-card__price {
-    font-size: 13px;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #ffffff;
+  }
+
+  .esp-event-card__price.is-free {
+    color: #10b981;
   }
 
   .esp-event-card__date {
-    font-size: 10px;
+    font-size: 10.5px;
+    color: #94a3b8;
   }
 }
 
 @media (max-width: 480px) {
   .esp-topbar {
-    padding: 10px 12px;
+    padding: max(10px, env(safe-area-inset-top, 10px)) 12px 10px;
     gap: 8px;
   }
 
   .esp-topbar__back-btn {
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
   }
 
   .esp-topbar__input-wrap {
-    height: 40px;
+    height: 42px;
     padding: 0 12px;
+    border-radius: 12px;
   }
 
   .esp-topbar__input {
@@ -945,6 +1144,14 @@
   }
 
   .esp-event-card__info {
-    padding: 8px 1px 1px;
+    padding: 7px 6px 3px;
+  }
+
+  .esp-popular-row {
+    padding: 6px 11px;
+  }
+
+  .esp-popular-row__text {
+    font-size: 12px;
   }
 }

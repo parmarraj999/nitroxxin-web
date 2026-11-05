@@ -221,7 +221,7 @@
 
 /* Search Bar Row */
 .up-search-bar-row {
-  margin-bottom: 22px;
+  margin-bottom: 15px;
   width: 100%;
 }
 
@@ -474,6 +474,17 @@
   border-radius: 24px;
   max-width: 580px;
   margin: 40px auto;
+}
+
+.up-empty-card__image {
+  width: 100%;
+  max-width: 240px;
+  height: auto;
+  aspect-ratio: 660 / 378;
+  object-fit: contain;
+  margin: 0 auto 16px;
+  display: block;
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.4));
 }
 
 .up-empty-card h3 {
@@ -752,7 +763,7 @@
     height: 36px;
   }
   .up-container {
-    padding: 20px 16px;
+    padding: 10px 10px;
   }
   .up-hero__title {
     font-size: 26px;

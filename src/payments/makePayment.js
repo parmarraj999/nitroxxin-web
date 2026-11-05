@@ -78,8 +78,14 @@ export const makePayment = async ({
             setLoading(false);
             onSuccess(orderResult);
             if (navigate) {
+              try {
+                sessionStorage.setItem("nx_last_site_path", "/accessories");
+              } catch (e) {}
               const payId = orderResult?.paymentId || orderResult?.payment_id || response?.razorpay_payment_id;
-              navigate(payId ? `/profile/orders?payment_id=${payId}` : "/profile/orders");
+              navigate(payId ? `/profile/orders?payment_id=${payId}` : "/profile/orders", {
+                replace: true,
+                state: { fromCheckout: true },
+              });
             }
           } else {
             setLoading(false);

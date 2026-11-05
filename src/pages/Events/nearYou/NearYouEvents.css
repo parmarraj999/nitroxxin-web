@@ -551,6 +551,17 @@
   margin: 40px auto;
 }
 
+.ny-empty-card__image {
+  width: 100%;
+  max-width: 240px;
+  height: auto;
+  aspect-ratio: 660 / 378;
+  object-fit: contain;
+  margin: 0 auto 16px;
+  display: block;
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.4));
+}
+
 .ny-empty-card h3 {
   font-size: 20px;
   font-weight: 700;

@@ -1,9 +1,19 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../../../context/AuthContext";
 import "./accessoriesNav.css";
 
 export function AccessoriesNav() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/accessories");
+    }
+  };
 
   return (
     <nav className="accessories-nav">
@@ -11,7 +21,7 @@ export function AccessoriesNav() {
         <button
           className="accessories-nav__back-btn"
           aria-label="Go back"
-          onClick={() => navigate(-1)}
+          onClick={handleBack}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -40,27 +50,29 @@ export function AccessoriesNav() {
       </div>
 
       <div className="accessories-nav__right">
-        <Link
-          to="/profile"
-          className="accessories-nav__icon-btn"
-          aria-label="Profile"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="22"
-            height="22"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        {isAuthenticated && (
+          <Link
+            to="/profile"
+            className="accessories-nav__icon-btn"
+            aria-label="Profile"
           >
-            <circle cx="12" cy="12" r="10" />
-            <circle cx="12" cy="10" r="3" />
-            <path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662" />
-          </svg>
-        </Link>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <circle cx="12" cy="10" r="3" />
+              <path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662" />
+            </svg>
+          </Link>
+        )}
 
         <Link
           to="/cart"

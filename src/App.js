@@ -14,6 +14,7 @@ import UpcomingEvents from './pages/Events/upcoming/UpcomingEvents';
 import EventDetail from './pages/Events/eventDetail/eventDetail';
 import EventBooking from './pages/Events/eventBooking/EventBooking';
 import EventSearch from './pages/Events/search/EventSearch';
+import OrganizerDetail from './pages/Events/organizerDetail/OrganizerDetail';
 
 import AccessoriesPage from './pages/Accessories/AccessoriesPage';
 import AccessoriesDetail from './pages/Accessories/accessoriesDetail/accessoriesDetail';
@@ -61,6 +62,7 @@ const Navigation = () => {
   const isSearchPage = location.pathname.includes('/search');
   const isComboPage = location.pathname.includes('/combo');
   const isPrivacyPage = location.pathname.includes('/privacy');
+  const isOrganizerPage = location.pathname.includes('/organizer');
   const isEventDetailPage =
     location.pathname.startsWith('/event/') ||
     (location.pathname.startsWith('/events/') &&
@@ -68,7 +70,7 @@ const Navigation = () => {
         location.pathname.startsWith(p)
       ));
 
-  if (isBookingPage || isProfilePage || isSearchPage || isComboPage || isPrivacyPage || isEventDetailPage) return null;
+  if (isBookingPage || isProfilePage || isSearchPage || isComboPage || isPrivacyPage || isOrganizerPage || isEventDetailPage) return null;
 
   return (
     <>
@@ -84,8 +86,9 @@ const FooterWrapper = () => {
   const isProfilePage = location.pathname.includes('/profile');
   const isSearchPage = location.pathname.includes('/search');
   const isPrivacyPage = location.pathname.includes('/privacy');
+  const isOrganizerPage = location.pathname.includes('/organizer');
 
-  if (isBookingPage || isProfilePage || isSearchPage || isPrivacyPage) return null;
+  if (isBookingPage || isProfilePage || isSearchPage || isPrivacyPage || isOrganizerPage) return null;
 
   return <Footer />;
 };
@@ -100,11 +103,27 @@ const AppShell = () => {
   const isSearchPage = location.pathname.includes('/search');
   const isPrivacyPage = location.pathname.includes('/privacy');
 
-  // Track the last non-profile page visited so the profile back button can return directly to it
+  // Track the last non-profile, non-checkout page visited so the profile back button can return directly to it
   useEffect(() => {
     try {
-      if (!location.pathname.startsWith('/profile')) {
+      if (
+        !location.pathname.startsWith('/profile') &&
+        location.pathname !== '/cart' &&
+        !location.pathname.includes('/cart') &&
+        !location.pathname.includes('/book')
+      ) {
         sessionStorage.setItem('nx_last_site_path', location.pathname + location.search + location.hash);
+      }
+
+      // Track event list pages to safely return to when exiting event detail
+      if (
+        location.pathname === '/events' ||
+        location.pathname.startsWith('/events/all') ||
+        location.pathname.startsWith('/events/near-you') ||
+        location.pathname.startsWith('/events/upcoming') ||
+        location.pathname === '/'
+      ) {
+        sessionStorage.setItem('nx_last_events_list', location.pathname + location.search);
       }
     } catch (e) {
       // Ignore storage errors in private browsing/incognito
@@ -131,6 +150,9 @@ const AppShell = () => {
         <Route path="/events/:id/book" element={<EventBooking />} />
         <Route path="/event/:id" element={<EventDetail />} />
         <Route path="/event/:id/book" element={<EventBooking />} />
+        <Route path="/organizer/:id" element={<OrganizerDetail />} />
+        <Route path="/organizers/:id" element={<OrganizerDetail />} />
+        <Route path="/events/organizer/:id" element={<OrganizerDetail />} />
 
         <Route element={<AccessoriesLayout />}>
           <Route path="/accessories" element={<AccessoriesPage />} />

@@ -648,3 +648,26 @@
   }
 }
 
+.cart-empty-explore-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 18px;
+  padding: 12px 28px;
+  background: #e5102d;
+  color: #ffffff !important;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 999px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(229, 16, 45, 0.25);
+}
+
+.cart-empty-explore-btn:hover {
+  background: #c80d26;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(229, 16, 45, 0.35);
+}
+
+

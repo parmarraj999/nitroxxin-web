@@ -291,6 +291,10 @@
     }
 
     /* Switch from search bar to search icon on mobile/tablet */
+    .navbar.has-search-open {
+        z-index: 1000;
+    }
+
     .navbar-search-bar {
         display: none !important;
     }

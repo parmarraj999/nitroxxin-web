@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useEventsContext } from "../../../context/EventsContext";
+import { useAuth } from "../../../context/AuthContext";
 import { toDate, formatPrice } from "../../../utils/dataFormatters";
 import "./EventSearch.css";
 
@@ -173,6 +174,7 @@ const CURATED_FALLBACK_EVENTS = [
 
 export default function EventSearch() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const { events = [] } = useEventsContext();
 
@@ -512,20 +514,22 @@ export default function EventSearch() {
               ))}
             </select>
 
-            {/* Quick Link to My Bookings / Orders */}
-            <Link
-              to="/profile"
-              className="ep-search-topnav__cart-btn"
-              title="My Account & Bookings"
-              aria-label="My Account"
-            >
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
-                <line x1="16" x2="16" y1="2" y2="6" />
-                <line x1="8" x2="8" y1="2" y2="6" />
-                <line x1="3" x2="21" y1="10" y2="10" />
-              </svg>
-            </Link>
+            {/* Quick Link to My Bookings / Orders - only when authenticated */}
+            {isAuthenticated && (
+              <Link
+                to="/profile"
+                className="ep-search-topnav__cart-btn"
+                title="My Account & Bookings"
+                aria-label="My Account"
+              >
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+                  <line x1="16" x2="16" y1="2" y2="6" />
+                  <line x1="8" x2="8" y1="2" y2="6" />
+                  <line x1="3" x2="21" y1="10" y2="10" />
+                </svg>
+              </Link>
+            )}
           </div>
         </div>
       </header>
@@ -880,12 +884,12 @@ export default function EventSearch() {
             </div>
           ) : (
             <div className="ep-search-empty">
-              <div className="ep-search-empty__icon">
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ff1f1f" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="11" cy="11" r="8" />
-                  <path d="m21 21-4.34-4.34" />
-                </svg>
-              </div>
+              <img
+                src="/assets/images/no-matching.png"
+                alt="No matching events found"
+                className="ep-search-empty__image"
+                loading="lazy"
+              />
               <h3 className="ep-search-empty__title">No matching events found</h3>
               <p className="ep-search-empty__desc">
                 We couldn't find any events or rides matching "{query}". Try checking your spelling or explore popular categories below.

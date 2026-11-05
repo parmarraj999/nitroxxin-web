@@ -2040,3 +2040,136 @@ BAR (heading + search side by side) ===== */
 
 
 
+
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Event Status Tags & Badges (Completed / Closed / Upcoming / Sold Out)
+   ────────────────────────────────────────────────────────────────────────── */
+.ep-featured__status-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 32px;
+  border-radius: 14px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  max-width: fit-content;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  user-select: none;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+}
+
+.ep-event-card__status-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.ep-event-card__status-badge .ed-status-tag-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.ed-status-tag-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.ed-status--completed {
+  background: rgba(148, 163, 184, 0.16) !important;
+  color: #e2e8f0 !important;
+  border: 1px solid rgba(148, 163, 184, 0.35) !important;
+}
+.ed-status--completed .ed-status-tag-dot {
+  background: #94a3b8;
+  box-shadow: 0 0 6px rgba(148, 163, 184, 0.6);
+}
+
+.ed-status--closed {
+  background: rgba(239, 68, 68, 0.16) !important;
+  color: #fca5a5 !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+}
+.ed-status--closed .ed-status-tag-dot {
+  background: #ef4444;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+}
+
+.ed-status--upcoming {
+  background: rgba(59, 130, 246, 0.16) !important;
+  color: #93c5fd !important;
+  border: 1px solid rgba(59, 130, 246, 0.35) !important;
+}
+.ed-status--upcoming .ed-status-tag-dot {
+  background: #3b82f6;
+  box-shadow: 0 0 6px rgba(59, 130, 246, 0.6);
+}
+
+.ed-status--soldout {
+  background: rgba(245, 158, 11, 0.16) !important;
+  color: #fcd34d !important;
+  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+}
+.ed-status--soldout .ed-status-tag-dot {
+  background: #f59e0b;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
+}
+
+.ed-status--cancelled {
+  background: rgba(239, 68, 68, 0.16) !important;
+  color: #f87171 !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+}
+.ed-status--cancelled .ed-status-tag-dot {
+  background: #ef4444;
+}
+
+
+/* Empty State Enhancement with No Matching Image */
+.ep-empty-state {
+  margin: 36px auto !important;
+
+  background: #131517 !important;
+  /* border: 1px solid rgba(255, 255, 255, 0.08) !important; */
+  border-radius: 16px !important;
+  padding: 36px 24px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  /* box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35); */
+  text-align: center !important;
+}
+
+.ep-empty-state__img {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  aspect-ratio: 660 / 378;
+  object-fit: contain;
+  margin: 0 auto 16px;
+  display: block;
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.4));
+}

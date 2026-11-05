@@ -1,25 +1,220 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import "./accessoriesHero.css";
 import { useAuth } from "../../../../context/AuthContext";
 import { useAuthModal } from "../../../../components/AuthModal/useAuthModal";
 import { addToCart, saveWishlistItem } from "../../../../services/commerceService";
+import { formatPrice } from "../../../../utils/dataFormatters";
+
+/**
+ * Helper to resolve recognized color names to hex codes for swatch display.
+ */
+const getColorHex = (name) => {
+  const s = String(name || "").toLowerCase();
+  if (s.includes("black") || s.includes("dark") || s.includes("carbon")) return "#1c1917";
+  if (s.includes("white")) return "#f8fafc";
+  if (s.includes("red") || s.includes("crimson")) return "#dc2626";
+  if (s.includes("blue") || s.includes("navy")) return "#2563eb";
+  if (s.includes("green") || s.includes("olive")) return "#16a34a";
+  if (s.includes("yellow") || s.includes("neon") || s.includes("hi-viz")) return "#eab308";
+  if (s.includes("orange")) return "#ea580c";
+  if (s.includes("grey") || s.includes("gray") || s.includes("titanium") || s.includes("silver")) return "#6b7280";
+  if (s.includes("gold") || s.includes("bronze")) return "#ca8a04";
+  if (s.includes("brown") || s.includes("tan")) return "#78350f";
+  return "#475569";
+};
 
 export function AccessoriesHero({ product }) {
   const [qty, setQty] = useState(1);
-  const sizeOptions = product?.variants?.sizes || product?.sizeOptions || product?.sizes || product?.availableSizes || [];
-  const colorOptions = product?.colorOptions || product?.variants?.colors || [];
-  const [selectedSize, setSelectedSize] = useState(sizeOptions[0] || "");
-  const [selectedColor, setSelectedColor] = useState(colorOptions[0] || "");
   const { user } = useAuth();
   const { openLogin } = useAuthModal();
 
-  const productImages = product?.images?.length ? product.images : [product?.image].filter(Boolean);
+  const productImages = useMemo(() => {
+    return product?.images?.length ? product.images : [product?.image].filter(Boolean);
+  }, [product]);
+
   const [activeImg, setActiveImg] = useState(0);
   const [lightboxIndex, setLightboxIndex] = useState(null);
   const [wishlistAdded, setWishlistAdded] = useState(false);
   const [cartAdded, setCartAdded] = useState(false);
 
-  // Keyboard nav for lightbox
+  // ── Normalize raw variants array from vendor data ──
+  const rawVariants = useMemo(() => {
+    if (Array.isArray(product?.variants)) return product.variants;
+    if (Array.isArray(product?.variantList)) return product.variantList;
+    return [];
+  }, [product]);
+
+  const hasArrayVariants = rawVariants.length > 0;
+
+  // ── Dynamically extract all option dimensions (e.g. Color, Size, etc.) ──
+  const optionDimensions = useMemo(() => {
+    if (hasArrayVariants) {
+      const dimMap = new Map();
+      rawVariants.forEach((v) => {
+        if (!v.options || typeof v.options !== "object") return;
+        Object.entries(v.options).forEach(([k, val]) => {
+          if (val === undefined || val === null || String(val).trim() === "") return;
+          const cleanVal = String(val).trim();
+          const lowerKey = k.toLowerCase().trim();
+          if (!dimMap.has(lowerKey)) {
+            const label = k.charAt(0).toUpperCase() + k.slice(1);
+            dimMap.set(lowerKey, {
+              key: lowerKey,
+              originalKey: k,
+              label,
+              valuesSet: new Set(),
+            });
+          }
+          dimMap.get(lowerKey).valuesSet.add(cleanVal);
+        });
+      });
+
+      return Array.from(dimMap.values()).map((dim) => ({
+        key: dim.key,
+        originalKey: dim.originalKey,
+        label: dim.label,
+        values: Array.from(dim.valuesSet),
+      }));
+    }
+
+    // Legacy fallback (when product.variants is not an array of objects)
+    const dims = [];
+    const colorOpts = product?.colorOptions || product?.variants?.colors || [];
+    const sizeOpts =
+      product?.variants?.sizes ||
+      product?.sizeOptions ||
+      product?.sizes ||
+      product?.availableSizes ||
+      [];
+
+    if (colorOpts.length) {
+      dims.push({ key: "color", originalKey: "color", label: "Color", values: colorOpts });
+    }
+    if (sizeOpts.length) {
+      dims.push({ key: "size", originalKey: "size", label: "Size", values: sizeOpts });
+    }
+    return dims;
+  }, [hasArrayVariants, rawVariants, product]);
+
+  // ── Selected option state ──
+  const [selectedOptions, setSelectedOptions] = useState({});
+
+  // Initialize selected options on product load
+  useEffect(() => {
+    if (hasArrayVariants) {
+      // Find the first variant with stock > 0, or just first variant
+      const firstInStock = rawVariants.find((v) => Number(v.stock ?? 1) > 0) || rawVariants[0];
+      if (firstInStock?.options && typeof firstInStock.options === "object") {
+        const initial = {};
+        Object.entries(firstInStock.options).forEach(([k, v]) => {
+          initial[k.toLowerCase().trim()] = String(v).trim();
+        });
+        setSelectedOptions(initial);
+        return;
+      }
+    }
+
+    // Legacy fallback
+    const initial = {};
+    optionDimensions.forEach((dim) => {
+      if (dim.values.length > 0) {
+        initial[dim.key] = dim.values[0];
+      }
+    });
+    setSelectedOptions(initial);
+  }, [product?.id, hasArrayVariants, rawVariants, optionDimensions]);
+
+  // ── Find currently active variant matching selected options ──
+  const activeVariant = useMemo(() => {
+    if (!hasArrayVariants) return null;
+    const match = rawVariants.find((v) => {
+      if (!v.options || typeof v.options !== "object") return false;
+      return Object.entries(selectedOptions).every(([dimKey, dimVal]) => {
+        if (!dimVal) return true;
+        const matchedKey = Object.keys(v.options).find(
+          (k) => k.toLowerCase().trim() === dimKey.toLowerCase().trim()
+        );
+        if (!matchedKey) return true;
+        return String(v.options[matchedKey]).trim().toLowerCase() === String(dimVal).trim().toLowerCase();
+      });
+    });
+    return match || rawVariants[0] || null;
+  }, [hasArrayVariants, rawVariants, selectedOptions]);
+
+  // Switch image if variant has its own image
+  useEffect(() => {
+    if (activeVariant?.image) {
+      const idx = productImages.findIndex((img) => img === activeVariant.image);
+      if (idx !== -1) {
+        setActiveImg(idx);
+      }
+    }
+  }, [activeVariant, productImages]);
+
+  // ── Dynamic Pricing ──
+  const variantPrice =
+    activeVariant?.price !== undefined && activeVariant.price !== null && activeVariant.price !== ""
+      ? Number(activeVariant.price)
+      : undefined;
+
+  const variantOfferPrice =
+    activeVariant?.offerPrice !== undefined && activeVariant.offerPrice !== null && activeVariant.offerPrice !== ""
+      ? Number(activeVariant.offerPrice)
+      : undefined;
+
+  const basePrice = Number(product?.price || 0);
+  const baseOfferPrice = Number(product?.offerPrice || product?.price || 0);
+
+  const currentSellingPrice = variantOfferPrice ?? variantPrice ?? baseOfferPrice;
+  const currentMrp =
+    basePrice > currentSellingPrice ? basePrice : variantPrice && variantPrice > currentSellingPrice ? variantPrice : null;
+
+  const discountPct =
+    currentMrp && currentSellingPrice && currentMrp > currentSellingPrice
+      ? Math.round(((currentMrp - currentSellingPrice) / currentMrp) * 100)
+      : null;
+
+  // ── Dynamic Stock ──
+  const stockQty =
+    activeVariant?.stock !== undefined && activeVariant.stock !== null && activeVariant.stock !== ""
+      ? Number(activeVariant.stock)
+      : (product?.inventory?.stockQuantity ?? product?.stock ?? null);
+
+  const isLowStock = stockQty !== null && stockQty > 0 && stockQty <= (product?.inventory?.lowStockThreshold || 5);
+  const isOutOfStock = stockQty !== null && stockQty <= 0;
+
+  // ── Dynamic SKU ──
+  const currentSku = activeVariant?.sku || product?.sku || null;
+
+  // ── Custom Attributes (e.g. weight, warranty, etc.) ──
+  const customAttributesList = useMemo(() => {
+    const raw = product?.customAttributes;
+    if (Array.isArray(raw)) {
+      return raw
+        .map((item) => {
+          if (!item || typeof item !== "object") return null;
+          const key = String(item.key || item.name || item.label || item.attribute || "").trim();
+          const value = item.value !== undefined ? item.value : (item.val !== undefined ? item.val : "");
+          return key && value !== "" ? { key, value: String(value) } : null;
+        })
+        .filter(Boolean);
+    }
+    if (raw && typeof raw === "object") {
+      return Object.entries(raw)
+        .map(([k, v]) => ({ key: String(k).trim(), value: String(v) }))
+        .filter((item) => item.key && item.value);
+    }
+    return [];
+  }, [product?.customAttributes]);
+
+  // Warranty text resolution (from root field or customAttributes)
+  const warrantyText = useMemo(() => {
+    if (product?.warranty) return String(product.warranty);
+    const attr = customAttributesList.find((a) => a.key.toLowerCase().includes("warr"));
+    return attr ? attr.value : "";
+  }, [product?.warranty, customAttributesList]);
+
+  // Keyboard navigation for lightbox
   useEffect(() => {
     if (lightboxIndex === null) {
       document.body.style.overflow = "";
@@ -49,9 +244,29 @@ export function AccessoriesHero({ product }) {
     );
   }
 
+  // ── Add to Cart ──
   const handleAddToCart = async () => {
     if (!user) return openLogin();
-    await addToCart({ userId: user.uid, product, quantity: qty, options: { size: selectedSize, color: selectedColor } });
+    const cartOptions = {
+      ...selectedOptions,
+      variantId: activeVariant?.id || "",
+      sku: currentSku || "",
+      price: currentSellingPrice,
+      size: selectedOptions.size || "",
+      color: selectedOptions.color || "",
+    };
+
+    await addToCart({
+      userId: user.uid,
+      product: {
+        ...product,
+        price: currentMrp || currentSellingPrice,
+        offerPrice: currentSellingPrice,
+        sku: currentSku || product.sku,
+      },
+      quantity: qty,
+      options: cartOptions,
+    });
     setCartAdded(true);
     setTimeout(() => setCartAdded(false), 2000);
   };
@@ -62,14 +277,6 @@ export function AccessoriesHero({ product }) {
     setWishlistAdded(true);
     setTimeout(() => setWishlistAdded(false), 2000);
   };
-
-  const discountPct = product.price && product.offerPrice && product.price !== product.offerPrice
-    ? Math.round(((product.price - product.offerPrice) / product.price) * 100)
-    : null;
-
-  const stockQty = product.inventory?.stockQuantity ?? product.stock ?? null;
-  const isLowStock = stockQty !== null && stockQty > 0 && stockQty <= (product.inventory?.lowStockThreshold || 5);
-  const isOutOfStock = stockQty === 0;
 
   return (
     <section className="product-hero">
@@ -118,20 +325,49 @@ export function AccessoriesHero({ product }) {
         <p className="product-hero__title">{product.name}</p>
         {product.subtitle && <p className="product-hero__subtitle">{product.subtitle}</p>}
 
+        {/* Quick Specs / Meta Chips (SKU, Weight, Warranty, etc.) */}
+        {(currentSku || customAttributesList.length > 0) && (
+          <div className="product-hero__meta-chips">
+            {currentSku && (
+              <span className="product-hero__meta-chip product-hero__meta-chip--sku">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                SKU: {currentSku}
+              </span>
+            )}
+            {customAttributesList.map((attr, idx) => (
+              <span key={idx} className="product-hero__meta-chip">
+                <span className="product-hero__meta-key">{attr.key.charAt(0).toUpperCase() + attr.key.slice(1)}:</span>
+                <span className="product-hero__meta-val">{attr.value}</span>
+              </span>
+            ))}
+          </div>
+        )}
+
         {/* Rating */}
         {(product.averageRating > 0 || product.reviewCount > 0) && (
           <div className="product-hero__rating-row">
             <span className="product-hero__stars">
-              {[1,2,3,4,5].map((s) => (
-                <svg key={s} xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+              {[1, 2, 3, 4, 5].map((s) => (
+                <svg
+                  key={s}
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
                   fill={s <= Math.round(product.averageRating || 0) ? "#f59e0b" : "none"}
-                  stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                  stroke="#f59e0b"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                 </svg>
               ))}
             </span>
             <span className="product-hero__rating-text">{product.averageRating?.toFixed(1)}</span>
-            {product.reviewCount > 0 && <span className="product-hero__review-count">({product.reviewCount} reviews)</span>}
+            {product.reviewCount > 0 && (
+              <span className="product-hero__review-count">({product.reviewCount} reviews)</span>
+            )}
           </div>
         )}
 
@@ -139,26 +375,32 @@ export function AccessoriesHero({ product }) {
           {product.shortDescription || (typeof product.description === "string" ? product.description : "")}
         </p>
 
-        {/* Price */}
+        {/* Dynamic Price Display */}
         <div className="product-hero__price-row">
           <span className="product-hero__price-new">
-            {product.offerPriceText || product.priceText || product.offerPrice || product.price}
+            {formatPrice(currentSellingPrice)}
           </span>
-          {discountPct && (
+          {discountPct && currentMrp && (
             <span className="product-hero__price-old">
-              {product.priceText || product.price}
+              {formatPrice(currentMrp)}
             </span>
           )}
-          {discountPct && <span className="product-hero__discount-badge">-{discountPct}%</span>}
+          {discountPct && (
+            <span className="product-hero__discount-badge">-{discountPct}%</span>
+          )}
         </div>
 
         {/* Stock status */}
         {isOutOfStock ? (
           <span className="product-hero__stock product-hero__stock--out">Out of Stock</span>
         ) : isLowStock ? (
-          <span className="product-hero__stock product-hero__stock--low">Only {stockQty} left!</span>
+          <span className="product-hero__stock product-hero__stock--low">
+            Only {stockQty} left! Order soon
+          </span>
         ) : stockQty > 0 ? (
-          <span className="product-hero__stock product-hero__stock--in">In Stock</span>
+          <span className="product-hero__stock product-hero__stock--in">
+            In Stock ({stockQty} available)
+          </span>
         ) : null}
 
         {/* Vendor pill */}
@@ -170,45 +412,73 @@ export function AccessoriesHero({ product }) {
           </a>
         </div>
 
-        {/* Color options */}
-        {colorOptions.length > 0 && (
-          <>
-            <p className="product-hero__size-label">Color: <strong>{selectedColor}</strong></p>
-            <div className="product-hero__colors">
-              {colorOptions.map((color) => (
-                <button
-                  key={color}
-                  className={`product-hero__color-btn${selectedColor === color ? " active" : ""}`}
-                  onClick={() => setSelectedColor(color)}
-                  title={color}
-                />
-              ))}
-            </div>
-          </>
-        )}
+        {/* ── Dynamic Option Dimensions (e.g. Color, Size, etc.) ── */}
+        {optionDimensions.map((dim) => {
+          const selectedVal = selectedOptions[dim.key] || "";
+          const isColorDim = dim.key.includes("color");
 
-        {/* Size */}
-        {sizeOptions.length > 0 && (
-          <>
-            <p className="product-hero__size-label">Size: <strong>{selectedSize}</strong></p>
-            <div className="product-hero__sizes">
-              {sizeOptions.map((size) => (
-                <button
-                  key={size}
-                  className={`product-hero__size-btn${String(size).length > 2 ? " product-hero__size-btn--xl" : ""}${selectedSize === size ? " active" : ""}`}
-                  onClick={() => setSelectedSize(size)}
-                >
-                  {size}
-                </button>
-              ))}
+          return (
+            <div key={dim.key} className="product-hero__dimension-group">
+              <p className="product-hero__size-label">
+                {dim.label}: <strong>{selectedVal || "Select"}</strong>
+              </p>
+
+              {isColorDim ? (
+                <div className="product-hero__color-pills">
+                  {dim.values.map((val) => {
+                    const isSelected =
+                      String(selectedVal).trim().toLowerCase() === String(val).trim().toLowerCase();
+                    const hex = getColorHex(val);
+                    return (
+                      <button
+                        key={val}
+                        type="button"
+                        className={`product-hero__color-pill${isSelected ? " active" : ""}`}
+                        onClick={() => setSelectedOptions((prev) => ({ ...prev, [dim.key]: val }))}
+                        title={val}
+                      >
+                        <span
+                          className="product-hero__color-swatch-dot"
+                          style={{ backgroundColor: hex }}
+                        />
+                        <span>{val}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="product-hero__option-pills">
+                  {dim.values.map((val) => {
+                    const isSelected =
+                      String(selectedVal).trim().toLowerCase() === String(val).trim().toLowerCase();
+                    return (
+                      <button
+                        key={val}
+                        type="button"
+                        className={`product-hero__option-pill${
+                          String(val).length > 2 ? " product-hero__option-pill--wide" : ""
+                        }${isSelected ? " active" : ""}`}
+                        onClick={() => setSelectedOptions((prev) => ({ ...prev, [dim.key]: val }))}
+                      >
+                        {val}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          </>
-        )}
+          );
+        })}
 
         {/* Quantity */}
         <p className="product-hero__qty-label">Quantity</p>
         <div className="product-hero__qty-control">
-          <button className="product-hero__qty-btn" onClick={() => setQty(Math.max(1, qty - 1))}>
+          <button
+            type="button"
+            className="product-hero__qty-btn"
+            onClick={() => setQty(Math.max(1, qty - 1))}
+            disabled={isOutOfStock}
+          >
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M5 12h14" />
             </svg>
@@ -216,7 +486,12 @@ export function AccessoriesHero({ product }) {
           <div className="product-hero__qty-divider" />
           <span className="product-hero__qty-value">{qty}</span>
           <div className="product-hero__qty-divider" />
-          <button className="product-hero__qty-btn" onClick={() => setQty(qty + 1)}>
+          <button
+            type="button"
+            className="product-hero__qty-btn"
+            onClick={() => setQty(qty + 1)}
+            disabled={isOutOfStock}
+          >
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M5 12h14" />
               <path d="M12 5v14" />
@@ -226,18 +501,32 @@ export function AccessoriesHero({ product }) {
 
         {/* Action buttons */}
         <div className="product-hero__actions">
-          <button className={`product-hero__btn-cart${cartAdded ? " added" : ""}`} onClick={handleAddToCart} disabled={isOutOfStock}>
+          <button
+            type="button"
+            className={`product-hero__btn-cart${cartAdded ? " added" : ""}`}
+            onClick={handleAddToCart}
+            disabled={isOutOfStock}
+          >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              {cartAdded
-                ? <polyline points="20 6 9 17 4 12"/>
-                : <><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></>
-              }
+              {cartAdded ? (
+                <polyline points="20 6 9 17 4 12" />
+              ) : (
+                <>
+                  <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <path d="M16 10a4 4 0 0 1-8 0" />
+                </>
+              )}
             </svg>
-            {cartAdded ? "Added!" : "Add to Cart"}
+            {cartAdded ? "Added to Cart!" : isOutOfStock ? "Out of Stock" : "Add to Cart"}
           </button>
-          <button className={`product-hero__btn-wishlist${wishlistAdded ? " added" : ""}`} onClick={handleWishlist}>
+          <button
+            type="button"
+            className={`product-hero__btn-wishlist${wishlistAdded ? " added" : ""}`}
+            onClick={handleWishlist}
+          >
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill={wishlistAdded ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
             </svg>
             {wishlistAdded ? "Saved!" : "Wishlist"}
           </button>
@@ -245,16 +534,16 @@ export function AccessoriesHero({ product }) {
 
         {/* Trust badges */}
         <div className="product-hero__trust-badges">
+          {warrantyText && (
+            <div className="product-hero__badge">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <span>{warrantyText.toLowerCase().includes("warr") ? warrantyText : `${warrantyText} Warranty`}</span>
+            </div>
+          )}
           {product.returnPolicy && (
             <div className="product-hero__badge">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></svg>
               <span>{product.returnPolicy}</span>
-            </div>
-          )}
-          {product.warranty && (
-            <div className="product-hero__badge">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              <span>{product.warranty}</span>
             </div>
           )}
           {product.shipping?.dispatchTime && (
@@ -280,9 +569,14 @@ export function AccessoriesHero({ product }) {
           </button>
 
           {productImages.length > 1 && (
-            <button className="ph-lightbox__arrow ph-lightbox__arrow--left"
-              onClick={(e) => { e.stopPropagation(); setLightboxIndex((p) => (p === 0 ? productImages.length - 1 : p - 1)); }}
-              aria-label="Previous">
+            <button
+              className="ph-lightbox__arrow ph-lightbox__arrow--left"
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightboxIndex((p) => (p === 0 ? productImages.length - 1 : p - 1));
+              }}
+              aria-label="Previous"
+            >
               <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
             </button>
           )}
@@ -293,9 +587,14 @@ export function AccessoriesHero({ product }) {
           </div>
 
           {productImages.length > 1 && (
-            <button className="ph-lightbox__arrow ph-lightbox__arrow--right"
-              onClick={(e) => { e.stopPropagation(); setLightboxIndex((p) => (p === productImages.length - 1 ? 0 : p + 1)); }}
-              aria-label="Next">
+            <button
+              className="ph-lightbox__arrow ph-lightbox__arrow--right"
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightboxIndex((p) => (p === productImages.length - 1 ? 0 : p + 1));
+              }}
+              aria-label="Next"
+            >
               <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
             </button>
           )}

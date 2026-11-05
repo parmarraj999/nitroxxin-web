@@ -24,6 +24,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { useAuthModal } from '../../../components/AuthModal/useAuthModal';
 import { formatCategoryValue, getCategoryDetails } from '../eventCategoryConfig';
 import { getTicketQrUrl } from '../../../utils/ticketSecurity';
+import { getEventStatusInfo } from '../../../utils/eventStatus';
 
 const STEPS = [
   { id: 1, label: 'Tickets', icon: FaTicketAlt },
@@ -1424,6 +1425,7 @@ export default function EventBooking() {
   }, [eventFromContext, eventFromState, fallbackQuery.data, location.state]);
 
   const loading = eventsLoading || (fallbackQuery.loading && !eventFromContext && !eventFromState);
+  const statusInfo = useMemo(() => getEventStatusInfo(event), [event]);
 
   const { user, profile } = useAuth();
   const { openLogin } = useAuthModal();
@@ -1805,10 +1807,6 @@ export default function EventBooking() {
           bikeDetails: [{ ...bike, joinAs }],
           joinAs,
           total: summary.total,
-          ticketPlan: {
-            counts,
-            tiers: tiers.map(({ key, name, price, availableSeats }) => ({ key, name, price, availableSeats })),
-          },
           addOns: availableAddOns.filter((item) => selectedAddOns.includes(item.key)),
           fees: { convenience: summary.fees, discount: summary.discount },
           bookingContact: contact,
@@ -1818,7 +1816,7 @@ export default function EventBooking() {
             ...payment,
             ...paymentDetails,
             method: paymentDetails.method || "Razorpay Online",
-            paymentStatus: "paid",
+            status: "paid",
             amount: summary.total,
           },
           notes: preferences.notes,
@@ -1836,7 +1834,7 @@ export default function EventBooking() {
           event,
           attendees: preparedAttendees,
           attendee: contact,
-          userPhoto: profile?.profilePhoto || profile?.photoURL || user?.photoURL || user?.profilePhoto || '',
+          photoURL: profile?.profilePhoto || profile?.photoURL || user?.photoURL || user?.profilePhoto || '',
           bike,
         });
       } catch (err) {
@@ -1845,6 +1843,12 @@ export default function EventBooking() {
         setIsGeneratingTicket(false);
       }
     };
+
+    // Check if event is open for booking
+    if (!statusInfo.canBook) {
+      setError(`Cannot book tickets: ${statusInfo.message}`);
+      return;
+    }
 
     // Free event pass (total is 0)
     if (summary.total <= 0) {
@@ -1916,8 +1920,19 @@ export default function EventBooking() {
 
   const previous = () => {
     setError('');
-    if (step === 1) navigate(`/events/${id}`);
-    else setStep((current) => current - 1);
+    if (step === 1) {
+      const targetEventUrl =
+        location.state?.fromPath ||
+        (location.pathname.startsWith('/events/') ? `/events/${id}` : `/event/${id}`);
+
+      if (location.state?.fromDetail && window.history.length > 1) {
+        navigate(-1);
+      } else {
+        navigate(targetEventUrl, { replace: true, state: { fromBooking: true } });
+      }
+    } else {
+      setStep((current) => current - 1);
+    }
   };
 
   const renderStep = () => {
@@ -1966,6 +1981,35 @@ export default function EventBooking() {
     }
     return <PaymentStep payment={payment} setPayment={setPayment} couponInput={couponInput} setCouponInput={setCouponInput} appliedCoupon={appliedCoupon} applyCoupon={applyCoupon} removeCoupon={removeCoupon} couponError={couponError} summary={summary} event={event} />;
   };
+
+  if (!loading && event && !statusInfo.canBook) {
+    return (
+      <div className="eb-page">
+        <BookingHeader event={event} seatsLeft={seatsLeft} onBack={previous} />
+        <div className="eb-shell" style={{ display: 'flex', justifyContent: 'center', padding: '40px 16px' }}>
+          <div className="eb-blocked-card">
+            <div className={`eb-blocked-badge ${statusInfo.badgeClass}`}>
+              <span className="ed-status-tag-dot" />
+              {statusInfo.badgeText}
+            </div>
+            <h2 className="eb-blocked-title">
+              {statusInfo.isCompleted ? "This Event is Completed" : "Registration Not Available"}
+            </h2>
+            <p className="eb-blocked-desc">{statusInfo.message}</p>
+            <div style={{ marginTop: '16px' }}>
+              <button
+                type="button"
+                className="ed-book-btn"
+                onClick={previous}
+              >
+                Back to Event
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="eb-page">
@@ -2125,11 +2169,19 @@ export default function EventBooking() {
           event={event}
           onClose={() => {
             setBookingConfirmation(null);
-            navigate('/profile/joined-events');
+            try {
+              sessionStorage.setItem('nx_last_site_path', `/events/${id}`);
+              sessionStorage.setItem('nx_booked_event_id', String(id));
+            } catch (e) {}
+            navigate('/profile/joined-events', { replace: true, state: { fromBooking: true } });
           }}
           onNavigateProfile={() => {
             setBookingConfirmation(null);
-            navigate('/profile/joined-events');
+            try {
+              sessionStorage.setItem('nx_last_site_path', `/events/${id}`);
+              sessionStorage.setItem('nx_booked_event_id', String(id));
+            } catch (e) {}
+            navigate('/profile/joined-events', { replace: true, state: { fromBooking: true } });
           }}
         />
       )}

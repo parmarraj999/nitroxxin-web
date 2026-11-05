@@ -4,9 +4,11 @@ import { useAuth } from "../../../context/AuthContext";
 import { useCollection } from "../../../hooks/useFirestore";
 import { COLLECTIONS } from "../../../services/firebase";
 import { getTicketQrUrl } from "../../../utils/ticketSecurity";
+import { useEventsContext } from "../../../context/EventsContext";
 
 export default function MyTickets() {
   const { user } = useAuth();
+  const { events: contextEvents = [] } = useEventsContext();
 
   const { data: bookingsData, loading: loadingBookings } = useCollection(COLLECTIONS.bookings, {
     where: user?.uid ? [["userId", "==", user.uid]] : [["userId", "==", "NO_USER"]],
@@ -76,13 +78,15 @@ export default function MyTickets() {
       ) : (
         <div className="nx-tickets-container">
           {tickets.map((t, idx) => {
-            const event = t.eventSnapshot || t;
+            const eventId = t.eventId || t.id;
+            const contextMatch = contextEvents.find((e) => e.id === eventId) || {};
+            const event = t.eventSnapshot || contextMatch || t;
             const theme = t.theme || (idx % 2 === 0 ? "holographic" : "amber");
             const isHolo = theme === "holographic";
 
-            const title = t.title || t.eventTitle || event.title || event.name || "Nitroxx Event";
+            const title = t.eventTitle || t.title || event.title || event.name || "Nitroxx Event";
             const venue = t.venue || t.location || event.venue || event.location || "Designated Venue";
-            const date = t.dateText || t.date || t.dates || event.dateText || "Date TBA";
+            const date = t.dateText || t.date || t.dates || event.dateText || event.dateTimeText || "Date TBA";
             const time = t.time || event.timeText || "";
             const count = t.tickets || (t.totalTickets ? `x${t.totalTickets}` : "x1");
 

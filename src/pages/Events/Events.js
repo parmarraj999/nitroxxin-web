@@ -12,6 +12,7 @@ import { saveFavoriteEvent, removeFavoriteEvent } from "../../services/commerceS
 import LocationModal from "../../components/layout/bottomNav/LocationModal";
 import EventPartners from "../../components/EventPartners/EventPartners";
 import { useEventCategoryContext } from "../../context/EventCategoryContext";
+import { getEventStatusInfo } from "../../utils/eventStatus";
 
 const timeFilters = ["All", "Today", "Upcoming", "Free", "Paid", "VIP"];
 const isVisibleEvent = (event) => String(event.status || "").toLowerCase() === "published";
@@ -169,10 +170,18 @@ export function EventCard({ event, isBookmarked: propIsBookmarked, onToggleBookm
     return `${count}k+ are Throttled!`;
   }, [event]);
 
+  const statusInfo = useMemo(() => getEventStatusInfo(event), [event]);
+
   return (
     <Link className="ep-event-card" to={`/event/${event.id}`}>
       <div className="ep-event-card__image">
         {image ? <img src={image} alt={event.name || event.title} loading="lazy" decoding="async" /> : <span>No image</span>}
+        {!statusInfo.canBook && (
+          <div className={`ep-event-card__status-badge ${statusInfo.badgeClass}`}>
+            <span className="ed-status-tag-dot" />
+            {statusInfo.badgeText}
+          </div>
+        )}
         <button
           type="button"
           className={`ep-event-card__bookmark${isBookmarked ? " ep-event-card__bookmark--active" : ""}`}
@@ -201,11 +210,19 @@ export function EventCard({ event, isBookmarked: propIsBookmarked, onToggleBookm
   );
 }
 
-function EmptyState({ title, text }) {
+function EmptyState({ title, text, image = "/assets/images/no-matching.png" }) {
   return (
-    <div className="nx-empty-state">
-      <h3>{title}</h3>
-      <p>{text}</p>
+    <div className="nx-empty-state ep-empty-state">
+      {image && (
+        <img
+          src={image}
+          alt={title || "No matching events"}
+          className="ep-empty-state__img"
+          loading="lazy"
+        />
+      )}
+        {/* <h3>{title}</h3>
+        <p>{text}</p> */}
     </div>
   );
 }
@@ -721,6 +738,11 @@ export default function Events() {
     [heroEvents, activeSlide]
   );
 
+  const currentEventStatus = useMemo(
+    () => getEventStatusInfo(currentEvent?.rawEvent || currentEvent),
+    [currentEvent]
+  );
+
   const displayDate = useMemo(() => {
     if (!currentEvent) return "";
 
@@ -821,6 +843,15 @@ export default function Events() {
   const handleHeroBook = (event) => {
     const target = event || currentEvent;
     if (!target) return;
+    const status = getEventStatusInfo(target?.rawEvent || target);
+    if (!status.canBook) {
+      if (target.eventId) {
+        navigate(`/event/${target.eventId}`);
+      } else if (target.id && !String(target.id).startsWith("slide-")) {
+        navigate(`/event/${target.id}`);
+      }
+      return;
+    }
     if (target.redirectUrl) {
       if (target.redirectUrl.startsWith("http://") || target.redirectUrl.startsWith("https://")) {
         window.open(target.redirectUrl, "_blank");
@@ -971,13 +1002,20 @@ export default function Events() {
                     {displayPrice}
                   </div>
 
-                  <button
-                    type="button"
-                    className="ep-featured__book-btn"
-                    onClick={() => handleHeroBook(currentEvent)}
-                  >
-                    Book tickets
-                  </button>
+                  {currentEventStatus.canBook ? (
+                    <button
+                      type="button"
+                      className="ep-featured__book-btn"
+                      onClick={() => handleHeroBook(currentEvent)}
+                    >
+                      Book tickets
+                    </button>
+                  ) : (
+                    <div className={`ep-featured__status-tag ${currentEventStatus.badgeClass}`} title={currentEventStatus.message}>
+                      <span className="ed-status-tag-dot" />
+                      {currentEventStatus.badgeText}
+                    </div>
+                  )}
                 </div>
 
                 <div

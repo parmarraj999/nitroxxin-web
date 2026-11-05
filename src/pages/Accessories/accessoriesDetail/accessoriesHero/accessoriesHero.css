@@ -278,74 +278,155 @@
   font-weight: bold;
 }
 
-/* ── Colors ── */
-.product-hero__colors {
+/* ── Meta Chips (SKU, Weight, Custom Specs) ── */
+.product-hero__meta-chips {
   display: flex;
+  align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+  margin-top: 10px;
   margin-bottom: 4px;
 }
 
-.product-hero__color-btn {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 3px solid transparent;
-  cursor: pointer;
-  transition: transform 0.15s, border-color 0.15s;
-  background: currentColor;
+.product-hero__meta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #e2e8f0;
 }
 
-.product-hero__color-btn:hover { transform: scale(1.15); }
-.product-hero__color-btn.active { border-color: #000; transform: scale(1.1); }
+.product-hero__meta-chip--sku {
+  background: #eff6ff;
+  color: #1e40af;
+  border-color: #bfdbfe;
+  font-weight: 600;
+}
 
-/* ── Size ── */
+.product-hero__meta-key {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.product-hero__meta-val {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+/* ── Colors & Dimension Options ── */
+.product-hero__dimension-group {
+  margin-top: 6px;
+}
+
+.product-hero__color-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.product-hero__color-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 20px;
+  border: 1.5px solid #d1d5db;
+  background: #ffffff;
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #1f2937;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.product-hero__color-pill:hover {
+  border-color: #000;
+  color: #000;
+  transform: translateY(-1px);
+}
+
+.product-hero__color-pill.active {
+  background: #000;
+  color: #ffffff;
+  border-color: #000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+.product-hero__color-swatch-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+
+.product-hero__color-pill.active .product-hero__color-swatch-dot {
+  border-color: #ffffff;
+}
+
+/* ── Size & Generic Options ── */
 .product-hero__size-label {
   font-family: 'Inter', sans-serif;
   font-weight: 600;
   font-size: 15px;
   color: #525252;
-  margin: 22px 0 10px 0;
+  margin: 18px 0 10px 0;
 }
 
 .product-hero__size-label strong {
   color: #000;
 }
 
+.product-hero__option-pills,
 .product-hero__sizes {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
+.product-hero__option-pill,
 .product-hero__size-btn {
   min-width: 44px;
   height: 44px;
-  border: 1.5px solid #ccc;
+  border: 1.5px solid #d1d5db;
   border-radius: 8px;
-  background: none;
+  background: #ffffff;
   font-family: 'Inter', sans-serif;
   font-weight: 600;
   font-size: 14px;
-  color: #444;
+  color: #374151;
   cursor: pointer;
-  padding: 0 10px;
-  transition: all 0.15s;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
 }
 
+.product-hero__option-pill:hover,
 .product-hero__size-btn:hover {
   border-color: #000;
   color: #000;
 }
 
+.product-hero__option-pill.active,
 .product-hero__size-btn.active {
   background: #000;
   color: #fff;
   border-color: #000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
 }
 
+.product-hero__option-pill--wide,
 .product-hero__size-btn--xl {
-  min-width: 60px;
+  min-width: 58px;
 }
 
 /* ── Quantity ── */

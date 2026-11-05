@@ -649,6 +649,14 @@ export default function ComboDetailPage() {
   const isLoading = comboDocLoading && subBundleLoading && bundles.length === 0;
   const avatarPalette = ['#dcfce7', '#dbeafe', '#fce7f3', '#e0f2fe', '#fef3c7', '#f3e8ff'];
 
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/accessories');
+    }
+  };
+
   return (
     <div className="bundle-page-root">
       {/* ── Top Navigation Bar ── */}
@@ -658,7 +666,7 @@ export default function ComboDetailPage() {
           <button
             type="button"
             className="bundle-nav-back-btn"
-            onClick={() => navigate(-1)}
+            onClick={handleBack}
             aria-label="Go back to categories"
           >
             <svg

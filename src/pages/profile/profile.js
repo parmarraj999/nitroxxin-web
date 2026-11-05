@@ -2,11 +2,21 @@ import React, { useState, useEffect } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import "./profile.css";
 import { useAuth } from "../../context/AuthContext";
+import { useAuthModal } from "../../components/AuthModal/useAuthModal";
 
 export default function Profile() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { logout } = useAuth();
+  const { user, isAuthenticated, loading: authLoading, logout } = useAuth();
+  const { openLogin } = useAuthModal();
+
+  // Strict guard: unauthenticated users cannot access profile via URL or direct navigation
+  useEffect(() => {
+    if (!authLoading && (!isAuthenticated || !user)) {
+      openLogin();
+      navigate("/", { replace: true });
+    }
+  }, [authLoading, isAuthenticated, user, navigate, openLogin]);
 
   const [isMobile, setIsMobile] = useState(
     typeof window !== "undefined" ? window.innerWidth <= 768 : false
@@ -20,6 +30,18 @@ export default function Profile() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  if (authLoading) {
+    return (
+      <div style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div className="profile-spinner" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user) {
+    return null;
+  }
+
   // On mobile, if path is exactly "/profile", we show the sidebar menu. If path is a subroute, we show the content.
   const isRootProfile = location.pathname === "/profile" || location.pathname === "/profile/";
 
@@ -27,23 +49,53 @@ export default function Profile() {
   const handleExitProfile = () => {
     try {
       const lastSite = sessionStorage.getItem("nx_last_site_path");
-      if (lastSite && !lastSite.startsWith("/profile") && lastSite !== location.pathname) {
-        navigate(lastSite);
+      sessionStorage.removeItem("nx_last_site_path");
+      if (
+        lastSite &&
+        !lastSite.startsWith("/profile") &&
+        !lastSite.includes("/cart") &&
+        !lastSite.includes("/book") &&
+        lastSite !== location.pathname
+      ) {
+        navigate(lastSite, {
+          replace: true,
+          state: { fromBooking: true, fromProfile: true },
+        });
         return;
       }
     } catch (e) {
       // fallback
     }
 
-    if (window.history.length > 1) {
-      navigate(-1);
-    } else {
-      navigate("/");
+    // Context-aware fallback: if user is on orders/accessories/wishlist, return to /accessories
+    if (
+      location.pathname.includes("/orders") ||
+      location.pathname.includes("/accessories") ||
+      location.pathname.includes("/wishlist")
+    ) {
+      navigate("/accessories", { replace: true, state: { fromProfile: true } });
+      return;
     }
+
+    // If on events/tickets, return to /events
+    if (
+      location.pathname.includes("/events") ||
+      location.pathname.includes("/tickets")
+    ) {
+      const lastList = sessionStorage.getItem("nx_last_events_list") || "/events";
+      navigate(lastList, { replace: true, state: { fromBooking: true, fromProfile: true } });
+      return;
+    }
+
+    navigate("/", { replace: true });
   };
 
-  // On mobile, when inside a subpage, returns to the /profile settings menu
+  // On mobile, when inside a subpage, returns to the /profile settings menu (or exits cleanly if came from booking/checkout)
   const handleSubpageBack = () => {
+    if (location.state?.fromBooking || location.state?.fromCheckout) {
+      handleExitProfile();
+      return;
+    }
     if (location.state?.fromProfileMenu) {
       navigate(-1);
     } else {

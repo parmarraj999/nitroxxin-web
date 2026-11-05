@@ -455,6 +455,14 @@ export default function MarketplaceSearch() {
     return `₹${Number(val).toLocaleString("en-IN")}`;
   };
 
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/accessories");
+    }
+  };
+
   return (
     <div className="mp-search-page">
       {/* ── STICKY TOP NAVBAR ── */}
@@ -463,7 +471,7 @@ export default function MarketplaceSearch() {
           <button
             type="button"
             className="mp-search-topnav__back-btn"
-            onClick={() => navigate(-1)}
+            onClick={handleBack}
             aria-label="Go back"
             title="Go back"
           >
