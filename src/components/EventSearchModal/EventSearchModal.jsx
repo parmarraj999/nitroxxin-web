@@ -5,10 +5,109 @@ import { useEventsContext } from "../../context/EventsContext";
 import { useAuth } from "../../context/AuthContext";
 import { useAuthModal } from "../AuthModal/useAuthModal";
 import { toDate } from "../../utils/dataFormatters";
+import ImageWithLoader from "../common/ImageWithLoader";
+import { useCollection } from "../../hooks/useFirestore";
+import { COLLECTIONS } from "../../services/firebase";
 import "./EventSearchModal.css";
+
+// Helper: Slugify string
+function slugify(text) {
+  if (!text) return "";
+  return String(text)
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/[\s_-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+// Helper: Extract avatar initials/badge text
+function getAvatarBadgeText(name) {
+  if (!name) return "NX";
+  const clean = String(name).trim();
+  const firstWord = clean.split(" ")[0];
+  if (firstWord.length <= 6) {
+    return firstWord.toUpperCase();
+  }
+  const initials = clean
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("");
+  return (initials || "NX").toUpperCase();
+}
+
+// ── WELL-KNOWN CURATED ORGANIZERS ──
+const KNOWN_ORGANIZERS_LIST = [
+  {
+    id: "deyor-travels",
+    slug: "deyor-travels",
+    name: "Deyor Travels",
+    tagline: "Event Organizers",
+    avatarText: "DEYOR",
+    avatarBg: "#d72b2b",
+    city: "Manali, Himachal Pradesh",
+    eventsCount: 23,
+    isVerified: true,
+  },
+  {
+    id: "apex-racing-academy",
+    slug: "apex-racing-academy",
+    name: "Apex Racing Academy",
+    tagline: "Track Days & Pro Coaching",
+    avatarText: "APEX",
+    avatarBg: "#d72b2b",
+    city: "Buddh International Circuit",
+    eventsCount: 14,
+    isVerified: true,
+  },
+  {
+    id: "throttle-shifters-mc",
+    slug: "throttle-shifters-mc",
+    name: "Throttle Shifters MC",
+    tagline: "Touring & Adventure Expeditions",
+    avatarText: "TSMC",
+    avatarBg: "#d72b2b",
+    city: "Mumbai & Pune",
+    eventsCount: 19,
+    isVerified: true,
+  },
+  {
+    id: "himalayan-explorers",
+    slug: "himalayan-explorers",
+    name: "Himalayan Explorers",
+    tagline: "High-Altitude Mountain Trails",
+    avatarText: "HIMALAYAN",
+    avatarBg: "#d72b2b",
+    city: "Manali & Leh",
+    eventsCount: 8,
+  },
+  {
+    id: "redline-moto-club",
+    slug: "redline-moto-club",
+    name: "Redline Superbikes",
+    tagline: "Performance & Track Enthusiasts",
+    avatarText: "REDLINE",
+    avatarBg: "#d72b2b",
+    city: "Delhi NCR",
+    eventsCount: 11,
+  },
+  {
+    id: "mud-mavericks-offroad",
+    slug: "mud-mavericks-offroad",
+    name: "Mud Mavericks Enduro",
+    tagline: "Dirt Trails & Sand Dunes",
+    avatarText: "MUD",
+    avatarBg: "#d72b2b",
+    city: "Goa & Coorg",
+    eventsCount: 9,
+  },
+];
 
 // ── POPULAR EVENT SEARCHES (Curated top trending motorcycle events) ──
 const POPULAR_EVENT_SEARCHES = [
+  "Deyor Travels",
+  "Apex Racing Academy",
   "Kari Motor Speedway Track Day",
   "The Halloween Social Biker Night",
   "Day Ride to Matheran",
@@ -16,7 +115,6 @@ const POPULAR_EVENT_SEARCHES = [
   "Bhimashankar Offroad Trail",
   "DIY Maintenance & Chain Care Clinic",
   "Midnight Expressway Cruise",
-  "Apex Cornering Academy",
   "Western Ghats Monsoon Tour",
   "Free Entry Meetups",
 ];
@@ -196,6 +294,11 @@ export default function EventSearchModal({
   const [addedEvents, setAddedEvents] = useState({});
   const popupRef = useRef(null);
   const internalInputRef = useRef(null);
+
+  // Live organizers from Firestore collections 'event_host' and 'organizer_logos'
+  const { data: rawHosts = [] } = useCollection(COLLECTIONS.eventHost || "event_host");
+  const { data: rawLogos = [] } = useCollection(COLLECTIONS.organizerLogos || "organizer_logos");
+  const [failedOrgLogos, setFailedOrgLogos] = useState({});
 
   // Sync propQuery or initialQuery
   useEffect(() => {
@@ -407,6 +510,186 @@ export default function EventSearchModal({
 
     return list.slice(0, 20);
   }, [normalizedEvents, activeQuery]);
+
+  // Combined list of all live and curated organizers
+  const allOrganizers = useMemo(() => {
+    const map = new Map();
+
+    const addOrg = (org) => {
+      if (!org || !org.name) return;
+      const nameKey = org.name.trim().toLowerCase();
+      const existing = map.get(nameKey);
+      if (!existing) {
+        map.set(nameKey, {
+          id: org.id || slugify(org.name),
+          slug: org.slug || slugify(org.name),
+          name: org.name.trim(),
+          tagline: org.tagline || "Event Organizer",
+          logo: org.logo || org.logoUrl || org.photoURL || "",
+          avatarText: org.avatarText || getAvatarBadgeText(org.name),
+          avatarBg: org.avatarBg || "#d72b2b",
+          city: org.city || "",
+          isVerified: Boolean(org.isVerified),
+          eventsCount: Number(org.eventsCount || 0),
+          rating: org.rating || "4.5",
+        });
+      } else {
+        if (!existing.logo && (org.logo || org.logoUrl || org.photoURL)) {
+          existing.logo = org.logo || org.logoUrl || org.photoURL;
+        }
+        if (!existing.city && org.city) existing.city = org.city;
+        if (org.isVerified) existing.isVerified = true;
+        if (org.eventsCount && org.eventsCount > existing.eventsCount) {
+          existing.eventsCount = org.eventsCount;
+        }
+      }
+    };
+
+    // 1. From Firestore collection 'event_host'
+    (rawHosts || []).forEach((doc) => {
+      const name =
+        doc.organizationName ||
+        doc.fullName ||
+        doc.displayName ||
+        doc.name ||
+        doc.companyName ||
+        doc.legalName;
+      if (!name) return;
+      const logo =
+        doc.photoURL ||
+        doc.logoUrl ||
+        doc.logo ||
+        doc.avatar ||
+        doc.image ||
+        doc.imageUrl ||
+        "";
+      const tagline =
+        doc.organizationType ||
+        doc.role ||
+        doc.partnerTitle ||
+        doc.category ||
+        doc.tagline ||
+        "Event Organizers";
+      const city =
+        [doc.city, doc.state].filter(Boolean).join(", ") || doc.location || "";
+      const eventsCount =
+        Number(doc.totalEventsHosted || doc.eventsCount || doc.totalEvents || 0);
+
+      addOrg({
+        id: doc.id || doc.uid,
+        slug: slugify(name),
+        name,
+        tagline,
+        logo,
+        city,
+        isVerified: Boolean(doc.isVerified || doc.verified),
+        eventsCount,
+        rating: doc.hostRating || doc.rating || "4.5",
+      });
+    });
+
+    // 2. From organizerLogos
+    (rawLogos || []).forEach((doc) => {
+      const name = doc.name || doc.organizerName || doc.title;
+      if (!name) return;
+      const logo = doc.logoUrl || doc.logo || doc.imageUrl || doc.image;
+      const tagline = doc.tagline || doc.subtitle || doc.bio || "Event Organizer";
+      const city = doc.city || doc.location || "";
+
+      addOrg({
+        id: doc.id,
+        slug: slugify(name),
+        name,
+        tagline,
+        logo,
+        city,
+        eventsCount: Number(doc.eventsCount || 0),
+      });
+    });
+
+    // 3. From events in EventsContext
+    (events || []).forEach((e) => {
+      const name = e.organizerName || e.hostName || e.organizer || e.host;
+      if (!name) return;
+      const logo = e.hostPhotoURL || e.organizerPhoto || "";
+      const city = e.city || e.location || "";
+      addOrg({
+        id: e.hostId || e.organizerId || slugify(name),
+        slug: slugify(name),
+        name,
+        tagline: e.category || "Event Organizer",
+        logo,
+        city,
+      });
+    });
+
+    // 4. Known curated list
+    KNOWN_ORGANIZERS_LIST.forEach(addOrg);
+
+    // Re-verify event count with live events in context
+    return Array.from(map.values()).map((org) => {
+      const orgSlug = slugify(org.name);
+      const orgId = String(org.id).toLowerCase();
+      const liveMatches = (events || []).filter((e) => {
+        const eHostId = String(e.hostId || e.organizerId || "").toLowerCase();
+        const eHostSlug = slugify(e.hostName || "");
+        const eOrgSlug = slugify(e.organizerName || e.organizer || "");
+        return (
+          (orgId && eHostId === orgId) ||
+          (orgSlug && (eHostSlug === orgSlug || eOrgSlug === orgSlug))
+        );
+      });
+
+      return {
+        ...org,
+        eventsCount: Math.max(org.eventsCount || 0, liveMatches.length),
+      };
+    });
+  }, [rawHosts, rawLogos, events]);
+
+  // Filter organizers based on activeQuery
+  const filteredOrganizers = useMemo(() => {
+    const q = (activeQuery || "").trim().toLowerCase();
+    if (!q) return [];
+
+    const words = q.split(/\s+/).filter(Boolean);
+    return allOrganizers
+      .filter((org) => {
+        const text = [
+          org.name,
+          org.tagline,
+          org.city,
+          org.id,
+          org.slug,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        return words.every((w) => text.includes(w));
+      })
+      .slice(0, 6);
+  }, [allOrganizers, activeQuery]);
+
+  // Select organizer handler: navigate to organizer detail page and close modal
+  const handleSelectOrganizer = (org) => {
+    const targetId = org.id || org.slug || slugify(org.name);
+    saveRecentSearch(org.name);
+    onClose();
+    navigate(`/organizer/${targetId}`, {
+      state: {
+        fromPath: location.pathname,
+        organizer: {
+          id: targetId,
+          hostId: org.id,
+          name: org.name,
+          logoUrl: org.logo,
+          tagline: org.tagline,
+          city: org.city,
+        },
+      },
+    });
+  };
 
   // Navigate to full events search or page
   const handleGoToEvents = (queryToUse) => {
@@ -709,10 +992,89 @@ export default function EventSearchModal({
 
           {/* ════ RIGHT COLUMN: 4-COLUMN EVENT GRID (MAX 20 EVENTS) ════ */}
           <div className="esp-right-col">
+            {/* ── ORGANIZERS RESULTS (Shown when search matches organizers) ── */}
+            {hasQuery && filteredOrganizers.length > 0 && (
+              <div className="esp-organizers-section">
+                <div className="esp-organizers-header">
+                  <span className="esp-section__title">
+                    ORGANIZERS ({filteredOrganizers.length})
+                  </span>
+                </div>
+                <div className="esp-organizers-grid">
+                  {filteredOrganizers.map((org) => (
+                    <div
+                      key={org.id}
+                      className="esp-organizer-card"
+                      onClick={() => handleSelectOrganizer(org)}
+                      title={`View ${org.name} details`}
+                    >
+                      <div className="esp-org-avatar-wrap">
+                        {org.logo && !failedOrgLogos[org.id] ? (
+                          <img
+                            src={org.logo}
+                            alt={org.name}
+                            className="esp-org-avatar-img"
+                            onError={() =>
+                              setFailedOrgLogos((prev) => ({ ...prev, [org.id]: true }))
+                            }
+                          />
+                        ) : (
+                          <div
+                            className="esp-org-avatar-badge"
+                            style={{ backgroundColor: org.avatarBg || "#d72b2b" }}
+                          >
+                            <span>{org.avatarText || getAvatarBadgeText(org.name)}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="esp-org-info">
+                        <div className="esp-org-name-row">
+                          <h4 className="esp-org-name">{org.name}</h4>
+                          {org.isVerified && (
+                            <span className="esp-org-verified" title="Verified Host">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="#22c55e">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                              </svg>
+                            </span>
+                          )}
+                        </div>
+                        <p className="esp-org-tagline">{org.tagline || "Event Organizer"}</p>
+                        <div className="esp-org-meta-row">
+                          {org.city && <span className="esp-org-city">{org.city}</span>}
+                          {org.city && org.eventsCount > 0 ? (
+                            <span className="esp-org-dot">•</span>
+                          ) : null}
+                          {org.eventsCount > 0 ? (
+                            <span className="esp-org-events-count">
+                              {org.eventsCount} {org.eventsCount === 1 ? "Event" : "Events"}
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                      <div className="esp-org-arrow">
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M9 18l6-6-6-6" />
+                        </svg>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="esp-right-header">
               <span className="esp-section__title">
                 {hasQuery
-                  ? `SEARCH RESULTS (${filteredEvents.length})`
+                  ? `EVENTS (${filteredEvents.length})`
                   : "RECOMMENDED EVENTS"}
               </span>
 
@@ -754,11 +1116,12 @@ export default function EventSearchModal({
                     >
                       {/* Event Image Box: Square 1:1, centered cover image */}
                       <div className="esp-event-card__img-box">
-                        <img
+                        <ImageWithLoader
                           src={event.image}
                           alt={event.title}
                           className="esp-event-card__img"
                           loading="lazy"
+                          size="small"
                         />
 
                         {/* Heart Wishlist Icon (Top-right) */}
@@ -859,6 +1222,12 @@ export default function EventSearchModal({
                   );
                 })}
               </div>
+            ) : filteredOrganizers.length > 0 ? (
+              <div className="esp-no-events-found">
+                <p>
+                  No specific event dates listed matching "{activeQuery}", but matching organizers are shown above.
+                </p>
+              </div>
             ) : (
               <div className="esp-no-results">
                 <img
@@ -868,10 +1237,10 @@ export default function EventSearchModal({
                   loading="lazy"
                 />
                 <h3 className="esp-no-results__title">
-                  No events found matching "{activeQuery}"
+                  No organizers or events found matching "{activeQuery}"
                 </h3>
                 <p className="esp-no-results__desc">
-                  Try searching with different keywords like 'Track Day', 'Night Ride', or 'Pune'.
+                  Try searching with different keywords like 'Deyor', 'Apex', 'Track Day', 'Night Ride', or 'Pune'.
                 </p>
                 <button
                   type="button"

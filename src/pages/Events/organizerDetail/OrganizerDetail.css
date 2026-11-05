@@ -1,54 +1,57 @@
-/* ─────────────────────────────────────────────────────────────────────────────
-   EVENT ORGANIZER DETAIL PAGE (eod)
-   Dark, sleek, responsive layout matching reference UI 1:1
-   ───────────────────────────────────────────────────────────────────────────── */
-
 .eod-page {
-  min-height: 100vh;
+  min-height: auto;
   background-color: #0d0e10;
   color: #ffffff;
-  padding-bottom: 70px;
+  width: 100%;
+  box-sizing: border-box;
+  /* overflow-x: hidden; */
+  padding-bottom: 100px
 }
 
 /* ── TOP NAV BAR ── */
 .eod-navbar {
   position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   width: 100%;
-  z-index: 10000;
+  height: 56px;
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 20px;
-  background: rgba(13, 14, 16, 0.88);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  padding: 0 16px;
+  background: rgba(13, 14, 16, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  box-sizing: border-box;
 }
 
 .eod-back-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   color: #ffffff;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   padding: 0;
+  flex-shrink: 0;
 }
 
 .eod-back-btn:hover {
-  background: rgba(255, 255, 255, 0.14);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.22);
   transform: translateX(-2px);
 }
 
 .eod-back-btn:active {
-  transform: scale(0.94);
+  transform: scale(0.92);
 }
 
 .eod-nav-center {
@@ -56,14 +59,17 @@
 }
 
 .eod-nav-right-spacer {
-  width: 42px;
+  width: 38px;
+  flex-shrink: 0;
 }
 
-/* ── MAIN CONTENT CONTAINER ── */
+/* ── MAIN CONTENT CONTAINER (Responsive Mobile-to-Desktop) ── */
 .eod-shell {
-  max-width: 35%;
+  width: 100%;
+  max-width: 520px;
   margin: 0 auto;
-  padding: 5rem 20px 0 0;
+  padding: 72px 18px 40px;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
 }
@@ -74,13 +80,13 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  margin-top: 8px;
-  margin-bottom: 26px;
+  margin-bottom: 22px;
+  width: 100%;
 }
 
 .eod-avatar-container {
-  width: 92px;
-  height: 92px;
+  width: 90px;
+  height: 90px;
   border-radius: 50%;
   overflow: hidden;
   display: flex;
@@ -88,6 +94,7 @@
   justify-content: center;
   margin-bottom: 14px;
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 0 0 2px rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
 }
 
 .eod-avatar-img {
@@ -112,6 +119,7 @@
   font-weight: 800;
   letter-spacing: 0.8px;
   text-transform: uppercase;
+  font-family: inherit;
 }
 
 .eod-organizer-name {
@@ -120,6 +128,9 @@
   color: #ffffff;
   margin: 0 0 4px 0;
   letter-spacing: -0.2px;
+  line-height: 1.25;
+  text-align: center;
+  word-break: break-word;
 }
 
 .eod-organizer-tagline {
@@ -127,25 +138,31 @@
   font-weight: 400;
   color: #8f9098;
   margin: 0;
+  letter-spacing: 0.1px;
+  text-align: center;
 }
 
 /* ── STATS CARD (Events, Participants, Reviews) ── */
-.eod-stats-container{
+.eod-stats-container {
+  width: 100%;
+  box-sizing: border-box;
   background-color: #17181b;
-  padding: 10px;
+  padding: 8px;
   border-radius: 20px;
-  margin-bottom: 25px;
+  margin-bottom: 26px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
 }
+
 .eod-stats-card {
-  background: #0D0E10;
+  width: 100%;
+  box-sizing: border-box;
+  background: #0d0e10;
   border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 16px;
-  padding: 16px 10px;
+  border-radius: 14px;
+  padding: 14px 8px;
   display: flex;
   align-items: center;
   justify-content: space-around;
-  /* margin-bottom: 28px; */
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
 }
 
 .eod-stat-col {
@@ -155,18 +172,20 @@
   align-items: center;
   justify-content: center;
   text-align: center;
+  min-width: 0;
 }
 
 .eod-stat-val {
-  font-size: 28px;
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: 700;
   color: #ffffff;
   margin-bottom: 2px;
-  letter-spacing: -0.2px;
+  letter-spacing: -0.3px;
+  line-height: 1.15;
 }
 
 .eod-stat-lbl {
-  font-size: 18px;
+  font-size: 13px;
   font-weight: 400;
   color: #8f9098;
   letter-spacing: 0.1px;
@@ -174,17 +193,19 @@
 
 .eod-stat-divider {
   width: 1px;
-  height: 28px;
+  height: 26px;
   background: rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
 }
 
 /* ── EVENTS SECTION ── */
 .eod-events-section {
   width: 100%;
+  box-sizing: border-box;
 }
 
 .eod-section-header {
-  margin-bottom: 16px;
+  margin-bottom: 14px;
   padding: 0 2px;
 }
 
@@ -198,19 +219,23 @@
 
 /* ── EVENTS LIST ── */
 .eod-events-list {
+  width: 100%;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 20px;
 }
 
 .eod-event-card {
+  width: 100%;
+  box-sizing: border-box;
   text-decoration: none;
   display: block;
   border-radius: 18px;
-  /* overflow: hidden; */
   background: transparent;
   transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .eod-event-card:hover {
@@ -226,6 +251,12 @@
   background-color: #17181c;
 }
 
+.eod-card-image-wrap .nx-img-loader-wrap {
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+}
+
 .eod-card-img {
   width: 100%;
   height: 100%;
@@ -234,17 +265,21 @@
   transition: transform 0.3s ease;
 }
 
-.eod-event-card:hover .eod-card-img {
+.eod-event-card:hover .eod-card-img,
+.eod-event-card:hover .nx-img-elem.nx-img--visible {
   transform: scale(1.02);
 }
 
+/* Card details row */
 .eod-card-info-row {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
-  margin-top: 12px;
-  padding: 0 4px;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 0 2px;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .eod-card-info-left {
@@ -263,44 +298,92 @@
   text-overflow: ellipsis;
 }
 
+.eod-card-meta-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  line-height: 1.3;
+}
+
 .eod-card-location {
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 400;
   color: #8f9098;
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.eod-card-dot {
+  color: #55555e;
+  font-size: 10px;
+}
+
+.eod-card-date {
+  font-size: 13px;
+  font-weight: 500;
+  color: #a1a1aa;
+  white-space: nowrap;
 }
 
 .eod-card-price {
-  font-size: 16px;
+  font-size: 16.5px;
   font-weight: 700;
   color: #ffffff;
   white-space: nowrap;
   letter-spacing: -0.2px;
+  flex-shrink: 0;
+  text-align: right;
+  line-height: 1.3;
 }
-.eod-card-date {
-  font-size: 16px;
+
+/* ── EMPTY STATE ── */
+.eod-empty-state {
+  text-align: center;
+  padding: 40px 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  margin-top: 8px;
+}
+
+.eod-empty-state p {
+  font-size: 14px;
+  color: #8f9098;
+  margin: 0 0 16px 0;
+}
+
+.eod-explore-btn {
+  display: inline-block;
+  padding: 10px 22px;
+  border-radius: 24px;
+  background: #ff2244;
+  color: #ffffff;
+  font-size: 13px;
   font-weight: 600;
-  color: #6b6b6b;
-  white-space: nowrap;
-  letter-spacing: -0.2px;
+  text-decoration: none;
+  transition: background 0.2s ease, transform 0.2s ease;
 }
 
-/* ── RESPONSIVE TWEAKS ── */
-@media (max-width: 480px) {
-  .eod-navbar {
-    padding: 12px 16px;
-  }
+.eod-explore-btn:hover {
+  background: #e01e3c;
+  transform: translateY(-1px);
+}
 
+/* ── MOBILE RESPONSIVE MEDIA QUERIES ── */
+@media (max-width: 600px) {
   .eod-shell {
-    padding: 18px 16px;
+    max-width: 100%;
+    padding: 88px 16px 140px;
   }
 
   .eod-avatar-container {
-    width: 86px;
-    height: 86px;
+    width: 84px;
+    height: 84px;
+    margin-bottom: 12px;
   }
 
   .eod-avatar-badge span {
@@ -312,7 +395,11 @@
   }
 
   .eod-stat-val {
-    font-size: 19px;
+    font-size: 21px;
+  }
+
+  .eod-stat-lbl {
+    font-size: 12px;
   }
 
   .eod-card-title {
@@ -322,5 +409,56 @@
   .eod-card-price {
     font-size: 15.5px;
   }
+
+  .eod-card-location {
+    max-width: 150px;
+  }
 }
 
+@media (max-width: 380px) {
+  .eod-shell {
+    padding: 64px 12px 30px;
+  }
+
+  .eod-stats-container {
+    padding: 6px;
+    border-radius: 16px;
+  }
+
+  .eod-stats-card {
+    padding: 12px 4px;
+  }
+
+  .eod-stat-val {
+    font-size: 18px;
+  }
+
+  .eod-stat-lbl {
+    font-size: 11px;
+  }
+
+  .eod-stat-divider {
+    height: 22px;
+  }
+
+  .eod-card-info-row {
+    gap: 8px;
+  }
+
+  .eod-card-title {
+    font-size: 14px;
+  }
+
+  .eod-card-price {
+    font-size: 14.5px;
+  }
+
+  .eod-card-location {
+    max-width: 110px;
+    font-size: 12px;
+  }
+
+  .eod-card-date {
+    font-size: 12px;
+  }
+}

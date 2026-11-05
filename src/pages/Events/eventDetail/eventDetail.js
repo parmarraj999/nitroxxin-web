@@ -16,6 +16,7 @@ import { useAuth } from "../../../context/AuthContext";
 import { useAuthModal } from "../../../components/AuthModal/useAuthModal";
 import { formatCategoryValue, getCategoryDetails } from "../eventCategoryConfig";
 import { getEventStatusInfo } from "../../../utils/eventStatus";
+import ImageWithLoader from "../../../components/common/ImageWithLoader";
 
 const listFrom = (...values) =>
   values.flatMap((value) => {
@@ -64,16 +65,16 @@ export default function EventDetail() {
     const req = (event?.specificBikeRequired === false && !event?.bikeRequirements?.specificBikeRequired)
       ? null
       : (event?.bikeRequirements || (
-          (event?.bikeType || event?.bikeModel || event?.brand || event?.bikeBrand || event?.bikeEngineCC || event?.engineCC || event?.minimumCC)
-            ? {
-                bikeType: event.bikeType,
-                brand: event.brand || event.bikeBrand,
-                model: event.model || event.bikeModel,
-                engineCC: event.engineCC || event.bikeEngineCC || event.minimumCC,
-                criteria: event.criteria || event.bikeCriteria,
-              }
-            : null
-        ));
+        (event?.bikeType || event?.bikeModel || event?.brand || event?.bikeBrand || event?.bikeEngineCC || event?.engineCC || event?.minimumCC)
+          ? {
+            bikeType: event.bikeType,
+            brand: event.brand || event.bikeBrand,
+            model: event.model || event.bikeModel,
+            engineCC: event.engineCC || event.bikeEngineCC || event.minimumCC,
+            criteria: event.criteria || event.bikeCriteria,
+          }
+          : null
+      ));
 
     if (!req || typeof req !== 'object') return [];
 
@@ -469,7 +470,7 @@ export default function EventDetail() {
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </button>
-          </div>
+        </div>
 
         {event && (
           <div className="ed-nav-actions">
@@ -553,7 +554,14 @@ export default function EventDetail() {
             {/* Banner – first image full width */}
             {gallery[0] && (
               <div className="ed-gallery-banner" onClick={() => openLightbox(0)}>
-                <img src={event.bannerImage || gallery[0]} alt={event?.title || event?.name} className="ed-gallery-banner-img" />
+                <ImageWithLoader
+                  src={event.bannerImage || gallery[0]}
+                  alt={event?.title || event?.name}
+                  className="ed-gallery-banner-img"
+                  loading="eager"
+                  priority
+                  size="large"
+                />
                 <div className="ed-gallery-banner-overlay" />
               </div>
             )}
@@ -565,7 +573,12 @@ export default function EventDetail() {
                   const isLast = i === 3 && gallery.length > 5;
                   return (
                     <div key={i} className="ed-gallery-thumb" onClick={() => openLightbox(i + 1)}>
-                      <img src={src} alt={`${event?.title || event?.name} ${i + 2}`} className="ed-gallery-thumb-img" />
+                      <ImageWithLoader
+                        src={src}
+                        alt={`${event?.title || event?.name} ${i + 2}`}
+                        className="ed-gallery-thumb-img"
+                        size="small"
+                      />
                       {isLast && (
                         <div className="ed-gallery-more-overlay">
                           <span>+{gallery.length - 5} more</span>
@@ -755,7 +768,9 @@ export default function EventDetail() {
               <div className="ed-info-card">
                 <div className="ed-info-row">
                   <div className="ed-info-icon-box"><svg xmlns="http://www.w3.org/2000/svg" color="white" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" /><circle cx="12" cy="10" r="3" /></svg></div>
-                  <div className="ed-info-text"><p className="ed-info-label">{event.location || event.city}</p><p className="ed-info-sub">{event.venue || event.address || "Venue details from organizer"}{event.city ? `, ${event.city}` : ""}{event.state ? `, ${event.state}` : ""}</p></div>
+                  <div className="ed-info-text">
+                    <p className="ed-info-label">{event.location || event.city}</p>
+                    <p className="ed-info-sub">{event.venue || event.address || "Venue details from organizer"}{event.city ? `, ${event.city}` : ""}{event.state ? `, ${event.state}` : ""}</p></div>
                 </div>
                 <div className="ed-divider-thin" />
                 <div className="ed-info-row">
@@ -791,7 +806,9 @@ export default function EventDetail() {
                 <div className="ed-price-row">
                   <div>
                     <p className="ed-price">{event.ticketPrice ? `₹${event.ticketPrice}` : (event.priceText || "Free")}</p>
-                    {event.ticketType && <p className="ed-info-sub" style={{ marginTop: 2 }}>{event.ticketType}</p>}
+                    {/* {event.ticketType && 
+                    <p className="ed-info-sub" style={{ marginTop: 2 }}>{event.ticketType}</p>
+                    } */}
                   </div>
                   {statusInfo.canBook ? (
                     <button
@@ -821,7 +838,8 @@ export default function EventDetail() {
                 className="ed-organizer-card"
                 onClick={() => {
                   const orgName = event.organizerName || event.hostName || "Nitroxx Partner";
-                  const targetSlug = String(event.organizerId || event.hostId || orgName)
+                  const hostId = event.hostId || event.organizerId;
+                  const targetSlug = hostId || String(orgName)
                     .toLowerCase()
                     .replace(/[^\w\s-]/g, '')
                     .replace(/[\s_-]+/g, '-')
@@ -830,6 +848,7 @@ export default function EventDetail() {
                     state: {
                       organizer: {
                         id: targetSlug,
+                        hostId: hostId || "",
                         name: orgName,
                         logoUrl: event.hostPhotoURL || event.organizerPhoto,
                         city: event.city || event.location,
@@ -894,7 +913,16 @@ export default function EventDetail() {
                 {related.map((item) => (
                   <Link className="ep-event-card" to={`/event/${item.id}`} key={item.id}>
                     <div className="ep-event-card__image">
-                      {item.image ? <img src={item.image} alt={item.title || item.name} /> : <span>No image</span>}
+                      {item.image ? (
+                        <ImageWithLoader
+                          src={item.image}
+                          alt={item.title || item.name}
+                          className="ep-event-card__img"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <span>No image</span>
+                      )}
                     </div>
                     <div className="ep-event-card__info">
                       <div className="ep-event-card__name">{item.title || item.name}</div>
@@ -945,7 +973,13 @@ export default function EventDetail() {
               )}
 
               <div className="ed-lightbox-content" onClick={(e) => e.stopPropagation()}>
-                <img src={gallery[lightboxIndex]} alt={`Gallery view ${lightboxIndex + 1}`} className="ed-lightbox-main-img" />
+                <ImageWithLoader
+                  src={gallery[lightboxIndex]}
+                  alt={`Gallery view ${lightboxIndex + 1}`}
+                  className="ed-lightbox-main-img"
+                  size="large"
+                  priority
+                />
                 <div className="ed-lightbox-counter">
                   {lightboxIndex + 1} / {gallery.length}
                 </div>

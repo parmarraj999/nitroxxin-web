@@ -1,197 +1,207 @@
 .eb-page {
   min-height: 100vh;
-  background: #f6f7f9;
+  background: #ffffff;
   color: #15171a;
   font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   padding-bottom: 120px;
 }
 
+/* ════════════════════════════════════════════════════
+   Hero & Header Section (Matching Reference Screenshot)
+   ════════════════════════════════════════════════════ */
 .eb-hero {
   position: relative;
-  min-height: 180px;
+  width: 100%;
+  /* min-height: 380px; tdgf=hhvhf  chgbbjhjh  fg */
+  background: #ffffff;
   overflow: hidden;
-  background: #14171c;
+  box-sizing: border-box;
 }
 
 .eb-hero__image {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center top;
+  filter: saturate(1.08);
 }
 
 .eb-hero__shade {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, rgba(10, 12, 16, 0.94), rgba(10, 12, 16, 0.7), rgba(10, 12, 16, 0.35));
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.42) 0%,
+    rgba(255, 255, 255, 0.7) 40%,
+    rgba(255, 255, 255, 0.94) 82%,
+    #ffffff 100%
+  );
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
-.eb-back {
-  position: absolute;
+.eb-hero__content {
+  position: relative;
   z-index: 2;
-  top: 18px;
-  left: clamp(16px, 4vw, 40px);
-  width: 36px;
-  height: 36px;
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 28px 24px 28px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Circular Back Button on top left */
+.eb-back-circle {
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
-  color: #fff;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  color: #1a1a1a;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   backdrop-filter: blur(12px);
-  transition: transform 0.15s ease, background 0.15s ease;
+  -webkit-backdrop-filter: blur(12px);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 0;
+  margin-bottom: 26px;
+  align-self: flex-start;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
-.eb-back:hover {
-  transform: scale(1.05);
-  background: rgba(255, 255, 255, 0.2);
+.eb-back-circle:hover {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.25);
+  transform: translateX(-2px);
 }
 
-.eb-hero__content {
-  position: relative;
-  z-index: 1;
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 44px 24px 24px;
-  color: #fff;
+.eb-back-circle:active {
+  transform: scale(0.93);
 }
 
-.eb-kicker {
-  margin: 0 0 6px;
-  color: #0a8f5a;
-  font-size: 11.5px;
+/* Big Bold Black Title */
+.eb-hero__title {
+  font-size: clamp(26px, 3.8vw, 42px);
   font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  color: #000000;
+  margin: 0 0 18px 0;
+  line-height: 1.18;
+  letter-spacing: -0.02em;
+  max-width: 820px;
+  word-break: break-word;
 }
 
-.eb-hero__content .eb-kicker {
-  color: #64e39d;
-}
-
-.eb-hero h1 {
-  max-width: 760px;
-  margin: 0;
-  font-size: clamp(22px, 3.2vw, 34px);
-  line-height: 1.15;
-  letter-spacing: -0.01em;
-}
-
-.eb-hero__meta {
+/* Metadata Pills */
+.eb-hero__pills {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 28px;
+  max-width: 900px;
 }
 
-.eb-hero__meta span,
-.eb-summary__meta span,
-.eb-trust span {
+.eb-hero__pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  padding: 7px 16px;
+  border-radius: 9999px;
+  background: rgba(243, 244, 246, 0.75);
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  color: #111827;
+  font-size: 13.5px;
+  font-weight: 500;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
 }
 
-.eb-hero__meta span {
-  min-height: 30px;
-  padding: 0 12px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.92);
-  font-size: 12px;
-  font-weight: 500;
-  backdrop-filter: blur(14px);
+.eb-pill-icon {
+  color: #1f2937;
+  flex-shrink: 0;
+}
+
+/* ════════════════════════════════════════════════════
+   Booking Steps Pill Bar (Centered, matching image)
+   ════════════════════════════════════════════════════ */
+.eb-stepper-wrap {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin: 10px 0 0;
+}
+
+.eb-stepper-pill-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid #d1d5db;
+  border-radius: 9999px;
+  background: #ffffff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.eb-stepper-pill-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.eb-step-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 9999px;
+  background: transparent;
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 22px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.eb-step-pill-btn.is-active {
+  background: #000000;
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.eb-step-pill-btn.is-done {
+  color: #111827;
+}
+
+.eb-step-pill-btn:hover:not(.is-active):not(:disabled) {
+  color: #000000;
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.eb-step-pill-btn:disabled {
+  cursor: default;
 }
 
 .eb-shell {
   max-width: 1180px;
-  margin: -16px auto 0;
+  margin: 16px auto 0;
   padding: 0 20px;
   position: relative;
   z-index: 2;
-}
-
-/* ════════════════════════════════════════════════════
-   Booking Steps Tabs (Compact & Sleek)
-   ════════════════════════════════════════════════════ */
-.eb-stepper {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  padding: 6px;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  background: #ffffff;
-  box-shadow: 0 4px 18px rgba(17, 24, 39, 0.05);
-}
-
-.eb-stepper__item {
-  flex: 1;
-  min-height: 40px;
-  height: 40px;
-  border: none;
-  border-radius: 10px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  color: #64748b;
-  background: transparent;
-  font-size: 12.5px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.18s ease;
-  font-family: inherit;
-  padding: 0 10px;
-  white-space: nowrap;
-}
-
-.eb-stepper__item:hover:not(:disabled) {
-  background: #f1f5f9;
-  color: #0f172a;
-}
-
-.eb-stepper__badge {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: #e2e8f0;
-  color: #475569;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 800;
-  flex-shrink: 0;
-  transition: all 0.18s ease;
-}
-
-.eb-stepper__item.is-active {
-  color: #ffffff;
-  background: #0f1115;
-  box-shadow: 0 2px 8px rgba(15, 17, 21, 0.18);
-}
-
-.eb-stepper__item.is-active .eb-stepper__badge {
-  background: #50d735;
-  color: #041006;
-}
-
-.eb-stepper__item.is-done {
-  color: #0a6f45;
-  background: #e8f7ee;
-  cursor: pointer;
-}
-
-.eb-stepper__item.is-done .eb-stepper__badge {
-  background: #0a8f5a;
-  color: #ffffff;
 }
 
 .eb-content {
@@ -1087,26 +1097,15 @@
     display: none;
   }
 
-  .eb-stepper {
+  .eb-stepper-wrap {
     overflow-x: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    justify-content: flex-start;
-    padding: 5px;
-    gap: 6px;
+    justify-content: center;
   }
 
-  .eb-stepper::-webkit-scrollbar {
+  .eb-stepper-pill-bar::-webkit-scrollbar {
     display: none;
-  }
-
-  .eb-stepper__item {
-    flex: 0 0 auto;
-    padding: 0 12px;
-    min-height: 36px;
-    height: 36px;
-    font-size: 12px;
-    border-radius: 8px;
   }
 
   .eb-panel__head {
@@ -1121,32 +1120,54 @@
   }
 
   .eb-hero {
-    min-height: 140px;
-  }
-
-  .eb-hero__shade {
-    background: linear-gradient(180deg, rgba(10, 12, 16, 0.88), rgba(10, 12, 16, 0.94));
-  }
-
-  .eb-shell {
-    margin-top: -10px;
-    padding: 0 12px;
+    min-height: 300px;
   }
 
   .eb-hero__content {
-    padding: 36px 14px 16px;
+    padding: 20px 14px 20px;
   }
 
-  .eb-hero h1 {
-    font-size: 20px;
-    line-height: 1.2;
+  .eb-back-circle {
+    width: 38px;
+    height: 38px;
+    margin-bottom: 18px;
   }
 
-  .eb-hero__meta span {
-    font-size: 11px;
-    min-height: 26px;
-    padding: 0 9px;
-    border-radius: 6px;
+  .eb-hero__title {
+    font-size: 22px;
+    margin-bottom: 14px;
+  }
+
+  .eb-hero__pills {
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .eb-hero__pill {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .eb-stepper-wrap {
+    justify-content: flex-start;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+  }
+
+  .eb-stepper-pill-bar {
+    width: max-content;
+  }
+
+  .eb-step-pill-btn {
+    padding: 7px 16px;
+    font-size: 13px;
+  }
+
+  .eb-shell {
+    margin-top: 10px;
+    padding: 0 12px;
   }
 
   .eb-ticket,

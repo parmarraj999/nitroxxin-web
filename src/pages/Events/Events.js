@@ -13,6 +13,7 @@ import LocationModal from "../../components/layout/bottomNav/LocationModal";
 import EventPartners from "../../components/EventPartners/EventPartners";
 import { useEventCategoryContext } from "../../context/EventCategoryContext";
 import { getEventStatusInfo } from "../../utils/eventStatus";
+import ImageWithLoader from "../../components/common/ImageWithLoader";
 
 const timeFilters = ["All", "Today", "Upcoming", "Free", "Paid", "VIP"];
 const isVisibleEvent = (event) => String(event.status || "").toLowerCase() === "published";
@@ -175,7 +176,17 @@ export function EventCard({ event, isBookmarked: propIsBookmarked, onToggleBookm
   return (
     <Link className="ep-event-card" to={`/event/${event.id}`}>
       <div className="ep-event-card__image">
-        {image ? <img src={image} alt={event.name || event.title} loading="lazy" decoding="async" /> : <span>No image</span>}
+        {image ? (
+          <ImageWithLoader
+            src={image}
+            alt={event.name || event.title}
+            className="ep-event-card__img"
+            loading="lazy"
+            decoding="async"
+          />
+        ) : (
+          <span>No image</span>
+        )}
         {!statusInfo.canBook && (
           <div className={`ep-event-card__status-badge ${statusInfo.badgeClass}`}>
             <span className="ed-status-tag-dot" />
@@ -1038,10 +1049,12 @@ export default function Events() {
                         <div className="ep-banner-card">
                           <div className="ep-banner-card__inner">
                             {event.bannerImage || event.banner ? (
-                              <img
+                              <ImageWithLoader
                                 src={event.bannerImage || event.banner}
                                 alt={event.title || event.name}
                                 loading={index === 0 ? "eager" : "lazy"}
+                                priority={index === 0}
+                                size="large"
                               />
                             ) : (
                               <div className="ep-slide-placeholder">{event.title || `Event ${index + 1}`}</div>

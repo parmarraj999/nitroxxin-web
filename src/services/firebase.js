@@ -103,6 +103,9 @@ export const COLLECTIONS = {
   combo: "combos",
   combos: "combos",
   organizerLogos: "organizer_logos",
+  eventHost: "event_host",
+  event_host: "event_host",
+  eventHosts: "event_host",
 };
 
 export const serverTimestamp = () => getFirebase().firestore.FieldValue.serverTimestamp();

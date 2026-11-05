@@ -609,11 +609,23 @@ BAR (heading + search side by side) ===== */
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.ep-event-card__image img {
+.ep-event-card__image .nx-img-loader-wrap {
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+}
+
+.ep-event-card__image img,
+.ep-event-card__image .nx-img-elem {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+.ep-event-card:hover .ep-event-card__image img,
+.ep-event-card:hover .ep-event-card__image .nx-img-elem.nx-img--visible {
+  transform: scale(1.04);
 }
 
 /* Throttle Flame Badge in top-left */

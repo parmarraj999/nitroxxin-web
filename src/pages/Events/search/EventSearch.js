@@ -3,7 +3,103 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useEventsContext } from "../../../context/EventsContext";
 import { useAuth } from "../../../context/AuthContext";
 import { toDate, formatPrice } from "../../../utils/dataFormatters";
+import { useCollection } from "../../../hooks/useFirestore";
+import { COLLECTIONS } from "../../../services/firebase";
 import "./EventSearch.css";
+
+// Helper: Slugify string
+function slugify(text) {
+  if (!text) return "";
+  return String(text)
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/[\s_-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+// Helper: Extract avatar initials/badge text
+function getAvatarBadgeText(name) {
+  if (!name) return "NX";
+  const clean = String(name).trim();
+  const firstWord = clean.split(" ")[0];
+  if (firstWord.length <= 6) {
+    return firstWord.toUpperCase();
+  }
+  const initials = clean
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("");
+  return (initials || "NX").toUpperCase();
+}
+
+// ── WELL-KNOWN CURATED ORGANIZERS ──
+const KNOWN_ORGANIZERS_LIST = [
+  {
+    id: "deyor-travels",
+    slug: "deyor-travels",
+    name: "Deyor Travels",
+    tagline: "Event Organizers",
+    avatarText: "DEYOR",
+    avatarBg: "#d72b2b",
+    city: "Manali, Himachal Pradesh",
+    eventsCount: 23,
+    isVerified: true,
+  },
+  {
+    id: "apex-racing-academy",
+    slug: "apex-racing-academy",
+    name: "Apex Racing Academy",
+    tagline: "Track Days & Pro Coaching",
+    avatarText: "APEX",
+    avatarBg: "#d72b2b",
+    city: "Buddh International Circuit",
+    eventsCount: 14,
+    isVerified: true,
+  },
+  {
+    id: "throttle-shifters-mc",
+    slug: "throttle-shifters-mc",
+    name: "Throttle Shifters MC",
+    tagline: "Touring & Adventure Expeditions",
+    avatarText: "TSMC",
+    avatarBg: "#d72b2b",
+    city: "Mumbai & Pune",
+    eventsCount: 19,
+    isVerified: true,
+  },
+  {
+    id: "himalayan-explorers",
+    slug: "himalayan-explorers",
+    name: "Himalayan Explorers",
+    tagline: "High-Altitude Mountain Trails",
+    avatarText: "HIMALAYAN",
+    avatarBg: "#d72b2b",
+    city: "Manali & Leh",
+    eventsCount: 8,
+  },
+  {
+    id: "redline-moto-club",
+    slug: "redline-moto-club",
+    name: "Redline Superbikes",
+    tagline: "Performance & Track Enthusiasts",
+    avatarText: "REDLINE",
+    avatarBg: "#d72b2b",
+    city: "Delhi NCR",
+    eventsCount: 11,
+  },
+  {
+    id: "mud-mavericks-offroad",
+    slug: "mud-mavericks-offroad",
+    name: "Mud Mavericks Enduro",
+    tagline: "Dirt Trails & Sand Dunes",
+    avatarText: "MUD",
+    avatarBg: "#d72b2b",
+    city: "Goa & Coorg",
+    eventsCount: 9,
+  },
+];
 
 // Category filter tabs matching MarketplaceSearch structure in Dark Edition
 const EVENT_CATEGORY_TABS = [
@@ -185,6 +281,10 @@ export default function EventSearch() {
   const [activeTab, setActiveTab] = useState(initialCategory);
   const [selectedCity, setSelectedCity] = useState("All Cities");
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
+
+  const { data: rawHosts = [] } = useCollection(COLLECTIONS.eventHost || "event_host");
+  const { data: rawLogos = [] } = useCollection(COLLECTIONS.organizerLogos || "organizer_logos");
+  const [failedOrgLogos, setFailedOrgLogos] = useState({});
 
   const inputRef = useRef(null);
 
@@ -472,6 +572,159 @@ export default function EventSearch() {
     return list;
   }, [normalizedEvents, query, activeTab, selectedCity]);
 
+  // Combined list of all live and curated organizers
+  const allOrganizers = useMemo(() => {
+    const map = new Map();
+
+    const addOrg = (org) => {
+      if (!org || !org.name) return;
+      const nameKey = org.name.trim().toLowerCase();
+      const existing = map.get(nameKey);
+      if (!existing) {
+        map.set(nameKey, {
+          id: org.id || slugify(org.name),
+          slug: org.slug || slugify(org.name),
+          name: org.name.trim(),
+          tagline: org.tagline || "Event Organizer",
+          logo: org.logo || org.logoUrl || org.photoURL || "",
+          avatarText: org.avatarText || getAvatarBadgeText(org.name),
+          avatarBg: org.avatarBg || "#d72b2b",
+          city: org.city || "",
+          isVerified: Boolean(org.isVerified),
+          eventsCount: Number(org.eventsCount || 0),
+          rating: org.rating || "4.5",
+        });
+      } else {
+        if (!existing.logo && (org.logo || org.logoUrl || org.photoURL)) {
+          existing.logo = org.logo || org.logoUrl || org.photoURL;
+        }
+        if (!existing.city && org.city) existing.city = org.city;
+        if (org.isVerified) existing.isVerified = true;
+        if (org.eventsCount && org.eventsCount > existing.eventsCount) {
+          existing.eventsCount = org.eventsCount;
+        }
+      }
+    };
+
+    // 1. From Firestore collection 'event_host'
+    (rawHosts || []).forEach((doc) => {
+      const name =
+        doc.organizationName ||
+        doc.fullName ||
+        doc.displayName ||
+        doc.name ||
+        doc.companyName ||
+        doc.legalName;
+      if (!name) return;
+      const logo =
+        doc.photoURL ||
+        doc.logoUrl ||
+        doc.logo ||
+        doc.avatar ||
+        doc.image ||
+        doc.imageUrl ||
+        "";
+      const tagline =
+        doc.organizationType ||
+        doc.role ||
+        doc.partnerTitle ||
+        doc.category ||
+        doc.tagline ||
+        "Event Organizers";
+      const city =
+        [doc.city, doc.state].filter(Boolean).join(", ") || doc.location || "";
+      const eventsCount =
+        Number(doc.totalEventsHosted || doc.eventsCount || doc.totalEvents || 0);
+
+      addOrg({
+        id: doc.id || doc.uid,
+        slug: slugify(name),
+        name,
+        tagline,
+        logo,
+        city,
+        isVerified: Boolean(doc.isVerified || doc.verified),
+        eventsCount,
+        rating: doc.hostRating || doc.rating || "4.5",
+      });
+    });
+
+    // 2. From organizerLogos
+    (rawLogos || []).forEach((doc) => {
+      const name = doc.name || doc.organizerName || doc.title;
+      if (!name) return;
+      const logo = doc.logoUrl || doc.logo || doc.imageUrl || doc.image;
+      const tagline = doc.tagline || doc.subtitle || doc.bio || "Event Organizer";
+      const city = doc.city || doc.location || "";
+
+      addOrg({
+        id: doc.id,
+        slug: slugify(name),
+        name,
+        tagline,
+        logo,
+        city,
+        eventsCount: Number(doc.eventsCount || 0),
+      });
+    });
+
+    // 3. From events
+    (events || []).forEach((e) => {
+      const name = e.organizerName || e.hostName || e.organizer || e.host;
+      if (!name) return;
+      const logo = e.hostPhotoURL || e.organizerPhoto || "";
+      const city = e.city || e.location || "";
+      addOrg({
+        id: e.hostId || e.organizerId || slugify(name),
+        slug: slugify(name),
+        name,
+        tagline: e.category || "Event Organizer",
+        logo,
+        city,
+      });
+    });
+
+    // 4. Known curated list
+    KNOWN_ORGANIZERS_LIST.forEach(addOrg);
+
+    return Array.from(map.values()).map((org) => {
+      const orgSlug = slugify(org.name);
+      const orgId = String(org.id).toLowerCase();
+      const liveMatches = (events || []).filter((e) => {
+        const eHostId = String(e.hostId || e.organizerId || "").toLowerCase();
+        const eHostSlug = slugify(e.hostName || "");
+        const eOrgSlug = slugify(e.organizerName || e.organizer || "");
+        return (
+          (orgId && eHostId === orgId) ||
+          (orgSlug && (eHostSlug === orgSlug || eOrgSlug === orgSlug))
+        );
+      });
+
+      return {
+        ...org,
+        eventsCount: Math.max(org.eventsCount || 0, liveMatches.length),
+      };
+    });
+  }, [rawHosts, rawLogos, events]);
+
+  // Filter organizers based on query
+  const filteredOrganizers = useMemo(() => {
+    const q = (query || "").trim().toLowerCase();
+    if (!q) return [];
+
+    const words = q.split(/\s+/).filter(Boolean);
+    return allOrganizers
+      .filter((org) => {
+        const text = [org.name, org.tagline, org.city, org.id, org.slug]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        return words.every((w) => text.includes(w));
+      })
+      .slice(0, 8);
+  }, [allOrganizers, query]);
+
   const handleEventClick = (event) => {
     saveRecentSearch(event.title);
     saveRecentlyVisited(event);
@@ -755,6 +1008,105 @@ export default function EventSearch() {
                 </div>
               </div>
             )}
+          </section>
+        )}
+
+        {/* ── ORGANIZERS RESULTS SECTION ── */}
+        {query.trim() && filteredOrganizers.length > 0 && (
+          <section className="ep-search-orgs-section">
+            <div className="ep-search-orgs-header">
+              <h2 className="ep-search-content__title">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#ff1f1f"
+                  strokeWidth="2.3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+                <span>Organizers ({filteredOrganizers.length})</span>
+              </h2>
+            </div>
+            <div className="ep-search-orgs-grid">
+              {filteredOrganizers.map((org) => (
+                <div
+                  key={org.id}
+                  className="ep-search-org-card"
+                  onClick={() => {
+                    navigate(`/organizer/${org.id || org.slug}`, {
+                      state: {
+                        fromPath: `/events/search${query ? `?q=${encodeURIComponent(query)}` : ""}`,
+                        organizer: org,
+                      },
+                    });
+                  }}
+                  title={`View ${org.name} details`}
+                >
+                  <div className="ep-search-org-avatar">
+                    {org.logo && !failedOrgLogos[org.id] ? (
+                      <img
+                        src={org.logo}
+                        alt={org.name}
+                        className="ep-search-org-avatar-img"
+                        onError={() =>
+                          setFailedOrgLogos((prev) => ({ ...prev, [org.id]: true }))
+                        }
+                      />
+                    ) : (
+                      <div
+                        className="ep-search-org-avatar-badge"
+                        style={{ backgroundColor: org.avatarBg || "#d72b2b" }}
+                      >
+                        <span>{org.avatarText || getAvatarBadgeText(org.name)}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="ep-search-org-info">
+                    <div className="ep-search-org-name-row">
+                      <h4 className="ep-search-org-name">{org.name}</h4>
+                      {org.isVerified && (
+                        <span className="ep-search-org-verified" title="Verified Host">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="#22c55e">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                          </svg>
+                        </span>
+                      )}
+                    </div>
+                    <p className="ep-search-org-tagline">{org.tagline || "Event Organizer"}</p>
+                    <div className="ep-search-org-meta">
+                      {org.city && <span>{org.city}</span>}
+                      {org.city && org.eventsCount > 0 ? <span>•</span> : null}
+                      {org.eventsCount > 0 ? (
+                        <span className="ep-search-org-count">
+                          {org.eventsCount} {org.eventsCount === 1 ? "Event" : "Events"}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                  <div className="ep-search-org-arrow">
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M9 18l6-6-6-6" />
+                    </svg>
+                  </div>
+                </div>
+              ))}
+            </div>
           </section>
         )}
 

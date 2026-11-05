@@ -101,20 +101,78 @@ export default function EventPartners({
   const navigate = useNavigate();
   const sliderRef = useRef(null);
 
-  // Fetch live organizer logos from Firestore collection
+  // Fetch live event hosts and organizer logos from Firestore
+  const { data: rawHosts = [] } = useCollection(
+    COLLECTIONS.eventHost || 'event_host'
+  );
   const { data: rawOrganizers = [] } = useCollection(
     COLLECTIONS.organizerLogos || 'organizer_logos'
   );
 
   const organizers = useMemo(() => {
+    const list = [];
+
+    // 1. Process hosts from event_host
+    if (rawHosts && rawHosts.length > 0) {
+      rawHosts.forEach((host) => {
+        const name =
+          host.organizationName ||
+          host.fullName ||
+          host.displayName ||
+          host.name ||
+          host.companyName ||
+          host.legalName;
+        if (!name) return;
+        const logo =
+          host.photoURL ||
+          host.logoUrl ||
+          host.logo ||
+          host.avatar ||
+          host.image ||
+          host.imageUrl ||
+          '';
+        const tagline =
+          host.organizationType ||
+          host.role ||
+          host.partnerTitle ||
+          host.badge ||
+          host.category ||
+          'Event Organizer';
+        const city =
+          [host.city, host.state].filter(Boolean).join(', ') || host.location || '';
+        const url = host.socialLinks?.website || host.website || '';
+
+        list.push({
+          id: host.id,
+          ...host,
+          name,
+          logo: logo || `/assets/images/brand-1.png`,
+          tagline,
+          city,
+          url,
+        });
+      });
+    }
+
+    // 2. Process logos from organizer_logos
     if (rawOrganizers && rawOrganizers.length > 0) {
-      const liveList = rawOrganizers.map((doc, idx) => {
+      rawOrganizers.forEach((doc, idx) => {
         const name =
           doc.name ||
           doc.organizerName ||
           doc.title ||
           doc.label ||
           `Partner ${idx + 1}`;
+        // Skip duplicate names
+        if (
+          list.some(
+            (item) =>
+              item.id === doc.id ||
+              item.name.toLowerCase().trim() === name.toLowerCase().trim()
+          )
+        ) {
+          return;
+        }
         const logo =
           doc.logoUrl ||
           doc.logo ||
@@ -135,7 +193,7 @@ export default function EventPartners({
         const city = doc.city || doc.location || '';
         const url = doc.website || doc.link || doc.url || doc.redirectUrl || '';
 
-        return {
+        list.push({
           id: doc.id || `partner-${idx}`,
           ...doc,
           name,
@@ -143,23 +201,25 @@ export default function EventPartners({
           tagline,
           city,
           url,
-        };
+        });
       });
+    }
 
+    if (list.length > 0) {
       // Ensure at least 8 items for a rich two-row display
-      if (liveList.length < 8) {
-        const extraNeeded = 8 - liveList.length;
+      if (list.length < 8) {
+        const extraNeeded = 8 - list.length;
         const extras = FALLBACK_ORGANIZERS.slice(0, extraNeeded).map((fb, i) => ({
           ...fb,
           id: `${fb.id}-fill-${i}`,
         }));
-        return [...liveList, ...extras];
+        return [...list, ...extras];
       }
-
-      return liveList;
+      return list;
     }
+
     return FALLBACK_ORGANIZERS;
-  }, [rawOrganizers]);
+  }, [rawHosts, rawOrganizers]);
 
   const scroll = (direction) => {
     if (sliderRef.current) {
