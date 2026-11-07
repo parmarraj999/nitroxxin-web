@@ -16,7 +16,10 @@ import { useAuth } from "../../../context/AuthContext";
 import { useAuthModal } from "../../../components/AuthModal/useAuthModal";
 import { formatCategoryValue, getCategoryDetails } from "../eventCategoryConfig";
 import { getEventStatusInfo } from "../../../utils/eventStatus";
+import { formatDisplayDate, formatDisplayTime } from "../../../utils/dataFormatters";
 import ImageWithLoader from "../../../components/common/ImageWithLoader";
+import { BiArrowToRight } from "react-icons/bi";
+import { LuArrowBigRight, LuArrowRight } from "react-icons/lu";
 
 const listFrom = (...values) =>
   values.flatMap((value) => {
@@ -543,6 +546,43 @@ export default function EventDetail() {
   const seatsLeft = Math.max(0, Number(event.capacity || 0) - Number(event.registeredCount || 0));
   const categoryDetails = getCategoryDetails(event);
 
+  // Date & Time formatting for ed-info-card
+  const rawStartDate = event.startDate || event.date || event.eventDate || event.startsAt;
+  const rawEndDate = event.endDate || event.endsAt;
+  const rawStartTime = event.startTime || event.time;
+  const rawEndTime = event.endTime;
+
+  const formattedStartDate = formatDisplayDate(rawStartDate, event.dateText || "Date TBA");
+  const formattedEndDate = rawEndDate ? formatDisplayDate(rawEndDate) : null;
+  const dateSub = (formattedEndDate && formattedEndDate !== formattedStartDate)
+    ? `Ends ${formattedEndDate}`
+    : "Single day event";
+
+  const formattedStartTime = formatDisplayTime(rawStartTime, rawStartDate);
+  const formattedEndTime = formatDisplayTime(rawEndTime, rawEndDate);
+
+  let timeLabel = "Time TBA";
+  if (formattedStartTime && formattedEndTime && formattedStartTime !== formattedEndTime) {
+    timeLabel = `${formattedStartTime} - ${formattedEndTime}`;
+  } else if (formattedStartTime) {
+    timeLabel = formattedStartTime;
+  } else if (formattedEndTime) {
+    timeLabel = `Ends at ${formattedEndTime}`;
+  }
+
+  let timeSub = "Check with organizer";
+  if (formattedStartTime && formattedEndTime && formattedStartTime !== formattedEndTime) {
+    timeSub = "Event duration";
+  } else if (formattedStartTime) {
+    timeSub = "Reporting & flag-off time";
+  }
+
+  const rawRegStart = event.registrationStart || event.registrationStartDate || event.registrationOpens;
+  const rawRegEnd = event.registrationEnd || event.registrationEndDate || event.registrationCloses || event.registrationDeadline;
+
+  const formattedRegStart = rawRegStart ? formatDisplayDate(rawRegStart, "Now") : "Now";
+  const formattedRegEnd = rawRegEnd ? formatDisplayDate(rawRegEnd, "Event Day") : "Event Day";
+
   return (
     <div className="event-detail-page">
       {navHeader}
@@ -770,26 +810,61 @@ export default function EventDetail() {
                   <div className="ed-info-icon-box"><svg xmlns="http://www.w3.org/2000/svg" color="white" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" /><circle cx="12" cy="10" r="3" /></svg></div>
                   <div className="ed-info-text">
                     <p className="ed-info-label">{event.location || event.city}</p>
-                    <p className="ed-info-sub">{event.venue || event.address || "Venue details from organizer"}{event.city ? `, ${event.city}` : ""}{event.state ? `, ${event.state}` : ""}</p></div>
-                </div>
-                <div className="ed-divider-thin" />
-                <div className="ed-info-row">
-                  <div className="ed-info-icon-box"><svg xmlns="http://www.w3.org/2000/svg" color="white" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 14v2.2l1.6 1" /><path d="M16 2v4" /><path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5" /><path d="M3 10h5" /><path d="M8 2v4" /><circle cx="16" cy="16" r="6" /></svg></div>
-                  <div className="ed-info-text">
-                    <p className="ed-info-label">{event.startDate || event.dateText}{event.startTime ? ` · ${event.startTime}` : ""}</p>
-                    <p className="ed-info-sub">{event.endDate ? `Ends ${event.endDate}` : ""}{event.endTime ? ` · ${event.endTime}` : ""}</p>
+                    <p className="ed-info-sub">{event.venue || event.address || "Venue details from organizer"}{event.city ? `, ${event.city}` : ""}{event.state ? `, ${event.state}` : ""}</p>
                   </div>
                 </div>
+
+                {/* Date Section (like '10 Dec, 2026') */}
+                <div className="ed-divider-thin" />
+                <div className="ed-info-row">
+                  <div className="ed-info-icon-box">
+                    <svg xmlns="http://www.w3.org/2000/svg" color="white" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                      <line x1="16" y1="2" x2="16" y2="6" />
+                      <line x1="8" y1="2" x2="8" y2="6" />
+                      <line x1="3" y1="10" x2="21" y2="10" />
+                    </svg>
+                  </div>
+                  <div className="ed-info-text">
+                    <p className="ed-info-label">{formattedStartDate}</p>
+                    <p className="ed-info-sub">{dateSub}</p>
+                  </div>
+                </div>
+
+                {/* Time Section (AM or PM, e.g. 5:30 AM) */}
+                <div className="ed-divider-thin" />
+                <div className="ed-info-row">
+                  <div className="ed-info-icon-box">
+                    <svg xmlns="http://www.w3.org/2000/svg" color="white" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10" />
+                      <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                  </div>
+                  <div className="ed-info-text">
+                    <p className="ed-info-label">{timeLabel}</p>
+                    <p className="ed-info-sub">{timeSub}</p>
+                  </div>
+                </div>
+
                 <div className="ed-divider-thin" />
                 <div className="ed-info-row">
                   <div className="ed-info-icon-box"><svg xmlns="http://www.w3.org/2000/svg" color="white" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><path d="M16 3.128a4 4 0 0 1 0 7.744" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><circle cx="9" cy="7" r="4" /></svg></div>
                   <div className="ed-info-text"><p className="ed-info-label">{seatsLeft || "Limited"} seats available</p><p className="ed-info-sub">Out of {event.capacity || "—"} total capacity</p></div>
                 </div>
-                {(event.registrationStart || event.registrationEnd) && (
+
+                {/* Registration Row (formatted as e.g. 10 Dec, 2026) */}
+                {(rawRegStart || rawRegEnd) && (
                   <>
                     <div className="ed-divider-thin" />
                     <div className="ed-info-row">
-                      <div className="ed-info-icon-box"><svg xmlns="http://www.w3.org/2000/svg" color="white" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg></div>
+                      <div className="ed-info-icon-box">
+                        <svg xmlns="http://www.w3.org/2000/svg" color="white" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                          <line x1="16" y1="2" x2="16" y2="6" />
+                          <line x1="8" y1="2" x2="8" y2="6" />
+                          <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                      </div>
                       <div className="ed-info-text">
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                           <p className="ed-info-label" style={{ margin: 0 }}>Registration</p>
@@ -797,7 +872,7 @@ export default function EventDetail() {
                             {statusInfo.isCompleted ? 'Concluded' : statusInfo.isRegistrationClosed ? 'Closed' : statusInfo.isRegistrationUpcoming ? 'Opens Soon' : 'Open'}
                           </span>
                         </div>
-                        <p className="ed-info-sub">{event.registrationStart || 'Now'} → {event.registrationEnd || 'Event Day'}</p>
+                        <p className="ed-info-sub">{formattedRegStart} → {formattedRegEnd}</p>
                       </div>
                     </div>
                   </>
@@ -844,6 +919,12 @@ export default function EventDetail() {
                     .replace(/[^\w\s-]/g, '')
                     .replace(/[\s_-]+/g, '-')
                     .replace(/^-+|-+$/g, '');
+
+                  if (location.state?.fromOrganizer && window.history.length > 1) {
+                    navigate(-1);
+                    return;
+                  }
+
                   navigate(`/organizer/${targetSlug}`, {
                     state: {
                       organizer: {
@@ -861,9 +942,9 @@ export default function EventDetail() {
                 title="View Organizer Details"
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <p className="ed-organizer-heading" style={{ margin: 0 }}>Organizer</p>
-                  <span style={{ fontSize: '12px', color: '#ff2244', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    View Profile →
+                  <p className="ed-organizer-heading" style={{ margin: 0 }}>Organiser</p>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <LuArrowRight style={{ fontSize: '20px', color: '#ffffffff' }} />
                   </span>
                 </div>
                 <div className="ed-organizer-profile">

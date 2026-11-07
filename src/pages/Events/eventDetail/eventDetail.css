@@ -911,7 +911,7 @@
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius-xl);
-  padding: 20px 22px 18px;
+  padding: 20px 20px 10px;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -920,7 +920,7 @@
 }
 
 .ed-organizer-heading {
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -939,21 +939,18 @@
   height: 56px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid rgba(80, 215, 53, 0.35);
-  box-shadow: 0 0 0 4px rgba(80, 215, 53, 0.1), 0 4px 16px rgba(0, 0, 0, 0.4);
+  border: 1px solid white;
+  /* border: 2px solid rgba(80, 215, 53, 0.35); */
+  /* box-shadow: 0 0 0 4px rgba(80, 215, 53, 0.1), 0 4px 16px rgba(0, 0, 0, 0.4); */
   flex-shrink: 0;
   transition: box-shadow var(--transition);
-}
-
-.ed-organizer-avatar:hover {
-  box-shadow: 0 0 0 5px rgba(80, 215, 53, 0.22), 0 6px 22px rgba(0, 0, 0, 0.5);
 }
 
 .ed-organizer-avatar--placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgba(80, 215, 53, 0.12), rgba(57, 23, 56, 0.4));
+  background: rgba(53, 53, 53, 0.4);
 }
 
 .ed-organizer-meta {

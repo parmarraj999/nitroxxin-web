@@ -245,14 +245,15 @@ export default function OrganizerDetail() {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [id]);
 
-  // Back button handler: return to previous page or /events
+  // Back button handler: return to previous page cleanly or /events
   const handleBack = () => {
-    if (location.state?.fromPath) {
-      navigate(location.state.fromPath);
-    } else if (window.history.length > 1) {
+    if (window.history.length > 1) {
       navigate(-1);
+    } else if (location.state?.fromPath) {
+      navigate(location.state.fromPath, { replace: true });
     } else {
-      navigate('/events');
+      const lastList = sessionStorage.getItem('nx_last_events_list') || '/events';
+      navigate(lastList, { replace: true });
     }
   };
 

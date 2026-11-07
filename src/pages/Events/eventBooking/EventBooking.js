@@ -43,18 +43,27 @@ const STEPS = [
 
 
 /**
+ * Formats motorcycle / vehicle registration number to standard Indian format:
+ * Strips special characters and spaces, forces uppercase, max 10 chars (e.g. MP04XX1231).
+ */
+export const formatVehicleNumber = (val) => {
+  if (!val) return '';
+  return String(val).replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 10);
+};
+
+/**
  * Validates motorcycle / vehicle registration number against Indian RTO standards:
  * - Standard state series: 2-letter State code + 1-2 digit RTO + optional 1-3 series letters + 1-4 digit number
- *   (e.g. MH 02 AB 1234, DL 01 1234, DL 1C A 1234, KA 05 MB 9876, HR 26 DQ 5551)
+ *   (e.g. MP04XX1231, MH02AB1234, DL011234)
  * - Bharat (BH) series: 2-digit year + BH + 1-4 digit number + 1-2 letters
- *   (e.g. 22 BH 1234 AA)
+ *   (e.g. 22BH1234AA)
  */
 export const isValidRegistrationNumber = (reg) => {
   if (!reg || typeof reg !== 'string') return false;
-  const clean = reg.replace(/[\s.-]/g, '').toUpperCase();
+  const clean = formatVehicleNumber(reg);
   const standardPattern = /^[A-Z]{2}[0-9]{1,2}[A-Z]{0,3}[0-9]{1,4}$/;
   const bhSeriesPattern = /^[0-9]{2}BH[0-9]{1,4}[A-Z]{1,2}$/;
-  return (standardPattern.test(clean) || bhSeriesPattern.test(clean)) && clean.length >= 6 && clean.length <= 12;
+  return (standardPattern.test(clean) || bhSeriesPattern.test(clean)) && clean.length >= 6 && clean.length <= 10;
 };
 
 const makeAttendee = (index = 0) => ({
@@ -120,19 +129,20 @@ const getBestBikeDetails = (prof, bikesList) => {
     bikesList && bikesList.length > 0
       ? bikesList[0]
       : prof?.bikes && prof.bikes.length > 0
-      ? prof.bikes[0]
-      : prof?.bike || null;
+        ? prof.bikes[0]
+        : prof?.bike || null;
 
   if (primary) {
     return {
       brand: primary.brand || primary.make || '',
       model: primary.model || primary.bikeModel || '',
-      registration:
+      registration: formatVehicleNumber(
         primary.regNumber ||
         primary.registration ||
         primary.registrationNumber ||
         primary.plateNumber ||
-        '',
+        ''
+      ),
       engineCC: primary.cc || primary.engineCC || primary.capacity || '',
     };
   }
@@ -140,7 +150,7 @@ const getBestBikeDetails = (prof, bikesList) => {
   return {
     brand: prof?.bikeBrand || prof?.motorcycleBrand || '',
     model: prof?.bikeModel || prof?.motorcycleModel || '',
-    registration: prof?.bikeRegistration || prof?.regNumber || prof?.vehicleNumber || '',
+    registration: formatVehicleNumber(prof?.bikeRegistration || prof?.regNumber || prof?.vehicleNumber || ''),
     engineCC: prof?.engineCC || prof?.bikeCC || '',
   };
 };
@@ -172,7 +182,7 @@ const resolveBikeRequirements = (event) => {
   };
 };
 
-const formatMoney = (amount) => `Rs. ${Math.round(Number(amount || 0)).toLocaleString('en-IN')}`;
+const formatMoney = (amount) => `₹ ${Math.round(Number(amount || 0)).toLocaleString('en-IN')}`;
 
 function Field({ label, children }) {
   return (
@@ -219,19 +229,11 @@ function BookingHeader({ event, seatsLeft, onBack, step, setStep }) {
     '/assets/images/mandu-fort-ride.png';
 
   return (
-    <header className="eb-hero">
-      {bannerImg && (
-        <img
-          className="eb-hero__image"
-          src={bannerImg}
-          alt={event.title || 'Event banner'}
-        />
-      )}
-      <div className="eb-hero__shade" />
-      <div className="eb-hero__content">
+    <>
+      <div className="eb-navbar_mobile">
         <button
-          className="eb-back-circle"
           type="button"
+          className="eb-back-circle-mob"
           onClick={onBack}
           aria-label="Back to event"
         >
@@ -249,78 +251,113 @@ function BookingHeader({ event, seatsLeft, onBack, step, setStep }) {
             <path d="M12 19l-7-7 7-7" />
           </svg>
         </button>
-
-        <h1 className="eb-hero__title">
-          {event.title || 'Leh Ladakh Ultimate Expedition 2027'}
-        </h1>
-
-        <div className="eb-hero__pills">
-          <div className="eb-hero__pill">
-            <svg
-              className="eb-pill-icon"
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-              <line x1="16" y1="2" x2="16" y2="6" />
-              <line x1="8" y1="2" x2="8" y2="6" />
-              <line x1="3" y1="10" x2="21" y2="10" />
-            </svg>
-            <span>{displayDate}</span>
-          </div>
-
-          <div className="eb-hero__pill">
-            <svg
-              className="eb-pill-icon"
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polygon points="3 11 22 2 13 21 11 13 3 11" />
-            </svg>
-            <span>{displayLocation}</span>
-          </div>
-
-          <div className="eb-hero__pill">
-            <svg
-              className="eb-pill-icon"
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
-              <line x1="9" y1="9" x2="9" y2="9" />
-              <line x1="15" y1="9" x2="15.01" y2="9" />
-              <line x1="9" y1="15" x2="9.01" y2="15" />
-              <line x1="15" y1="15" x2="15.01" y2="15" />
-            </svg>
-            <span>{displayTickets}</span>
-          </div>
-        </div>
-
-        {step && setStep && (
-          <div className="eb-stepper-wrap">
-            <Stepper step={step} setStep={setStep} />
-          </div>
-        )}
+        <h3 title={event.title}>{event.title}</h3>
+        <div className="eb-navbar_mobile-spacer" />
       </div>
-    </header>
+
+      <header className="eb-hero">
+        {bannerImg && (
+          <img
+            className="eb-hero__image"
+            src={bannerImg}
+            alt={event.title || 'Event banner'}
+          />
+        )}
+        <div className="eb-hero__shade" />
+        <div className="eb-hero__content">
+          <button
+            className="eb-back-circle"
+            type="button"
+            onClick={onBack}
+            aria-label="Back to event"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M19 12H5" />
+              <path d="M12 19l-7-7 7-7" />
+            </svg>
+          </button>
+
+          <h1 className="eb-hero__title">
+            {event.title || 'Leh Ladakh Ultimate Expedition 2027'}
+          </h1>
+
+          <div className="eb-hero__pills">
+            <div className="eb-hero__pill">
+              <svg
+                className="eb-pill-icon"
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                <line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" />
+                <line x1="3" y1="10" x2="21" y2="10" />
+              </svg>
+              <span>{displayDate}</span>
+            </div>
+
+            <div className="eb-hero__pill">
+              <svg
+                className="eb-pill-icon"
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polygon points="3 11 22 2 13 21 11 13 3 11" />
+              </svg>
+              <span>{displayLocation}</span>
+            </div>
+
+            <div className="eb-hero__pill">
+              <svg
+                className="eb-pill-icon"
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
+                <line x1="9" y1="9" x2="9" y2="9" />
+                <line x1="15" y1="9" x2="15.01" y2="9" />
+                <line x1="9" y1="15" x2="9.01" y2="15" />
+                <line x1="15" y1="15" x2="15.01" y2="15" />
+              </svg>
+              <span>{displayTickets}</span>
+            </div>
+          </div>
+
+          {step && setStep && (
+            <div className="eb-stepper-wrap">
+              <Stepper step={step} setStep={setStep} />
+            </div>
+          )}
+        </div>
+      </header>
+    </>
   );
 }
 
@@ -351,6 +388,8 @@ function Stepper({ step, setStep }) {
 
 function TicketStep({ counts, setCount, tiers, seatsLeft }) {
   const [activePlanTab, setActivePlanTab] = useState('passes');
+  const [expandedIncludes, setExpandedIncludes] = useState({});
+  const [expandedExcludes, setExpandedExcludes] = useState({});
 
   const handleSelectTier = (tierKey) => {
     // If this tier is already selected, do nothing
@@ -368,29 +407,12 @@ function TicketStep({ counts, setCount, tiers, seatsLeft }) {
   };
 
   return (
-    <section className="eb-panel eb-plan-panel">
+    <section className="eb-plan-panel">
       {/* Header matching reference UI: Title on Left, Toggle Pill on Right */}
       <div className="eb-plan-header">
         <div>
           <h2 className="eb-plan-main-title">Select a Plan</h2>
-        </div>
-
-        <div className="eb-plan-toggle-pill">
-          <button
-            type="button"
-            className={`eb-plan-toggle-btn ${activePlanTab === 'passes' ? 'is-active' : ''}`}
-            onClick={() => setActivePlanTab('passes')}
-          >
-            Passes
-          </button>
-          <button
-            type="button"
-            className={`eb-plan-toggle-btn ${activePlanTab === 'group' ? 'is-active' : ''}`}
-            onClick={() => setActivePlanTab('group')}
-          >
-            <span>Group</span>
-            <span className="eb-plan-toggle-discount">{seatsLeft > 0 ? `${seatsLeft} LEFT` : 'SOLD OUT'}</span>
-          </button>
+          <span className="eb-plan-toggle-discount">{seatsLeft > 0 ? `${seatsLeft} LEFT` : 'SOLD OUT'}</span>
         </div>
       </div>
 
@@ -406,8 +428,18 @@ function TicketStep({ counts, setCount, tiers, seatsLeft }) {
             const subtitle = tier.ticketFor
               ? `For ${tier.ticketFor}`
               : tier.description && tier.description.length < 50
-              ? tier.description
-              : (idx === 0 ? 'For Individuals' : idx === 1 ? 'For Teams & Crews' : 'Premium Access');
+                ? tier.description
+                : (idx === 0 ? 'For Individuals' : idx === 1 ? 'For Teams & Crews' : 'Premium Access');
+
+            const isExpandedPerks = Boolean(expandedIncludes[tier.key]);
+            const perksList = tier.perks || [];
+            const hasManyPerks = perksList.length > 2;
+            const visiblePerks = hasManyPerks && !isExpandedPerks ? perksList.slice(0, 2) : perksList;
+
+            const isExpandedExc = Boolean(expandedExcludes[tier.key]);
+            const excList = tier.exclusions || [];
+            const hasManyExcludes = excList.length > 2;
+            const visibleExcludes = hasManyExcludes && !isExpandedExc ? excList.slice(0, 2) : excList;
 
             return (
               <article
@@ -446,18 +478,50 @@ function TicketStep({ counts, setCount, tiers, seatsLeft }) {
                   <div className="eb-plan-expanded-content">
                     {/* Features List (Inclusions / Perks) */}
                     <div className="eb-plan-features-list">
-                      {tier.perks && tier.perks.length > 0 ? (
-                        tier.perks.map((perk, i) => (
-                          <div key={`perk-${i}`} className="eb-plan-feature-item">
-                            <span className="eb-plan-feature-icon">
-                              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-                                <circle cx="10" cy="10" r="9" stroke="#1d72fe" strokeWidth="1.8" />
-                                <path d="M6 10.2L8.7 13L14 7.5" stroke="#1d72fe" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                              </svg>
-                            </span>
-                            <span className="eb-plan-feature-text">{perk}</span>
-                          </div>
-                        ))
+                      {perksList.length > 0 ? (
+                        <>
+                          {visiblePerks.map((perk, i) => (
+                            <div key={`perk-${i}`} className="eb-plan-feature-item">
+                              <span className="eb-plan-feature-icon">
+                                <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                                  <circle cx="10" cy="10" r="9" stroke="#1d72fe" strokeWidth="1.8" />
+                                  <path d="M6 10.2L8.7 13L14 7.5" stroke="#1d72fe" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                              </span>
+                              <span className="eb-plan-feature-text">{perk}</span>
+                            </div>
+                          ))}
+
+                          {hasManyPerks && (
+                            <button
+                              type="button"
+                              className="eb-plan-read-more-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedIncludes((prev) => ({
+                                  ...prev,
+                                  [tier.key]: !prev[tier.key],
+                                }));
+                              }}
+                            >
+                              {isExpandedPerks ? (
+                                <>
+                                  <span>Read less</span>
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="18 15 12 9 6 15" />
+                                  </svg>
+                                </>
+                              ) : (
+                                <>
+                                  <span>+{perksList.length - 2} more included • Read more</span>
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="6 9 12 15 18 9" />
+                                  </svg>
+                                </>
+                              )}
+                            </button>
+                          )}
+                        </>
                       ) : (
                         <>
                           <div className="eb-plan-feature-item">
@@ -491,18 +555,51 @@ function TicketStep({ counts, setCount, tiers, seatsLeft }) {
                       )}
 
                       {/* Exclusions if present */}
-                      {tier.exclusions && tier.exclusions.length > 0 && (
-                        tier.exclusions.map((exc, i) => (
-                          <div key={`exc-${i}`} className="eb-plan-feature-item is-exclusion">
-                            <span className="eb-plan-feature-icon is-exclusion">
-                              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-                                <circle cx="10" cy="10" r="9" stroke="#94a3b8" strokeWidth="1.8" />
-                                <path d="M7 7L13 13M13 7L7 13" stroke="#94a3b8" strokeWidth="1.8" strokeLinecap="round" />
-                              </svg>
-                            </span>
-                            <span className="eb-plan-feature-text is-exclusion">{exc}</span>
-                          </div>
-                        ))
+                      {excList.length > 0 && (
+                        <div className="eb-plan-subgroup eb-plan-exclusions-block">
+                          <div className="eb-plan-subgroup-label">Exclusions:</div>
+                          {visibleExcludes.map((exc, i) => (
+                            <div key={`exc-${i}`} className="eb-plan-feature-item is-exclusion">
+                              <span className="eb-plan-feature-icon is-exclusion">
+                                <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                                  <circle cx="10" cy="10" r="9" stroke="#ff0000ff" strokeWidth="1.8" />
+                                  <path d="M7 7L13 13M13 7L7 13" stroke="#ff0000ff" strokeWidth="1.8" strokeLinecap="round" />
+                                </svg>
+                              </span>
+                              <span className="eb-plan-feature-text is-exclusion">{exc}</span>
+                            </div>
+                          ))}
+
+                          {hasManyExcludes && (
+                            <button
+                              type="button"
+                              className="eb-plan-read-more-btn is-exclusion"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedExcludes((prev) => ({
+                                  ...prev,
+                                  [tier.key]: !prev[tier.key],
+                                }));
+                              }}
+                            >
+                              {isExpandedExc ? (
+                                <>
+                                  <span>Read less</span>
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="18 15 12 9 6 15" />
+                                  </svg>
+                                </>
+                              ) : (
+                                <>
+                                  <span>+{excList.length - 2} more excluded • Read more</span>
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="6 9 12 15 18 9" />
+                                  </svg>
+                                </>
+                              )}
+                            </button>
+                          )}
+                        </div>
                       )}
 
                       {/* Description note if long */}
@@ -577,74 +674,74 @@ function TicketStep({ counts, setCount, tiers, seatsLeft }) {
   );
 }
 
-function CategoryBookingBrief({ event }) {
-  const [expanded, setExpanded] = useState(false);
-  const { config, details } = getCategoryDetails(event);
-  const bikeReq = resolveBikeRequirements(event);
-  const hasBike = Boolean(bikeReq && (bikeReq.bikeType || bikeReq.brand || bikeReq.model || bikeReq.engineCC));
+// function CategoryBookingBrief({ event }) {
+//   const [expanded, setExpanded] = useState(false);
+//   const { config, details } = getCategoryDetails(event);
+//   const bikeReq = resolveBikeRequirements(event);
+//   const hasBike = Boolean(bikeReq && (bikeReq.bikeType || bikeReq.brand || bikeReq.model || bikeReq.engineCC));
 
-  if (!config && !hasBike) return null;
+//   if (!config && !hasBike) return null;
 
-  const keyBikeSummary = [
-    bikeReq?.bikeType,
-    bikeReq?.brand,
-    bikeReq?.model,
-    bikeReq?.engineCC ? (String(bikeReq.engineCC).toLowerCase().includes('cc') ? bikeReq.engineCC : `${bikeReq.engineCC} cc`) : null
-  ].filter(Boolean).join(' • ');
+//   const keyBikeSummary = [
+//     bikeReq?.bikeType,
+//     bikeReq?.brand,
+//     bikeReq?.model,
+//     bikeReq?.engineCC ? (String(bikeReq.engineCC).toLowerCase().includes('cc') ? bikeReq.engineCC : `${bikeReq.engineCC} cc`) : null
+//   ].filter(Boolean).join(' • ');
 
-  return (
-    <section className="eb-category-brief">
-      <div
-        className="eb-category-brief__bar"
-        onClick={() => setExpanded(!expanded)}
-        role="button"
-        tabIndex={0}
-      >
-        <div className="eb-category-brief__info">
-          <span className="eb-category-brief__tag">📋 {config?.category || 'Ride'} Requirements</span>
-          {keyBikeSummary && <strong className="eb-category-brief__summary">{keyBikeSummary}</strong>}
-        </div>
-        <button type="button" className="eb-category-brief__toggle" aria-expanded={expanded}>
-          {expanded ? 'Hide details ▴' : 'View details ▾'}
-        </button>
-      </div>
-      {expanded && (
-        <div className="eb-category-brief__grid">
-          {hasBike && (
-            <>
-              {bikeReq.bikeType && <div><span>Bike Type</span><strong>{bikeReq.bikeType}</strong></div>}
-              {bikeReq.brand && <div><span>Required Brand</span><strong>{bikeReq.brand}</strong></div>}
-              {bikeReq.model && <div><span>Required Model</span><strong>{bikeReq.model}</strong></div>}
-              {bikeReq.engineCC && (
-                <div>
-                  <span>Minimum CC</span>
-                  <strong>{String(bikeReq.engineCC).toLowerCase().includes('cc') ? bikeReq.engineCC : `${bikeReq.engineCC} cc`}</strong>
-                </div>
-              )}
-            </>
-          )}
-          {details.map((field) => {
-            const isLongText = typeof field.value === 'string' && field.value.length > 60;
-            return (
-              <div key={field.id} className={isLongText ? 'eb-category-item--wide' : ''}>
-                <span>{field.label}</span>
-                <strong>{formatCategoryValue(field.value, field)}</strong>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </section>
-  );
-}
+//   return (
+//     <section className="eb-category-brief">
+//       <div
+//         className="eb-category-brief__bar"
+//         onClick={() => setExpanded(!expanded)}
+//         role="button"
+//         tabIndex={0}
+//       >
+//         <div className="eb-category-brief__info">
+//           <span className="eb-category-brief__tag">📋 {config?.category || 'Ride'} Requirements</span>
+//           {keyBikeSummary && <strong className="eb-category-brief__summary">{keyBikeSummary}</strong>}
+//         </div>
+//         <button type="button" className="eb-category-brief__toggle" aria-expanded={expanded}>
+//           {expanded ? 'Hide details ▴' : 'View details ▾'}
+//         </button>
+//       </div>
+//       {expanded && (
+//         <div className="eb-category-brief__grid">
+//           {hasBike && (
+//             <>
+//               {bikeReq.bikeType && <div><span>Bike Type</span><strong>{bikeReq.bikeType}</strong></div>}
+//               {bikeReq.brand && <div><span>Required Brand</span><strong>{bikeReq.brand}</strong></div>}
+//               {bikeReq.model && <div><span>Required Model</span><strong>{bikeReq.model}</strong></div>}
+//               {bikeReq.engineCC && (
+//                 <div>
+//                   <span>Minimum CC</span>
+//                   <strong>{String(bikeReq.engineCC).toLowerCase().includes('cc') ? bikeReq.engineCC : `${bikeReq.engineCC} cc`}</strong>
+//                 </div>
+//               )}
+//             </>
+//           )}
+//           {details.map((field) => {
+//             const isLongText = typeof field.value === 'string' && field.value.length > 60;
+//             return (
+//               <div key={field.id} className={isLongText ? 'eb-category-item--wide' : ''}>
+//                 <span>{field.label}</span>
+//                 <strong>{formatCategoryValue(field.value, field)}</strong>
+//               </div>
+//             );
+//           })}
+//         </div>
+//       )}
+//     </section>
+//   );
+// }
 
 function AttendeesStep({ totalTickets, attendees, updateAttendee, contact, setContact, emergency, setEmergency, bookingForSelf, onBookingForSelf, user }) {
   return (
     <section className="eb-panel">
       <div className="eb-panel__head">
-        <p className="eb-kicker">Rider information</p>
+        {/* <p className="eb-kicker">Rider information</p> */}
         <h2>Attendee and contact details</h2>
-        <span>Names should match the ID shown at check-in.</span>
+        {/* <span>Names should match the ID shown at check-in.</span> */}
       </div>
       <label className="eb-self-booking">
         <input type="checkbox" checked={bookingForSelf} onChange={(event) => onBookingForSelf(event.target.checked)} />
@@ -893,7 +990,7 @@ function RideSetupStep({
                       ...prev,
                       brand: bBrand,
                       model: bModel,
-                      registration: bReg.toUpperCase(),
+                      registration: formatVehicleNumber(bReg),
                       engineCC: bCC ? String(bCC) : prev.engineCC,
                       requirementConfirmed: true,
                     }));
@@ -935,12 +1032,14 @@ function RideSetupStep({
           <Field label="Registration number">
             <input
               value={bike.registration}
-              onChange={(e) => setBike({ ...bike, registration: e.target.value.toUpperCase() })}
-              placeholder="e.g. MH 02 AB 1234"
+              onChange={(e) => setBike({ ...bike, registration: formatVehicleNumber(e.target.value) })}
+              placeholder="e.g. MP04XX1231"
+              maxLength={10}
+              autoCapitalize="characters"
             />
             {bike.registration && !isValidRegistrationNumber(bike.registration) && (
               <span style={{ color: '#f87171', fontSize: '11px', marginTop: '4px', display: 'block' }}>
-                Enter valid number plate (e.g. MH 02 AB 1234 or 22 BH 1234 AA)
+                Enter valid vehicle number (e.g. MP04XX1231)
               </span>
             )}
           </Field>
@@ -1031,14 +1130,14 @@ function AddOnsStep({ selectedAddOns, toggleAddOn, preferences, setPreferences, 
         )) : <p style={{ color: '#66707d', gridColumn: '1/-1' }}>No add-ons available for this event.</p>}
       </div>
       <div className="eb-consents">
-        <label>
+        {/* <label>
           <input
             type="checkbox"
             checked={preferences.helmetConfirmed}
             onChange={(e) => setPreferences({ ...preferences, helmetConfirmed: e.target.checked })}
           />
           I confirm every rider will wear a certified helmet and follow marshal instructions.
-        </label>
+        </label> */}
         <label>
           <input
             type="checkbox"
@@ -1053,7 +1152,7 @@ function AddOnsStep({ selectedAddOns, toggleAddOn, preferences, setPreferences, 
             checked={preferences.whatsappUpdates}
             onChange={(e) => setPreferences({ ...preferences, whatsappUpdates: e.target.checked })}
           />
-          Send ticket, route, and gate updates on WhatsApp.
+          I Accept All the Terms & Conditions of Event Organiser
         </label>
       </div>
     </section>
@@ -1128,9 +1227,19 @@ function PaymentStep({ payment, setPayment, couponInput, setCouponInput, applied
   );
 }
 
-function BookingSummary({ event, summary, counts, selectedAddOns, currentStep, availableAddOns }) {
+function BookingSummary({
+  event,
+  summary,
+  counts,
+  selectedAddOns,
+  currentStep,
+  availableAddOns,
+  onBack,
+  onNext,
+  submitting,
+  totalSteps = STEPS.length,
+}) {
   const selected = availableAddOns.filter((item) => selectedAddOns.includes(item.key));
-  console.log(summary)
   return (
     <aside className="eb-summary">
       <p className="eb-kicker">Order summary</p>
@@ -1158,7 +1267,33 @@ function BookingSummary({ event, summary, counts, selectedAddOns, currentStep, a
         <span><FaCheck />Instant ticket ID</span>
         <span><FaUserFriends />Host approval tracking</span>
       </div>
-      <p className="eb-summary__hint">Step {currentStep} of {STEPS.length}</p>
+      <p className="eb-summary__hint">Step {currentStep} of {totalSteps}</p>
+      <div className="eb-summary__actions">
+        {currentStep > 1 && (
+          <button
+            type="button"
+            className="eb-summary__btn-back"
+            onClick={onBack}
+            disabled={submitting}
+            aria-label="Previous step"
+          >
+            <FaArrowLeft style={{ fontSize: '12px' }} />
+            <span>Back</span>
+          </button>
+        )}
+        <button
+          type="button"
+          className="eb-summary__btn-continue"
+          onClick={onNext}
+          disabled={submitting}
+        >
+          {submitting
+            ? 'Creating booking...'
+            : currentStep === totalSteps
+            ? `Pay ${formatMoney(summary.total)}`
+            : 'Continue'}
+        </button>
+      </div>
     </aside>
   );
 }
@@ -1189,7 +1324,7 @@ const formatLandscapeDateTime = (evt) => {
         const day = dateObj.getDate();
         const month = new Intl.DateTimeFormat('en-IN', { month: 'short' }).format(dateObj);
         formattedDate = `${weekday}, ${day} ${month}`;
-      } catch (e) {}
+      } catch (e) { }
     }
   }
 
@@ -1575,7 +1710,7 @@ export default function EventBooking() {
   // for opening ticket popup 
   const [bookingConfirmation, setBookingConfirmation] = useState(null);
   const [showOrderBreakdown, setShowOrderBreakdown] = useState(false);
-  
+
   const [error, setError] = useState('');
   const [bookingForSelf, setBookingForSelf] = useState(false);
 
@@ -1665,7 +1800,7 @@ export default function EventBooking() {
       setBike((prev) => ({
         brand: bikeData.brand || prev.brand,
         model: bikeData.model || prev.model,
-        registration: (bikeData.registration || prev.registration).toUpperCase(),
+        registration: formatVehicleNumber(bikeData.registration || prev.registration),
       }));
     }
   };
@@ -1715,7 +1850,7 @@ export default function EventBooking() {
       setBike((prev) => ({
         brand: prev.brand || bikeData.brand,
         model: prev.model || bikeData.model,
-        registration: (prev.registration || bikeData.registration).toUpperCase(),
+        registration: formatVehicleNumber(prev.registration || bikeData.registration),
         engineCC: prev.engineCC || bikeData.engineCC || '',
         requirementConfirmed: prev.requirementConfirmed || false,
       }));
@@ -1727,7 +1862,7 @@ export default function EventBooking() {
     const ticketTotal = Object.values(tierTotals).reduce((sum, value) => sum + value, 0);
     const addOnTotal = availableAddOns.filter((item) => selectedAddOns.includes(item.key)).reduce((sum, item) => sum + item.price, 0);
     const fees = 0;
-    
+
     let discount = 0;
     if (appliedCoupon) {
       if (appliedCoupon.type === 'percentage' || appliedCoupon.discountType === 'percentage') {
@@ -1740,7 +1875,7 @@ export default function EventBooking() {
         discount = Number(appliedCoupon.value || appliedCoupon.discount || appliedCoupon.amount || 0);
       }
     }
-    
+
     return {
       tierTotals,
       ticketCount: totalTickets,
@@ -1792,10 +1927,10 @@ export default function EventBooking() {
   const applyCoupon = () => {
     const code = couponInput.trim().toUpperCase();
     if (!code) return;
-    
+
     const eventCoupons = event?.coupons || [];
     const validCoupon = eventCoupons.find(c => String(c.code || c.couponCode).toUpperCase() === code);
-    
+
     if (validCoupon) {
       if (validCoupon.available !== undefined && Number(validCoupon.available) <= 0) {
         setCouponError('This coupon is fully claimed.');
@@ -1836,7 +1971,7 @@ export default function EventBooking() {
       }
 
       if (!isValidRegistrationNumber(bike.registration)) {
-        return 'Please enter a valid motorcycle registration number (e.g. MH 02 AB 1234 or 22 BH 1234 AA).';
+        return 'Please enter a valid motorcycle registration number (e.g. MP04XX1231).';
       }
 
       const bikeReq = resolveBikeRequirements(event);
@@ -2134,7 +2269,7 @@ export default function EventBooking() {
       <div className="eb-shell">
         <div className="eb-content">
           <main>
-            {step === 1 && <CategoryBookingBrief event={event} />}
+            {/* {step === 1 && <CategoryBookingBrief event={event} />} */}
             {renderStep()}
             {error && <p className="eb-error">{error}</p>}
           </main>
@@ -2145,6 +2280,10 @@ export default function EventBooking() {
             selectedAddOns={selectedAddOns}
             currentStep={step}
             availableAddOns={availableAddOns}
+            onBack={previous}
+            onNext={next}
+            submitting={submitting}
+            totalSteps={STEPS.length}
           />
         </div>
       </div>
@@ -2160,7 +2299,7 @@ export default function EventBooking() {
         >
           <div className="eb-fixed-bar__summary-text">
             <span className="eb-fixed-bar__kicker">
-              {step === STEPS.length ? 'Final Payable' : 'Order Total'}
+              {/* {step === STEPS.length ? 'Final Payable' : 'Order Total'} */}
             </span>
             <strong className="eb-fixed-bar__price">{formatMoney(summary.total)}</strong>
             <span className="eb-fixed-bar__sub">
@@ -2176,8 +2315,8 @@ export default function EventBooking() {
             onClick={previous}
             aria-label="Go back"
           >
-            <FaArrowLeft style={{ fontSize: '12px' }} />
-            <span>Back</span>
+            <FaArrowLeft style={{ fontSize: '12px',color:'white' }} />
+            {/* <span>Back</span> */}
           </button>
 
           <button
@@ -2191,8 +2330,8 @@ export default function EventBooking() {
               {submitting
                 ? 'Creating booking...'
                 : step === STEPS.length
-                ? `Pay ${formatMoney(summary.total)}`
-                : 'Continue'}
+                  ? `Pay ${formatMoney(summary.total)}`
+                  : 'Continue'}
             </span>
           </button>
         </div>
@@ -2288,7 +2427,7 @@ export default function EventBooking() {
             try {
               sessionStorage.setItem('nx_last_site_path', `/events/${id}`);
               sessionStorage.setItem('nx_booked_event_id', String(id));
-            } catch (e) {}
+            } catch (e) { }
             navigate('/profile/joined-events', { replace: true, state: { fromBooking: true } });
           }}
           onNavigateProfile={() => {
@@ -2296,7 +2435,7 @@ export default function EventBooking() {
             try {
               sessionStorage.setItem('nx_last_site_path', `/events/${id}`);
               sessionStorage.setItem('nx_booked_event_id', String(id));
-            } catch (e) {}
+            } catch (e) { }
             navigate('/profile/joined-events', { replace: true, state: { fromBooking: true } });
           }}
         />
