@@ -523,7 +523,7 @@ BAR (heading + search side by side) ===== */
 
 .ep-cat-card {
   flex-shrink: 0;
-  width: 250px;
+  width: 260px;
   height: 360px;
   border-radius: 20px;
   overflow: hidden;

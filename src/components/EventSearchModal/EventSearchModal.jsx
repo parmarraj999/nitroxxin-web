@@ -2,8 +2,6 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useEventsContext } from "../../context/EventsContext";
-import { useAuth } from "../../context/AuthContext";
-import { useAuthModal } from "../AuthModal/useAuthModal";
 import { toDate } from "../../utils/dataFormatters";
 import ImageWithLoader from "../common/ImageWithLoader";
 import { useCollection } from "../../hooks/useFirestore";
@@ -279,8 +277,6 @@ export default function EventSearchModal({
   const navigate = useNavigate();
   const location = useLocation();
   const { events = [] } = useEventsContext();
-  const { user } = useAuth();
-  const { openAuthModal } = useAuthModal();
 
   const [localQuery, setLocalQuery] = useState(propQuery !== undefined ? propQuery : initialQuery);
   const [wishlist, setWishlist] = useState(() => {

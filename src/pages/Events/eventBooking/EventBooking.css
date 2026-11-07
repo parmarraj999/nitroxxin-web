@@ -889,12 +889,391 @@
 
 .eb-form-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
 }
 
 .eb-form-grid--wide {
   margin-bottom: 20px;
+}
+
+/* ════════════════════════════════════════════════════
+   Step 2: Attendee & Buyer Information
+   ════════════════════════════════════════════════════ */
+.eb-attendees-step {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.eb-step-section {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.eb-step-section-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.eb-buyer-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 16px 0;
+  letter-spacing: -0.02em;
+}
+
+.eb-section-subtitle {
+  font-size: 13.5px;
+  color: #64748b;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* Outer buyer card matching reference */
+.eb-buyer-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+}
+
+/* ════════════════════════════════════════════════════
+   Notched Outline Floating-Label Fields
+   ════════════════════════════════════════════════════ */
+.eb-notched-field-group {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+}
+
+.eb-notched-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 56px;
+  box-sizing: border-box;
+  background: #ffffff;
+  border: 1.5px solid #d1d5db;
+  border-radius: 14px;
+  padding: 0 16px;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  cursor: text;
+}
+
+.eb-notched-field:hover {
+  border-color: #9ca3af;
+}
+
+.eb-notched-field:focus-within {
+  border-color: #0f172a;
+  box-shadow: 0 0 0 1px #0f172a;
+}
+
+.eb-notched-field.has-error {
+  border-color: #ef4444;
+}
+
+.eb-notched-field.has-error:focus-within {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 1px #ef4444;
+}
+
+.eb-notched-field__label {
+  position: absolute;
+  top: -9px;
+  left: 14px;
+  background: #ffffff;
+  padding: 0 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+  line-height: 1;
+  pointer-events: none;
+  z-index: 2;
+  transition: color 0.18s ease;
+  white-space: nowrap;
+}
+
+.eb-notched-field:focus-within .eb-notched-field__label {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.eb-notched-field.has-error .eb-notched-field__label {
+  color: #ef4444;
+}
+
+.eb-notched-field__control {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+}
+
+.eb-notched-field input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  padding: 14px 0 !important;
+  margin: 0 !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: #0f172a !important;
+  line-height: 1.4 !important;
+  font-family: inherit;
+  min-height: auto !important;
+}
+
+.eb-notched-field input::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.eb-notched-field input:-webkit-autofill,
+.eb-notched-field input:-webkit-autofill:hover,
+.eb-notched-field input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  -webkit-text-fill-color: #0f172a !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+.eb-notched-field__lock {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: auto;
+  padding-left: 8px;
+  user-select: none;
+}
+
+.eb-notched-field__lock svg {
+  width: 19px;
+  height: 19px;
+  stroke: #cbd5e1;
+  transition: stroke 0.18s ease;
+}
+
+.eb-notched-field:focus-within .eb-notched-field__lock svg {
+  stroke: #94a3b8;
+}
+
+.eb-notched-field__trailing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: auto;
+  padding-left: 8px;
+}
+
+.eb-notched-field select {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  padding: 14px 0 !important;
+  margin: 0 !important;
+  font-size: 15.5px !important;
+  font-weight: 600 !important;
+  color: #0f172a !important;
+  cursor: pointer;
+  font-family: inherit;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 4px center !important;
+  background-size: 16px 16px !important;
+  padding-right: 28px !important;
+  min-height: auto !important;
+}
+
+.eb-notched-field--textarea {
+  align-items: flex-start;
+  min-height: 110px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.eb-notched-field textarea {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  padding: 4px 0 !important;
+  margin: 0 !important;
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  color: #0f172a !important;
+  line-height: 1.5 !important;
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+}
+
+.eb-field-error {
+  font-size: 12px;
+  font-weight: 500;
+  color: #ef4444;
+  margin-top: 5px;
+  padding-left: 4px;
+  display: block;
+}
+
+/* Plain field fallback (e.g. for coupons or custom blocks) */
+.eb-plain-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.eb-plain-field__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #3f4650;
+}
+
+.eb-plain-field__control {
+  width: 100%;
+}
+
+.eb-plain-field input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 46px;
+  border: 1px solid #dbe0e6;
+  border-radius: 8px;
+  background: #fff;
+  color: #15171a;
+  font: inherit;
+  font-weight: 600;
+  padding: 0 13px;
+  outline: none;
+}
+
+/* ════════════════════════════════════════════════════
+   Self-booking Toggle & Attendee Cards
+   ════════════════════════════════════════════════════ */
+.eb-self-booking-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  margin: 18px 0 24px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.eb-self-booking-toggle:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.eb-self-booking-toggle.is-active {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.eb-self-booking-toggle input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #0f172a;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.eb-self-booking-toggle__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.eb-self-booking-toggle__text strong {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.eb-self-booking-toggle__text small {
+  font-size: 12.5px;
+  color: #64748b;
+}
+
+.eb-attendee-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 18px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+}
+
+.eb-attendee-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.eb-attendee-card__badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.eb-attendee-card__badge svg {
+  color: #64748b;
+  font-size: 18px;
+}
+
+.eb-attendee-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.eb-attendee-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px 16px;
 }
 
 .eb-field {
@@ -1351,14 +1730,49 @@
 
   .eb-shell {
     margin-top: 50px;
-    padding: 0 3px;
+    padding: 0 12px;
   }
 
   .eb-ticket,
   .eb-option-grid,
   .eb-addons,
-  .eb-form-grid {
+  .eb-form-grid,
+  .eb-attendee-grid {
     grid-template-columns: 1fr;
+  }
+
+  .eb-buyer-card,
+  .eb-attendee-card {
+    padding: 18px 14px;
+    border-radius: 16px;
+    gap: 16px;
+  }
+
+  .eb-notched-field {
+    min-height: 52px;
+    padding: 0 14px;
+    border-radius: 12px;
+  }
+
+  .eb-notched-field input {
+    font-size: 16px !important;
+    padding: 13px 0 !important;
+  }
+
+  .eb-notched-field__label {
+    font-size: 12px;
+    top: -8px;
+    left: 12px;
+  }
+
+  .eb-buyer-title {
+    font-size: 18.5px;
+    margin-bottom: 12px;
+  }
+
+  .eb-self-booking-toggle {
+    padding: 12px 14px;
+    margin: 14px 0 20px;
   }
 }
 

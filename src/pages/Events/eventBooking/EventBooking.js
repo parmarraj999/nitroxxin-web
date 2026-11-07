@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, isValidElement } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
@@ -8,7 +8,6 @@ import {
   FaCreditCard,
   FaIdCard,
   FaMapMarkerAlt,
-  FaMotorcycle,
   FaShieldAlt,
   FaTicketAlt,
   FaUserFriends,
@@ -22,7 +21,6 @@ import { useEventsContext } from '../../../context/EventsContext';
 import { bookEvent } from '../../../services/commerceService';
 import { useAuth } from '../../../context/AuthContext';
 import { useAuthModal } from '../../../components/AuthModal/useAuthModal';
-import { formatCategoryValue, getCategoryDetails } from '../eventCategoryConfig';
 import { getTicketQrUrl } from '../../../utils/ticketSecurity';
 import { getEventStatusInfo } from '../../../utils/eventStatus';
 
@@ -184,12 +182,56 @@ const resolveBikeRequirements = (event) => {
 
 const formatMoney = (amount) => `₹ ${Math.round(Number(amount || 0)).toLocaleString('en-IN')}`;
 
-function Field({ label, children }) {
+function Field({
+  label,
+  children,
+  isLocked = false,
+  trailingIcon = null,
+  className = '',
+  error = null,
+  plain = false,
+}) {
+  if (plain) {
+    return (
+      <div className={`eb-plain-field ${className}`}>
+        {label && <span className="eb-plain-field__label">{label}</span>}
+        <div className="eb-plain-field__control">{children}</div>
+        {error && <span className="eb-field-error">{error}</span>}
+      </div>
+    );
+  }
+
+  const isTextarea = isValidElement(children) && children.type === 'textarea';
+
   return (
-    <label className="eb-field">
-      <span>{label}</span>
-      {children}
-    </label>
+    <div className={`eb-notched-field-group ${className}`}>
+      <label className={`eb-notched-field ${isTextarea ? 'eb-notched-field--textarea' : ''} ${error ? 'has-error' : ''}`}>
+        {label && <span className="eb-notched-field__label">{label}</span>}
+        <div className="eb-notched-field__control">
+          {children}
+          {isLocked ? (
+            <span className="eb-notched-field__lock" title="Verified contact detail" aria-label="Verified">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            </span>
+          ) : trailingIcon ? (
+            <span className="eb-notched-field__trailing">{trailingIcon}</span>
+          ) : null}
+        </div>
+      </label>
+      {error && <span className="eb-field-error">{error}</span>}
+    </div>
   );
 }
 
@@ -387,7 +429,6 @@ function Stepper({ step, setStep }) {
 }
 
 function TicketStep({ counts, setCount, tiers, seatsLeft }) {
-  const [activePlanTab, setActivePlanTab] = useState('passes');
   const [expandedIncludes, setExpandedIncludes] = useState({});
   const [expandedExcludes, setExpandedExcludes] = useState({});
 
@@ -735,69 +776,178 @@ function TicketStep({ counts, setCount, tiers, seatsLeft }) {
 //   );
 // }
 
-function AttendeesStep({ totalTickets, attendees, updateAttendee, contact, setContact, emergency, setEmergency, bookingForSelf, onBookingForSelf, user }) {
+function AttendeesStep({
+  totalTickets,
+  attendees,
+  updateAttendee,
+  contact,
+  setContact,
+  emergency,
+  setEmergency,
+  bookingForSelf,
+  onBookingForSelf,
+  user,
+}) {
+  const handleBuyerChange = (field, value) => {
+    setContact((prev) => ({ ...prev, [field]: value }));
+
+    // If booking for self, sync primary attendee details automatically
+    if (bookingForSelf) {
+      if (field === 'name') updateAttendee(0, 'name', value);
+      if (field === 'phone') updateAttendee(0, 'phone', value);
+      if (field === 'email') updateAttendee(0, 'email', value);
+    }
+  };
+
   return (
-    <section className="eb-panel">
-      <div className="eb-panel__head">
-        {/* <p className="eb-kicker">Rider information</p> */}
-        <h2>Attendee and contact details</h2>
-        {/* <span>Names should match the ID shown at check-in.</span> */}
+    <div className="eb-attendees-step">
+      {/* ── 1. Buyer Information Section ── */}
+      <div className="eb-step-section">
+        <h2 className="eb-buyer-title">Edit buyer information</h2>
+
+        <div className="eb-buyer-card">
+          <Field label="Full name">
+            <input
+              type="text"
+              value={contact.name}
+              onChange={(e) => handleBuyerChange('name', e.target.value)}
+              placeholder="Full name"
+              autoComplete="name"
+            />
+          </Field>
+
+          <Field label="Mobile number" isLocked={true}>
+            <input
+              type="tel"
+              value={contact.phone}
+              onChange={(e) => handleBuyerChange('phone', e.target.value)}
+              placeholder="Mobile number"
+              autoComplete="tel"
+              maxLength={15}
+            />
+          </Field>
+
+          <Field label="Email">
+            <input
+              type="email"
+              value={contact.email}
+              onChange={(e) => handleBuyerChange('email', e.target.value)}
+              placeholder="Email"
+              autoComplete="email"
+            />
+          </Field>
+
+          <Field label="Emergency contact">
+            <input
+              type="text"
+              value={emergency.name}
+              onChange={(e) => setEmergency({ ...emergency, name: e.target.value })}
+              placeholder="Emergency contact person"
+            />
+          </Field>
+        </div>
       </div>
-      <label className="eb-self-booking">
-        <input type="checkbox" checked={bookingForSelf} onChange={(event) => onBookingForSelf(event.target.checked)} />
-        <span><strong>Booking for myself</strong><small>{user ? 'Use my saved profile for attendee 1 and booking contact.' : 'Sign in to use your saved profile details.'}</small></span>
+
+      {/* ── 2. Self Booking Toggle ── */}
+      <label className={`eb-self-booking-toggle ${bookingForSelf ? 'is-active' : ''}`}>
+        <input
+          type="checkbox"
+          checked={bookingForSelf}
+          onChange={(event) => onBookingForSelf(event.target.checked)}
+        />
+        <div className="eb-self-booking-toggle__text">
+          <strong>Booking for myself</strong>
+          <small>
+            {user
+              ? 'Using your saved account details for buyer and primary rider.'
+              : 'Sign in to use your saved profile details automatically.'}
+          </small>
+        </div>
       </label>
-      <div className="eb-form-grid eb-form-grid--wide">
-        <Field label="Booking contact name">
-          <input value={contact.name} onChange={(e) => setContact({ ...contact, name: e.target.value })} placeholder="Full name" />
-        </Field>
-        <Field label="Booking contact phone">
-          <input value={contact.phone} onChange={(e) => setContact({ ...contact, phone: e.target.value })} placeholder="10 digit mobile" />
-        </Field>
-        <Field label="Email for tickets">
-          <input value={contact.email} onChange={(e) => setContact({ ...contact, email: e.target.value })} placeholder="you@example.com" />
-        </Field>
-        <Field label="Emergency contact">
-          <input value={emergency.name} onChange={(e) => setEmergency({ ...emergency, name: e.target.value })} placeholder="Contact person" />
-        </Field>
+
+      {/* ── 3. Rider / Attendee Details Section ── */}
+      <div className="eb-step-section eb-step-section--attendees">
+        <div className="eb-step-section-head">
+          <h2 className="eb-buyer-title">
+            {totalTickets > 1 ? `Rider details (${totalTickets} attendees)` : 'Rider details'}
+          </h2>
+          <span className="eb-section-subtitle">
+            Attendee names should match the government ID shown at check-in.
+          </span>
+        </div>
+
+        <div className="eb-attendee-stack">
+          {Array.from({ length: totalTickets }, (_, index) => {
+            const attendee = attendees[index] || makeAttendee(index);
+            const isSelf = index === 0 && bookingForSelf;
+
+            return (
+              <article key={index} className="eb-attendee-card">
+                <div className="eb-attendee-card__header">
+                  <div className="eb-attendee-card__badge">
+                    <FaIdCard />
+                    <strong>{isSelf ? 'Attendee 1 — You' : `Attendee ${index + 1}`}</strong>
+                  </div>
+                  {isSelf && <span className="eb-attendee-pill">Primary Rider</span>}
+                </div>
+
+                <div className="eb-attendee-grid">
+                  <Field label="Full name">
+                    <input
+                      type="text"
+                      value={attendee.name}
+                      onChange={(e) => updateAttendee(index, 'name', e.target.value)}
+                      placeholder="Rider name"
+                    />
+                  </Field>
+
+                  <Field label="Mobile number" isLocked={isSelf}>
+                    <input
+                      type="tel"
+                      value={attendee.phone}
+                      onChange={(e) => updateAttendee(index, 'phone', e.target.value)}
+                      placeholder="Mobile number"
+                    />
+                  </Field>
+
+                  <Field label="Email">
+                    <input
+                      type="email"
+                      value={attendee.email}
+                      onChange={(e) => updateAttendee(index, 'email', e.target.value)}
+                      placeholder="Ticket email"
+                    />
+                  </Field>
+
+                  <Field label="Age">
+                    <input
+                      type="text"
+                      value={attendee.age}
+                      onChange={(e) => updateAttendee(index, 'age', e.target.value.replace(/\D/g, ''))}
+                      placeholder="18+"
+                      maxLength={3}
+                    />
+                  </Field>
+
+                  <Field label="Gender">
+                    <select
+                      value={attendee.gender}
+                      onChange={(e) => updateAttendee(index, 'gender', e.target.value)}
+                    >
+                      <option value="">Select</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Non-binary">Non-binary</option>
+                      <option value="Prefer not to say">Prefer not to say</option>
+                    </select>
+                  </Field>
+                </div>
+              </article>
+            );
+          })}
+        </div>
       </div>
-      <div className="eb-attendee-stack">
-        {Array.from({ length: totalTickets }, (_, index) => {
-          const attendee = attendees[index] || makeAttendee(index);
-          return (
-            <article key={index} className="eb-attendee">
-              <div className="eb-attendee__title">
-                <FaIdCard />
-                <strong>{index === 0 && bookingForSelf ? 'Attendee 1 — You' : `Attendee ${index + 1}`}</strong>
-              </div>
-              <div className="eb-form-grid">
-                <Field label="Full name">
-                  <input value={attendee.name} onChange={(e) => updateAttendee(index, 'name', e.target.value)} placeholder="Rider name" />
-                </Field>
-                <Field label="Phone">
-                  <input value={attendee.phone} onChange={(e) => updateAttendee(index, 'phone', e.target.value)} placeholder="Mobile number" />
-                </Field>
-                <Field label="Email">
-                  <input value={attendee.email} onChange={(e) => updateAttendee(index, 'email', e.target.value)} placeholder="Ticket email" />
-                </Field>
-                <Field label="Age">
-                  <input value={attendee.age} onChange={(e) => updateAttendee(index, 'age', e.target.value)} placeholder="18+" />
-                </Field>
-                <Field label="Gender">
-                  <select value={attendee.gender} onChange={(e) => updateAttendee(index, 'gender', e.target.value)}>
-                    <option value="">Select</option>
-                    <option>Female</option>
-                    <option>Male</option>
-                    <option>Non-binary</option>
-                    <option>Prefer not to say</option>
-                  </select>
-                </Field>
-              </div>
-            </article>
-          );
-        })}
-      </div>
-    </section>
+    </div>
   );
 }
 
@@ -1029,7 +1179,10 @@ function RideSetupStep({
               placeholder={reqCC > 0 ? `Min ${reqCC} cc` : 'e.g. 450'}
             />
           </Field>
-          <Field label="Registration number">
+          <Field
+            label="Registration number"
+            error={bike.registration && !isValidRegistrationNumber(bike.registration) ? "Enter valid vehicle number (e.g. MP04XX1231)" : null}
+          >
             <input
               value={bike.registration}
               onChange={(e) => setBike({ ...bike, registration: formatVehicleNumber(e.target.value) })}
@@ -1037,11 +1190,6 @@ function RideSetupStep({
               maxLength={10}
               autoCapitalize="characters"
             />
-            {bike.registration && !isValidRegistrationNumber(bike.registration) && (
-              <span style={{ color: '#f87171', fontSize: '11px', marginTop: '4px', display: 'block' }}>
-                Enter valid vehicle number (e.g. MP04XX1231)
-              </span>
-            )}
           </Field>
           <Field label="Riding experience">
             <select
@@ -1188,7 +1336,7 @@ function PaymentStep({ payment, setPayment, couponInput, setCouponInput, applied
             <Field label={payment.method === 'upi' ? 'UPI ID' : 'Payment reference'}>
               <input value={payment.reference} onChange={(e) => setPayment({ ...payment, reference: e.target.value })} placeholder="name@upi or card reference" />
             </Field>
-            <Field label="Coupon code">
+            <Field label="Coupon code" plain={true}>
               {appliedCoupon ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <div style={{ flex: 1, padding: '11px 13px', border: '1px solid #0a8f5a', borderRadius: '8px', background: '#e8f7ee', color: '#0a6f45', fontWeight: 'bold' }}>
@@ -1804,6 +1952,28 @@ export default function EventBooking() {
       }));
     }
   };
+
+  // Auto-prefill contact details when user/profile is loaded
+  useEffect(() => {
+    if (!user && !profile) return;
+    const userPhone = getBestUserPhone(profile, user);
+    const userName = profile?.fullName || profile?.name || profile?.displayName || user?.fullName || user?.displayName || '';
+    const userEmail = profile?.email || user?.email || '';
+
+    setContact((prev) => ({
+      name: prev.name || userName,
+      phone: prev.phone || userPhone,
+      email: prev.email || userEmail,
+    }));
+
+    const emerg = getBestEmergency(profile);
+    if (emerg.name) {
+      setEmergency((prev) => ({
+        name: prev.name || emerg.name,
+        phone: prev.phone || emerg.phone,
+      }));
+    }
+  }, [user, profile]);
 
   // Reactive sync when profile/user or bikes arrive asynchronously while bookingForSelf is checked
   useEffect(() => {
