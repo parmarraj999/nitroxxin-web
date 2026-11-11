@@ -5,10 +5,11 @@
 
 .nx-details-page-wrap {
   width: 100%;
-  max-width: 80%;
-  height: 100vh;
+  max-width: 1060px;
+  min-height: 100%;
+  height: auto;
   margin: 0 auto;
-  padding: 8px 0 60px;
+  padding: 12px 20px 80px;
   box-sizing: border-box;
 }
 
@@ -209,49 +210,134 @@
   margin-top: 8px;
 }
 
-/* ── Form Inputs ── */
-.nx-details-form {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+/* ── Personal Info Panel Header ── */
+.nx-details-panel-header {
+  margin-bottom: 4px;
 }
 
-.nx-details-field {
+.nx-details-section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 4px 0;
+  letter-spacing: -0.01em;
+}
+
+.nx-details-section-sub {
+  font-size: 13px;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* ── Form Inputs & Grid ── */
+.nx-details-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.nx-field-col-span-2 {
+  grid-column: 1 / -1;
+}
+
+/* ── Notched Floating-Label Field (Matches Image 1 & Booking Rider Detail) ── */
+.nx-notched-field-group {
+  position: relative;
+  width: 100%;
   display: flex;
   flex-direction: column;
+}
+
+.nx-notched-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 54px;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 0 16px;
+  background: #0f1217;
+  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+  box-sizing: border-box;
+  cursor: text;
+}
+
+.nx-notched-field:focus-within {
+  border-color: #3b82f6;
+  background: #121620;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+}
+
+.nx-notched-field.has-error {
+  border-color: #ef4444;
+}
+
+.nx-notched-field__label {
+  position: absolute;
+  top: -9px;
+  left: 14px;
+  background: #0e1116; /* matches .nx-details-right-panel background */
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #94a3b8;
+  pointer-events: none;
+  z-index: 2;
+  letter-spacing: 0.01em;
+  transition: color 0.18s ease;
+}
+
+.nx-notched-field:focus-within .nx-notched-field__label {
+  color: #60a5fa;
+}
+
+.nx-notched-field__control {
+  display: flex;
+  align-items: center;
+  width: 100%;
   gap: 8px;
 }
 
-.nx-details-label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #ffffff;
-  letter-spacing: -0.1px;
-}
-
-.nx-details-input {
+.nx-notched-input {
   width: 100%;
-  background: #0f1217;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
-  padding: 15px 18px;
+  background: transparent;
+  border: none;
+  outline: none;
   color: #ffffff;
   font-size: 15px;
   font-weight: 500;
-  outline: none;
   font-family: inherit;
+  padding: 15px 0;
   box-sizing: border-box;
-  transition: border-color 0.2s ease, background 0.2s ease;
 }
 
-.nx-details-input:focus {
-  border-color: #3b82f6;
-  background: #13171f;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+.nx-notched-input::placeholder {
+  color: rgba(255, 255, 255, 0.28);
 }
 
-.nx-details-input::placeholder {
-  color: rgba(255, 255, 255, 0.25);
+.nx-input-uppercase {
+  text-transform: uppercase;
+}
+
+.nx-notched-field__lock {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  font-size: 15px;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.nx-field-error {
+  font-size: 12px;
+  color: #f87171;
+  margin-top: 4px;
+  margin-left: 14px;
 }
 
 /* ── License Document Photo Section ── */
@@ -491,6 +577,55 @@
 
   .nx-details-avatar-card {
     padding: 32px 24px;
+  }
+}
+
+@media (max-width: 899px) {
+  .nx-details-page-wrap {
+    max-width: 100% !important;
+    width: 100% !important;
+    height: auto !important;
+    padding: 8px 12px 100px !important;
+  }
+
+  .nx-details-desktop-layout {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+  }
+
+  .nx-details-avatar-card,
+  .nx-details-right-panel,
+  .nx-details-license-card {
+    padding: 20px 16px !important;
+    border-radius: 16px !important;
+  }
+
+  .nx-details-fields-grid {
+    grid-template-columns: 1fr !important;
+    gap: 18px !important;
+  }
+
+  .nx-field-col-span-2 {
+    grid-column: 1 !important;
+  }
+
+  .nx-notched-field {
+    min-height: 52px !important;
+    padding: 0 14px !important;
+  }
+
+  .nx-notched-input {
+    font-size: 16px !important; /* Prevents auto-zoom in iOS Safari */
+    padding: 14px 0 !important;
+  }
+
+  .nx-details-header {
+    margin-bottom: 16px !important;
+  }
+
+  .nx-details-title {
+    font-size: 20px !important;
   }
 }
 

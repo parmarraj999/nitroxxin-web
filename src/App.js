@@ -35,6 +35,7 @@ import { EventCategoryProvider } from './context/EventCategoryContext';
 import { AccessoriesProvider } from './context/AccessoriesContext';
 import { BikeBrandsProvider } from './context/BikeBrandsContext';
 import { ForYouProvider } from './context/ForYouContext';
+import { AccessoriesPageProvider } from './context/AccessoriesPageContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Profile from './pages/profile/profile';
 import ProfileOverview from './pages/profile/pages/ProfileOverview';
@@ -99,6 +100,7 @@ const AccessoriesLayout = () => {
 
 const AppShell = () => {
   const location = useLocation();
+  const isBookingPage = location.pathname.includes('/book');
   const isProfilePage = location.pathname.includes('/profile');
   const isSearchPage = location.pathname.includes('/search');
   const isPrivacyPage = location.pathname.includes('/privacy');
@@ -131,7 +133,7 @@ const AppShell = () => {
   }, [location.pathname, location.search, location.hash]);
 
   return (
-    <div className={`app-container${isProfilePage ? ' is-profile-view' : ''}${isSearchPage ? ' is-search-view' : ''}${isPrivacyPage ? ' is-privacy-view' : ''}`}>
+    <div className={`app-container${isBookingPage ? ' is-booking-view' : ''}${isProfilePage ? ' is-profile-view' : ''}${isSearchPage ? ' is-search-view' : ''}${isPrivacyPage ? ' is-privacy-view' : ''}`}>
       <ScreenLoader />
       <Navigation />
 
@@ -227,12 +229,14 @@ function App() {
           <AccessoriesProvider>
             <BikeBrandsProvider>
               <ForYouProvider>
-                <Router>
-                  <ScrollToTop />
-                  <AuthProvider>
-                    <AppShell />
-                  </AuthProvider>
-                </Router>
+                <AccessoriesPageProvider>
+                  <Router>
+                    <ScrollToTop />
+                    <AuthProvider>
+                      <AppShell />
+                    </AuthProvider>
+                  </Router>
+                </AccessoriesPageProvider>
               </ForYouProvider>
             </BikeBrandsProvider>
           </AccessoriesProvider>

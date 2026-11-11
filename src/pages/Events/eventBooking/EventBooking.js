@@ -5,11 +5,19 @@ import {
   FaArrowLeft,
   FaCalendarAlt,
   FaCheck,
+  FaChevronDown,
+  FaChevronRight,
   FaCreditCard,
+  FaEdit,
   FaIdCard,
+  FaLock,
   FaMapMarkerAlt,
+  FaPercentage,
+  FaRegEdit,
+  FaRegUser,
   FaShieldAlt,
   FaTicketAlt,
+  FaUser,
   FaUserFriends,
   FaWallet,
 } from 'react-icons/fa';
@@ -108,12 +116,22 @@ const getBestEmergency = (prof) => {
   const name =
     prof?.emergencyContactName ||
     prof?.emergencyName ||
+    prof?.emergencyContactPerson ||
+    prof?.emergencyPerson ||
+    prof?.emergencyContact?.name ||
+    prof?.emergencyContact?.fullName ||
+    prof?.emergency?.name ||
     (typeof prof?.emergencyContact === 'string' && isNaN(Number(prof.emergencyContact)) ? prof.emergencyContact : '') ||
     '';
   const rawPhone =
     prof?.emergencyNumber ||
     prof?.emergencyPhone ||
     prof?.emergencyContactPhone ||
+    prof?.emergencyContactNumber ||
+    prof?.emergencyContact?.phone ||
+    prof?.emergencyContact?.number ||
+    prof?.emergencyContact?.mobile ||
+    prof?.emergency?.phone ||
     (typeof prof?.emergencyContact === 'string' && !isNaN(Number(prof.emergencyContact.replace(/\D/g, ''))) ? prof.emergencyContact : '') ||
     '';
   return {
@@ -180,6 +198,14 @@ const resolveBikeRequirements = (event) => {
   };
 };
 
+const isPillionOrSpectatorTier = (tier) => {
+  if (!tier) return false;
+  const str = `${tier.ticketFor || ''} ${tier.name || ''} ${tier.packageName || ''} ${tier.title || ''} ${tier.description || ''} ${tier.type || ''}`.toLowerCase();
+  const hasPillion = str.includes('pillion') || str.includes('pillon') || str.includes('passenger') || str.includes('co-rider') || str.includes('corider');
+  const hasSpectator = str.includes('spectator') || str.includes('visitor') || str.includes('audience') || str.includes('guest') || str.includes('fan');
+  return hasPillion || hasSpectator;
+};
+
 const formatMoney = (amount) => `₹ ${Math.round(Number(amount || 0)).toLocaleString('en-IN')}`;
 
 function Field({
@@ -235,7 +261,7 @@ function Field({
   );
 }
 
-function BookingHeader({ event, seatsLeft, onBack, step, setStep }) {
+function BookingHeader({ event, seatsLeft, onBack, step, setStep, steps = STEPS }) {
   const displayDate = useMemo(() => {
     if (event.dateTimeText) return event.dateTimeText;
     if (event.dateText && event.time) return `${event.dateText}, ${event.time}`;
@@ -394,7 +420,7 @@ function BookingHeader({ event, seatsLeft, onBack, step, setStep }) {
 
           {step && setStep && (
             <div className="eb-stepper-wrap">
-              <Stepper step={step} setStep={setStep} />
+              <Stepper step={step} setStep={setStep} steps={steps} />
             </div>
           )}
         </div>
@@ -403,10 +429,10 @@ function BookingHeader({ event, seatsLeft, onBack, step, setStep }) {
   );
 }
 
-function Stepper({ step, setStep }) {
+function Stepper({ step, setStep, steps = STEPS }) {
   return (
     <nav className="eb-stepper-pill-bar" aria-label="Booking steps">
-      {STEPS.map(({ id, label }) => {
+      {steps.map(({ id, label }) => {
         const isActive = step === id;
         const isDone = step > id;
         return (
@@ -837,12 +863,22 @@ function AttendeesStep({
             />
           </Field>
 
-          <Field label="Emergency contact">
+          <Field label="Emergency contact person">
             <input
               type="text"
               value={emergency.name}
-              onChange={(e) => setEmergency({ ...emergency, name: e.target.value })}
-              placeholder="Emergency contact person"
+              onChange={(e) => setEmergency((prev) => ({ ...prev, name: e.target.value }))}
+              placeholder="e.g. Parent / Spouse / Friend"
+            />
+          </Field>
+
+          <Field label="Emergency contact number">
+            <input
+              type="tel"
+              value={emergency.phone}
+              onChange={(e) => setEmergency((prev) => ({ ...prev, phone: e.target.value }))}
+              placeholder="Emergency contact number"
+              maxLength={15}
             />
           </Field>
         </div>
@@ -961,6 +997,7 @@ function RideSetupStep({
   setPreferences,
   selectedTiers,
   userBikes = [],
+  requiresVehicle = true,
 }) {
   const bikeReq = resolveBikeRequirements(event);
   const hasRequirement = Boolean(bikeReq);
@@ -972,32 +1009,48 @@ function RideSetupStep({
   );
   const ccBelow = reqCC > 0 && userCC > 0 && userCC < reqCC;
 
-  // derive joinAs from selected ticket types: default to biker unless ticket is explicitly pillion/passenger
+  // derive joinAs from selected ticket types: default to biker unless ticket is explicitly pillion/passenger/spectator
   useEffect(() => {
     if (selectedTiers && selectedTiers.length > 0) {
-      const isExplicitPillion = selectedTiers.every((tier) => {
-        const type = (tier.ticketFor || tier.name || '').toLowerCase();
-        return (type.includes('pillion') || type.includes('passenger') || type.includes('spectator')) &&
-          !type.includes('rider') && !type.includes('driver') && !type.includes('biker');
-      });
-      setJoinAs(isExplicitPillion ? 'pillion' : 'biker');
+      const isAllPillionOrSpectator = selectedTiers.every(isPillionOrSpectatorTier);
+      if (isAllPillionOrSpectator) {
+        const isSpectator = selectedTiers.every((t) => {
+          const str = `${t.ticketFor || ''} ${t.name || ''} ${t.packageName || ''}`.toLowerCase();
+          return str.includes('spectator') || str.includes('visitor') || str.includes('audience') || str.includes('guest') || str.includes('fan');
+        });
+        setJoinAs(isSpectator ? 'spectator' : 'pillion');
+      } else {
+        setJoinAs('biker');
+      }
     } else {
       setJoinAs('biker');
     }
   }, [selectedTiers, setJoinAs]);
 
+  const showVehicleSetup = requiresVehicle && joinAs === 'biker';
+
   return (
     <section className="eb-panel">
       <div className="eb-panel__head">
         <div>
-          <p className="eb-kicker">Ride setup</p>
-          <h2>{joinAs === 'biker' ? 'Vehicle setup' : 'Rider preferences'}</h2>
+          <p className="eb-kicker">{showVehicleSetup ? 'Ride setup' : 'Preferences'}</p>
+          <h2>
+            {showVehicleSetup
+              ? 'Vehicle setup'
+              : joinAs === 'spectator'
+              ? 'Spectator preferences'
+              : 'Pillion preferences'}
+          </h2>
         </div>
-        <span>This helps Nitroxx plan marshals, ride safety, and rider grouping.</span>
+        <span>
+          {showVehicleSetup
+            ? 'This helps Nitroxx plan marshals, ride safety, and rider grouping.'
+            : 'Let Nitroxx know if you have any special requirements or notes.'}
+        </span>
       </div>
 
-      {/* ── Case 1: Event has Bike Requirements ── */}
-      {hasRequirement && joinAs === 'biker' && (
+      {/* ── Case 1: Event has Bike Requirements (Only for Bikers) ── */}
+      {showVehicleSetup && hasRequirement && (
         <div className="eb-bike-req-banner">
           <div className="eb-bike-req-banner__header">
             <span className="eb-bike-req-pill">Event Bike Criteria</span>
@@ -1118,8 +1171,8 @@ function RideSetupStep({
         </div>
       )}
 
-      {/* Garage Quick Select (if user has saved bikes) */}
-      {joinAs === 'biker' && userBikes && userBikes.length > 0 && (
+      {/* Garage Quick Select (Only for Bikers) */}
+      {showVehicleSetup && userBikes && userBikes.length > 0 && (
         <div className="eb-garage-selector">
           <p className="eb-garage-title">Select from your garage:</p>
           <div className="eb-garage-chips">
@@ -1155,7 +1208,8 @@ function RideSetupStep({
         </div>
       )}
 
-      {joinAs === 'biker' && (
+      {/* Vehicle Form Grid (Only for Bikers) */}
+      {showVehicleSetup && (
         <div className="eb-form-grid eb-form-grid--wide">
           <Field label="Bike brand">
             <input
@@ -1215,21 +1269,9 @@ function RideSetupStep({
         </div>
       )}
 
-      {/* Special request */}
-
-      {joinAs !== 'biker' && (
+      {/* Preferences for Pillion Riders (NO Vehicle) */}
+      {!showVehicleSetup && joinAs === 'pillion' && (
         <div className="eb-form-grid eb-form-grid--wide">
-          <Field label="Riding experience (Optional)">
-            <select
-              value={preferences.experience}
-              onChange={(e) => setPreferences({ ...preferences, experience: e.target.value })}
-            >
-              <option>Beginner</option>
-              <option>Intermediate</option>
-              <option>Advanced</option>
-              <option>Professional</option>
-            </select>
-          </Field>
           <Field label="Preferred pace (Optional)">
             <select
               value={preferences.pace}
@@ -1307,71 +1349,532 @@ function AddOnsStep({ selectedAddOns, toggleAddOn, preferences, setPreferences, 
   );
 }
 
-function PaymentStep({ payment, setPayment, couponInput, setCouponInput, appliedCoupon, applyCoupon, removeCoupon, couponError, summary, event }) {
+function PaymentStep({
+  event,
+  summary,
+  contact,
+  setContact,
+  emergency,
+  setEmergency,
+  profile,
+  user,
+  tiers,
+  counts,
+  selectedAddOns,
+  availableAddOns,
+  couponInput,
+  setCouponInput,
+  appliedCoupon,
+  applyCoupon,
+  removeCoupon,
+  couponError,
+  setStep,
+  onPay,
+  submitting,
+}) {
+  const [showCouponInput, setShowCouponInput] = useState(false);
+  const [showEditBuyerModal, setShowEditBuyerModal] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editEmergencyName, setEditEmergencyName] = useState('');
+  const [editEmergencyPhone, setEditEmergencyPhone] = useState('');
+
+  const buyerName =
+    contact?.name ||
+    profile?.fullName ||
+    profile?.name ||
+    profile?.displayName ||
+    user?.displayName ||
+    user?.fullName ||
+    'Raj';
+  const rawPhone =
+    contact?.phone ||
+    profile?.phoneNumber ||
+    profile?.phone ||
+    user?.phoneNumber ||
+    user?.phone ||
+    '';
+  const formattedPhone = rawPhone ? (rawPhone.startsWith('+') ? rawPhone : `+91 ${rawPhone}`) : '+91 8869959066';
+  const buyerEmail =
+    contact?.email ||
+    profile?.email ||
+    user?.email ||
+    'developersucks@gmail.com';
+  const userLocation =
+    profile?.state ||
+    profile?.city ||
+    event?.state ||
+    event?.city ||
+    'Andaman and Nicobar Islands';
+
+  useEffect(() => {
+    setEditName(buyerName);
+    setEditEmail(buyerEmail);
+    setEditEmergencyName(emergency?.name || '');
+    setEditEmergencyPhone(emergency?.phone || '');
+  }, [buyerName, buyerEmail, emergency, showEditBuyerModal]);
+
+  const handleSaveBuyer = () => {
+    if (setContact) {
+      setContact((prev) => ({
+        ...prev,
+        name: editName.trim() || prev.name,
+        email: editEmail.trim() || prev.email,
+      }));
+    }
+    if (setEmergency) {
+      setEmergency({
+        name: editEmergencyName.trim(),
+        phone: editEmergencyPhone.trim(),
+      });
+    }
+    setShowEditBuyerModal(false);
+  };
+
+  const eventThumb =
+    event?.bannerUrl ||
+    event?.imageUrl ||
+    event?.image ||
+    event?.bannerImage ||
+    event?.banner ||
+    event?.coverImage ||
+    event?.ticketTemplateUrl ||
+    event?.media?.primaryImage ||
+    (Array.isArray(event?.images) && event.images[0]) ||
+    '/assets/images/mandu-fort-ride.png';
+
+  const displayDate = useMemo(() => {
+    if (event?.dateTimeText) return event.dateTimeText;
+    if (event?.dateText && event?.time) return `${event.dateText} | ${event.time}`;
+    if (event?.dateText) return event.dateText;
+    const rawDate = event?.startDate || event?.date;
+    if (rawDate) {
+      try {
+        const d = new Date(rawDate);
+        if (!isNaN(d.getTime())) {
+          const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+          const m = months[d.getMonth()];
+          const day = d.getDate();
+          let timeStr = event?.time || '';
+          if (!timeStr) {
+            const h = d.getHours();
+            const mins = d.getMinutes();
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            const hr = h % 12 || 12;
+            timeStr = mins > 0 ? `${hr}:${mins < 10 ? '0' : ''}${mins} ${ampm}` : `${hr}${ampm}`;
+          }
+          return `${m} ${day}${timeStr ? ` | ${timeStr}` : ''}`;
+        }
+      } catch (_) {}
+    }
+    return 'November 7 | 11AM';
+  }, [event]);
+
+  const displayLocation = useMemo(() => {
+    if (event?.venue && (event?.city || event?.state)) {
+      return [event.venue, event.city].filter(Boolean).join(', ');
+    }
+    return event?.venue || event?.location || event?.city || 'Timezone, Bhopal';
+  }, [event]);
+
+  const activeTiers = useMemo(() => {
+    return tiers.filter((t) => Number(counts[t.key] || 0) > 0);
+  }, [tiers, counts]);
+
+  const activeAddOns = useMemo(() => {
+    return availableAddOns.filter((a) => selectedAddOns.includes(a.key));
+  }, [availableAddOns, selectedAddOns]);
+
   return (
-    <section className="eb-panel">
-      <div className="eb-panel__head">
-        <p className="eb-kicker">Payment</p>
-        <h2>Review and pay securely</h2>
-        <span>Secure payment details are stored with the booking for dashboard reconciliation.</span>
-      </div>
-      <div className="eb-payment-layout">
-        <div className="eb-payment-methods">
-          {[
-            { key: 'upi', label: 'UPI', icon: FaWallet },
-            { key: 'card', label: 'Card', icon: FaCreditCard },
-            { key: 'wallet', label: 'Wallet', icon: FaWallet },
-          ].map(({ key, label, icon: Icon }) => (
-            <button
-              type="button"
-              key={key}
-              className={`eb-pay-option${payment.method === key ? ' is-selected' : ''}`}
-              onClick={() => setPayment({ ...payment, method: key })}
-            >
-              <Icon />
-              <span>{label}</span>
-            </button>
-          ))}
-          <div className="eb-form-grid">
-            <Field label={payment.method === 'upi' ? 'UPI ID' : 'Payment reference'}>
-              <input value={payment.reference} onChange={(e) => setPayment({ ...payment, reference: e.target.value })} placeholder="name@upi or card reference" />
-            </Field>
-            <Field label="Coupon code" plain={true}>
-              {appliedCoupon ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{ flex: 1, padding: '11px 13px', border: '1px solid #0a8f5a', borderRadius: '8px', background: '#e8f7ee', color: '#0a6f45', fontWeight: 'bold' }}>
-                    {appliedCoupon.code} Applied
-                  </div>
-                  <button type="button" onClick={removeCoupon} className="eb-btn eb-btn--ghost" style={{ minWidth: 'auto', padding: '0 16px' }}>Remove</button>
+    <div className="eb-pay-page">
+      <div className="eb-pay-grid">
+        {/* ── LEFT COLUMN (Desktop) / STACKED CONTENT (Mobile) ── */}
+        <div className="eb-pay-col-main">
+          {/* Section: Confirm details and payment (Desktop Title) */}
+          <h2 className="eb-pay-sec-title eb-pay-desktop-only">Confirm details and payment</h2>
+
+          {/* Buyer Card (Desktop: At Top; Mobile: Under "INVOICE DETAILS") */}
+          <div className="eb-pay-buyer-section">
+            <div className="eb-section-divider-bar eb-pay-mobile-only">
+              <span>Invoice Details</span>
+            </div>
+
+            <div className="eb-pay-buyer-card">
+              <div className="eb-pay-buyer-icon">
+                <FaRegUser className="eb-pay-user-outline-icon" />
+              </div>
+              <div className="eb-pay-buyer-body">
+                <h4>Buying tickets for <strong>{buyerName}</strong></h4>
+                <div className="eb-pay-buyer-sub eb-pay-desktop-only">
+                  <span>{formattedPhone} | {buyerEmail} | {userLocation}</span>
                 </div>
-              ) : (
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <input style={{ flex: 1, minHeight: '46px' }} value={couponInput} onChange={(e) => setCouponInput(e.target.value.toUpperCase())} placeholder="Enter code" />
-                  <button type="button" onClick={applyCoupon} className="eb-btn eb-btn--primary" style={{ minWidth: 'auto', padding: '0 16px' }}>Apply</button>
+                <div className="eb-pay-buyer-sub eb-pay-mobile-only">
+                  <span>{formattedPhone} {buyerEmail}</span>
+                  <span>{userLocation}</span>
+                </div>
+                {(emergency?.name || emergency?.phone) && (
+                  <div className="eb-pay-buyer-emerg">
+                    <span className="eb-pay-emerg-label">Emergency contact:</span>
+                    <span className="eb-pay-emerg-val">
+                      {[emergency.name, emergency.phone].filter(Boolean).join(' • ')}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                className="eb-pay-edit-btn"
+                onClick={() => setShowEditBuyerModal(true)}
+                title="Edit buyer details"
+                aria-label="Edit buyer details"
+              >
+                <FaRegEdit />
+              </button>
+            </div>
+          </div>
+
+          {/* ── OFFERS SECTION ── */}
+          <div className="eb-pay-offers-section">
+            <h3 className="eb-pay-sec-heading eb-pay-desktop-only">Offers</h3>
+            <div className="eb-section-divider-bar eb-pay-mobile-only">
+              <span>Offers</span>
+            </div>
+
+            <div className="eb-pay-card eb-pay-offers-card">
+              {/* Featured Offer Row (Desktop) */}
+              <div className="eb-pay-offer-item eb-pay-desktop-only">
+                <div className="eb-pay-offer-badge">
+                  <FaPercentage />
+                </div>
+                <div className="eb-pay-offer-content">
+                  <strong>{appliedCoupon ? `${appliedCoupon.code} Applied` : '30% OFF up to ₹300'}</strong>
+                  <p>
+                    {appliedCoupon
+                      ? `Saved ${formatMoney(summary.discount)} with this code`
+                      : 'Save ₹168 with this code'}
+                  </p>
+                  <button
+                    type="button"
+                    className="eb-pay-link-btn"
+                    onClick={() => setShowCouponInput((prev) => !prev)}
+                  >
+                    {showCouponInput ? 'Hide offers ▴' : 'View all offers >'}
+                  </button>
+                </div>
+                <div className="eb-pay-offer-action">
+                  {appliedCoupon ? (
+                    <button
+                      type="button"
+                      className="eb-pay-pill-btn eb-pay-pill-btn--remove"
+                      onClick={removeCoupon}
+                    >
+                      Remove
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="eb-pay-pill-btn"
+                      onClick={() => {
+                        setCouponInput('NITROXX10');
+                        applyCoupon();
+                      }}
+                    >
+                      Apply
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Offers Row (Mobile - Matches Image 3 & 4) */}
+              <div
+                className="eb-pay-offer-row eb-pay-offer-row--mob eb-pay-mobile-only"
+                onClick={() => {
+                  if (appliedCoupon) {
+                    removeCoupon();
+                  } else {
+                    setShowCouponInput((prev) => !prev);
+                  }
+                }}
+              >
+                <div className="eb-pay-offer-row__left">
+                  <div className="eb-pay-mob-percent-badge">
+                    <FaPercentage />
+                  </div>
+                  <span>{appliedCoupon ? `${appliedCoupon.code} Applied (Tap to remove)` : 'View all offers'}</span>
+                </div>
+                <FaChevronRight className="eb-pay-chevron" />
+              </div>
+
+              {/* Expandable / Manual Coupon Form */}
+              {(showCouponInput || couponError) && !appliedCoupon && (
+                <div className="eb-pay-coupon-drawer">
+                  <div className="eb-pay-coupon-form">
+                    <input
+                      type="text"
+                      value={couponInput}
+                      onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                      placeholder="Enter promo / coupon code"
+                    />
+                    <button
+                      type="button"
+                      className="eb-pay-pill-btn"
+                      onClick={applyCoupon}
+                      disabled={!couponInput.trim()}
+                    >
+                      Apply
+                    </button>
+                  </div>
+                  {couponError && <p className="eb-pay-coupon-err">{couponError}</p>}
                 </div>
               )}
-              {couponError && <span style={{ color: '#b42318', fontSize: '13px', marginTop: '4px' }}>{couponError}</span>}
-            </Field>
+
+              <div className="eb-pay-card-divider" />
+
+              {/* Payment Offers Row */}
+              <div
+                className="eb-pay-offer-row"
+                onClick={() => {
+                  setCouponInput('NITROXX10');
+                  setShowCouponInput(true);
+                }}
+              >
+                <div className="eb-pay-offer-row__left">
+                  <FaCreditCard className="eb-pay-card-icon" />
+                  <span>View all payment offers</span>
+                </div>
+                <FaChevronRight className="eb-pay-chevron" />
+              </div>
+            </div>
+          </div>
+
+          {/* ── PAYMENT SUMMARY SECTION ── */}
+          <div className="eb-pay-summary-section">
+            <h3 className="eb-pay-sec-heading eb-pay-desktop-only">Payment summary</h3>
+            <div className="eb-section-divider-bar eb-pay-mobile-only">
+              <span>Payment Summary</span>
+            </div>
+
+            <div className="eb-pay-card eb-pay-summary-card">
+              <div className="eb-pay-summary-line">
+                <span className="eb-pay-summary-label">
+                  Order amount <FaChevronDown style={{ fontSize: '10px', marginLeft: '4px' }} />
+                </span>
+                <span className="eb-pay-summary-val">{formatMoney(summary.ticketTotal + summary.addOnTotal)}</span>
+              </div>
+
+              <div className="eb-pay-summary-line">
+                <span className="eb-pay-summary-label">Booking fee</span>
+                <span className="eb-pay-summary-val">
+                  <span className="eb-fee-strikethrough">₹33.6</span>
+                  <strong className="eb-fee-free">₹0</strong>
+                </span>
+              </div>
+
+              {summary.discount > 0 && (
+                <div className="eb-pay-summary-line eb-pay-summary-line--discount">
+                  <span className="eb-pay-summary-label">Coupon discount</span>
+                  <strong className="eb-pay-discount-val">-{formatMoney(summary.discount)}</strong>
+                </div>
+              )}
+
+              <div className="eb-pay-card-divider" />
+
+              <div className="eb-pay-summary-line eb-pay-summary-line--grand">
+                <strong>Grand Total</strong>
+                <strong className="eb-pay-grand-total">{formatMoney(summary.total)}</strong>
+              </div>
+            </div>
           </div>
         </div>
-        <article className="eb-final-card">
-          {event.image ? <img src={event.image} alt={event.title} /> : null}
-          <div>
-            <strong>{event.title}</strong>
-            <span>{event.dateTimeText || event.dateText}</span>
-            <span>{event.location}</span>
+
+        {/* ── RIGHT COLUMN (Desktop Sidebar & Order Card) / TOP (Mobile) ── */}
+        <div className="eb-pay-col-side">
+          {/* Event Header (Matches Image 2 & 3: Above the Card on both Desktop & Mobile) */}
+          <div className="eb-pay-event-header">
+            <img
+              src={eventThumb}
+              alt={event?.title || 'Event'}
+              className="eb-pay-event-thumb"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = '/assets/images/mandu-fort-ride.png';
+              }}
+            />
+            <div className="eb-pay-event-info">
+              <h4>{event?.title || 'Timezone | DB Mall - Bhopal'}</h4>
+              <p>{displayLocation}</p>
+            </div>
           </div>
-          <dl>
-            <div><dt>Tickets</dt><dd>{summary.ticketCount}</dd></div>
-            <div><dt>Ticket total</dt><dd>{formatMoney(summary.ticketTotal)}</dd></div>
-            {summary.addOnTotal > 0 && <div><dt>Add-ons</dt><dd>{formatMoney(summary.addOnTotal)}</dd></div>}
-            {summary.fees > 0 && <div><dt>Convenience</dt><dd>{formatMoney(summary.fees)}</dd></div>}
-            {summary.discount > 0 && <div><dt>Discount</dt><dd>-{formatMoney(summary.discount)}</dd></div>}
-            <div className="eb-final-card__total"><dt>Amount payable</dt><dd>{formatMoney(summary.total)}</dd></div>
-          </dl>
-        </article>
+
+          <div className="eb-pay-order-card">
+            {/* Date & Time */}
+            <div className="eb-pay-date-row">
+              <strong>{displayDate}</strong>
+            </div>
+
+            <div className="eb-pay-card-divider" />
+
+            {/* Selected Ticket Tiers */}
+            <div className="eb-pay-items-list">
+              {activeTiers.map((tier) => {
+                const count = Number(counts[tier.key] || 0);
+                return (
+                  <div key={tier.key} className="eb-pay-item-row">
+                    <div className="eb-pay-item-desc">
+                      <strong>{count} x {tier.name}</strong>
+                    </div>
+                    <div className="eb-pay-item-pricing">
+                      <strong>{formatMoney(tier.price * count)}</strong>
+                      <button
+                        type="button"
+                        className="eb-pay-remove-link"
+                        onClick={() => setStep(1)}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {activeAddOns.map((addon) => (
+                <div key={addon.key} className="eb-pay-item-row">
+                  <div className="eb-pay-item-desc">
+                    <strong>1 x {addon.title}</strong>
+                  </div>
+                  <div className="eb-pay-item-pricing">
+                    <strong>{formatMoney(addon.price)}</strong>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="eb-pay-card-divider" />
+
+            {/* M-Ticket Row */}
+            <div className="eb-pay-mticket-row">
+              <span className="eb-pay-mticket-icon">
+                <FaTicketAlt />
+              </span>
+              <p>
+                <strong>M-Ticket:</strong> Entry using the QR code in your app
+              </p>
+            </div>
+
+            {/* CTA Button (Desktop View) */}
+            <div className="eb-pay-desktop-only" style={{ marginTop: '20px' }}>
+              <button
+                type="button"
+                className="eb-pay-cta-btn"
+                onClick={onPay}
+                disabled={submitting}
+                aria-label="Pay now"
+              >
+                <div className="eb-pay-cta-btn__total">
+                  <strong>{formatMoney(summary.total)}</strong>
+                  <span>TOTAL</span>
+                </div>
+                <div className="eb-pay-cta-btn__label">
+                  {submitting ? 'Processing...' : 'Pay Now'}
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
-    </section>
+
+      {/* ── Edit Buyer Information Modal (Pixel-Perfect Match with Image 1) ── */}
+      {showEditBuyerModal && (
+        <div className="eb-modal-overlay" onClick={() => setShowEditBuyerModal(false)}>
+          <div className="eb-edit-buyer-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="eb-edit-buyer-modal__header">
+              <h2>Edit buyer information</h2>
+              <button
+                type="button"
+                className="eb-modal-close-btn"
+                onClick={() => setShowEditBuyerModal(false)}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Rounded Card Enclosing the Fields (Image 1) */}
+            <div className="eb-edit-buyer-card">
+              <div className="eb-buyer-field-box">
+                <label className="eb-buyer-field-label">Full name</label>
+                <input
+                  type="text"
+                  className="eb-buyer-field-input"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder="Full name"
+                  autoComplete="name"
+                />
+              </div>
+
+              <div className="eb-buyer-field-box eb-buyer-field-box--locked">
+                <label className="eb-buyer-field-label">Mobile number</label>
+                <input
+                  type="tel"
+                  className="eb-buyer-field-input"
+                  value={rawPhone || '8869959066'}
+                  readOnly
+                  placeholder="Mobile number"
+                  autoComplete="tel"
+                />
+                <FaLock className="eb-buyer-field-lock" />
+              </div>
+
+              <div className="eb-buyer-field-box">
+                <label className="eb-buyer-field-label">Email</label>
+                <input
+                  type="email"
+                  className="eb-buyer-field-input"
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                  placeholder="Email"
+                  autoComplete="email"
+                />
+              </div>
+
+              <div className="eb-buyer-field-box">
+                <label className="eb-buyer-field-label">Emergency contact person</label>
+                <input
+                  type="text"
+                  className="eb-buyer-field-input"
+                  value={editEmergencyName}
+                  onChange={(e) => setEditEmergencyName(e.target.value)}
+                  placeholder="e.g. Parent / Spouse / Friend"
+                />
+              </div>
+
+              <div className="eb-buyer-field-box">
+                <label className="eb-buyer-field-label">Emergency contact number</label>
+                <input
+                  type="tel"
+                  className="eb-buyer-field-input"
+                  value={editEmergencyPhone}
+                  onChange={(e) => setEditEmergencyPhone(e.target.value)}
+                  placeholder="Emergency contact number"
+                  maxLength={15}
+                />
+              </div>
+            </div>
+
+            <div className="eb-edit-buyer-modal__actions">
+              <button
+                type="button"
+                className="eb-modal-save-btn"
+                onClick={handleSaveBuyer}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -1836,7 +2339,7 @@ export default function EventBooking() {
   const [counts, setCounts] = useState({});
   const [attendees, setAttendees] = useState([makeAttendee(0)]);
   const [contact, setContact] = useState({ name: '', phone: '', email: '' });
-  const [emergency, setEmergency] = useState({ name: '', phone: '' });
+  const [emergency, setEmergency] = useState(() => getBestEmergency(profile));
   const [joinAs, setJoinAs] = useState('biker');
   const [bike, setBike] = useState({ brand: '', model: '', registration: '', engineCC: '', requirementConfirmed: false, eligibilityType: '' });
   const [preferences, setPreferences] = useState({
@@ -1903,6 +2406,36 @@ export default function EventBooking() {
   const seatsLeft = capacity ? Math.max(0, capacity - registered) : 999;
   const totalTickets = Object.values(counts).reduce((sum, value) => sum + Number(value || 0), 0);
 
+  const selectedTiers = useMemo(() => {
+    return tiers.filter((t) => Number(counts[t.key] || 0) > 0);
+  }, [tiers, counts]);
+
+  const requiresVehicle = useMemo(() => {
+    if (!selectedTiers || selectedTiers.length === 0) return true;
+    return selectedTiers.some((tier) => !isPillionOrSpectatorTier(tier));
+  }, [selectedTiers]);
+
+  // Reactive sync for joinAs based on chosen ticket tiers
+  useEffect(() => {
+    if (selectedTiers.length > 0 && selectedTiers.every(isPillionOrSpectatorTier)) {
+      const isSpectatorOnly = selectedTiers.every((t) => {
+        const str = `${t.ticketFor || ''} ${t.name || ''} ${t.packageName || ''}`.toLowerCase();
+        return str.includes('spectator') || str.includes('visitor') || str.includes('audience') || str.includes('guest') || str.includes('fan');
+      });
+      setJoinAs(isSpectatorOnly ? 'spectator' : 'pillion');
+    } else {
+      setJoinAs('biker');
+    }
+  }, [selectedTiers]);
+
+  const currentSteps = useMemo(() => [
+    { id: 1, label: 'Ticket' },
+    { id: 2, label: 'Details' },
+    { id: 3, label: requiresVehicle ? 'Setup' : 'Preferences' },
+    { id: 4, label: 'Add Ons' },
+    { id: 5, label: 'Payment' },
+  ], [requiresVehicle]);
+
   const handleBookingForSelf = (checked) => {
     if (checked && !user) {
       openLogin();
@@ -1967,7 +2500,7 @@ export default function EventBooking() {
     }));
 
     const emerg = getBestEmergency(profile);
-    if (emerg.name) {
+    if (emerg.name || emerg.phone) {
       setEmergency((prev) => ({
         name: prev.name || emerg.name,
         phone: prev.phone || emerg.phone,
@@ -2130,12 +2663,14 @@ export default function EventBooking() {
     if (step === 1 && totalTickets < 1) return 'Select at least one ticket.';
     if (step === 2) {
       if (!contact.name || !contact.phone || !contact.email) return 'Add booking contact name, phone, and email.';
-      if (!emergency.name) return 'Add an emergency contact.';
+      if (!emergency.name && !emergency.phone) {
+        return 'Please enter an emergency contact person or phone number.';
+      }
       if (attendees.slice(0, totalTickets).some((item, index) => !item?.name || !item?.phone || (!item?.age && !(index === 0 && bookingForSelf)))) {
         return 'Each attendee needs name, phone, and age.';
       }
     }
-    if (step === 3 && joinAs !== 'pillion') {
+    if (step === 3 && requiresVehicle && joinAs === 'biker') {
       if (!bike.brand || !bike.model || !bike.registration) {
         return 'Please enter your bike brand, model, and registration number.';
       }
@@ -2163,8 +2698,8 @@ export default function EventBooking() {
         }
       }
     }
-    if (step === 4 && (!preferences.helmetConfirmed || !preferences.termsAccepted)) {
-      return 'Confirm helmet safety and accept event terms.';
+    if (step === 4 && !preferences.termsAccepted) {
+      return 'Please accept the event terms and conditions.';
     }
     return '';
   };
@@ -2202,10 +2737,11 @@ export default function EventBooking() {
 
         const preparedAttendees = attendees.slice(0, totalTickets).map((item, idx) => {
           const tier = attendeeTiers[idx] || tiers[0] || {};
-          const tierType = (tier.ticketFor || tier.name || '').toLowerCase();
-          const autoJoinAs = (tierType.includes('pillion') || tierType.includes('passenger'))
-            ? 'pillion'
-            : (tierType.includes('spectator') ? 'spectator' : 'biker');
+          const isPillionOrSpec = isPillionOrSpectatorTier(tier);
+          const tierStr = `${tier.ticketFor || ''} ${tier.name || ''} ${tier.packageName || ''}`.toLowerCase();
+          const autoJoinAs = isPillionOrSpec
+            ? (tierStr.includes('spectator') || tierStr.includes('visitor') || tierStr.includes('audience') || tierStr.includes('guest') || tierStr.includes('fan') ? 'spectator' : 'pillion')
+            : 'biker';
 
           return {
             ...item,
@@ -2226,7 +2762,7 @@ export default function EventBooking() {
             bags: 0,
           },
           attendees: preparedAttendees,
-          bikeDetails: [{ ...bike, joinAs }],
+          bikeDetails: requiresVehicle && joinAs === 'biker' ? [{ ...bike, joinAs }] : [],
           joinAs,
           total: summary.total,
           addOns: availableAddOns.filter((item) => selectedAddOns.includes(item.key)),
@@ -2243,14 +2779,55 @@ export default function EventBooking() {
           },
           notes: preferences.notes,
         });
+        const confirmedBookingId = bookingResult?.bookingId || `BKG-${Date.now().toString(36).toUpperCase()}`;
+        const confirmedBookingDocId = bookingResult?.id || bookingResult?.bookingDocId || `bkg_${Date.now()}`;
+        const confirmedTicketCode = bookingResult?.ticketCode || '';
+        const confirmedQrPayload = bookingResult?.qrPayload || '';
+        const confirmedSignature = bookingResult?.signature || '';
+
+        // Cache confirmed booking into localStorage so JoinedEvents displays immediately
+        try {
+          const cached = JSON.parse(localStorage.getItem('nx_user_bookings') || '[]');
+          const newBookingEntry = {
+            id: confirmedBookingDocId,
+            bookingId: confirmedBookingId,
+            bookingRefId: confirmedBookingDocId,
+            eventId: event?.id,
+            title: event?.title || event?.name || 'Nitroxx Motorsports Event',
+            eventTitle: event?.title || event?.name || 'Nitroxx Motorsports Event',
+            date: event?.startDate || event?.date || new Date().toISOString(),
+            startDate: event?.startDate || event?.date || new Date().toISOString(),
+            dateText: event?.dateText || event?.dateTimeText || '',
+            time: event?.time || '',
+            location: event?.venue || event?.location || event?.city || 'Venue TBA',
+            venue: event?.venue || event?.location || '',
+            city: event?.city || '',
+            banner: event?.image || event?.bannerImage || event?.banner || '',
+            image: event?.image || event?.banner || '',
+            hostName: event?.hostName || event?.organizerName || 'Nitroxx Community',
+            total: summary.total,
+            price: summary.total,
+            totalTickets,
+            ticketCode: confirmedTicketCode,
+            qrPayload: confirmedQrPayload,
+            signature: confirmedSignature,
+            attendees: preparedAttendees,
+            bike,
+            status: 'confirmed',
+            createdAt: new Date().toISOString(),
+          };
+          const filtered = cached.filter((b) => b.bookingId !== confirmedBookingId && b.id !== confirmedBookingDocId);
+          localStorage.setItem('nx_user_bookings', JSON.stringify([newBookingEntry, ...filtered]));
+        } catch (_) {}
+
         setSubmitting(false);
         setIsGeneratingTicket(false);
         setBookingConfirmation({
-          bookingId: bookingResult?.bookingId || `BKG-${Date.now().toString(36).toUpperCase()}`,
-          bookingRefId: bookingResult?.id || '',
-          ticketCode: bookingResult?.ticketCode || '',
-          qrPayload: bookingResult?.qrPayload || '',
-          signature: bookingResult?.signature || '',
+          bookingId: confirmedBookingId,
+          bookingRefId: confirmedBookingDocId,
+          ticketCode: confirmedTicketCode,
+          qrPayload: confirmedQrPayload,
+          signature: confirmedSignature,
           totalTickets,
           total: summary.total,
           event,
@@ -2310,9 +2887,9 @@ export default function EventBooking() {
           });
         },
         prefill: {
-          name: contact.name || profile?.fullName || user.displayName || "Rider",
-          email: contact.email || user.email || "",
-          contact: contact.phone || user.phoneNumber || "",
+          name: contact.name || profile?.fullName || user?.displayName || "Rider",
+          email: contact.email || user?.email || "",
+          contact: contact.phone || user?.phoneNumber || "",
         },
         theme: {
           color: "#ff2244",
@@ -2385,8 +2962,9 @@ export default function EventBooking() {
           setBike={setBike}
           preferences={preferences}
           setPreferences={setPreferences}
-          selectedTiers={tiers.filter((t) => counts[t.key] > 0)}
+          selectedTiers={selectedTiers}
           userBikes={userBikes}
+          requiresVehicle={requiresVehicle}
         />
       );
     }
@@ -2401,7 +2979,31 @@ export default function EventBooking() {
         />
       );
     }
-    return <PaymentStep payment={payment} setPayment={setPayment} couponInput={couponInput} setCouponInput={setCouponInput} appliedCoupon={appliedCoupon} applyCoupon={applyCoupon} removeCoupon={removeCoupon} couponError={couponError} summary={summary} event={event} />;
+    return (
+      <PaymentStep
+        event={event}
+        summary={summary}
+        contact={contact}
+        setContact={setContact}
+        emergency={emergency}
+        setEmergency={setEmergency}
+        profile={profile}
+        user={user}
+        tiers={tiers}
+        counts={counts}
+        selectedAddOns={selectedAddOns}
+        availableAddOns={availableAddOns}
+        couponInput={couponInput}
+        setCouponInput={setCouponInput}
+        appliedCoupon={appliedCoupon}
+        applyCoupon={applyCoupon}
+        removeCoupon={removeCoupon}
+        couponError={couponError}
+        setStep={setStep}
+        onPay={next}
+        submitting={submitting}
+      />
+    );
   };
 
   if (!loading && event && !statusInfo.canBook) {
@@ -2434,78 +3036,115 @@ export default function EventBooking() {
   }
 
   return (
-    <div className="eb-page">
-      <BookingHeader event={event} seatsLeft={seatsLeft} onBack={previous} step={step} setStep={setStep} />
+    <div className={`eb-page ${step === currentSteps.length ? 'eb-page--payment' : ''}`}>
+      {step === currentSteps.length ? (
+        <div className="eb-pay-top-bar">
+          <button
+            type="button"
+            className="eb-pay-back-pill"
+            onClick={previous}
+            aria-label="Go back to previous step"
+          >
+            <FaArrowLeft style={{ fontSize: '12px' }} />
+            <span>Back</span>
+          </button>
+        </div>
+      ) : (
+        <BookingHeader
+          event={event}
+          seatsLeft={seatsLeft}
+          onBack={previous}
+          step={step}
+          setStep={setStep}
+          steps={currentSteps}
+        />
+      )}
       <div className="eb-shell">
-        <div className="eb-content">
+        <div className={`eb-content ${step === currentSteps.length ? 'eb-content--full' : ''}`}>
           <main>
             {/* {step === 1 && <CategoryBookingBrief event={event} />} */}
             {renderStep()}
             {error && <p className="eb-error">{error}</p>}
           </main>
-          <BookingSummary
-            event={event}
-            summary={summary}
-            counts={counts}
-            selectedAddOns={selectedAddOns}
-            currentStep={step}
-            availableAddOns={availableAddOns}
-            onBack={previous}
-            onNext={next}
-            submitting={submitting}
-            totalSteps={STEPS.length}
-          />
+          {step < currentSteps.length && (
+            <BookingSummary
+              event={event}
+              summary={summary}
+              counts={counts}
+              selectedAddOns={selectedAddOns}
+              currentStep={step}
+              availableAddOns={availableAddOns}
+              onBack={previous}
+              onNext={next}
+              submitting={submitting}
+              totalSteps={currentSteps.length}
+            />
+          )}
         </div>
       </div>
 
       {/* ── Fixed Bottom Bar with Order Summary Tab & Action Buttons ── */}
-      <div className="eb-fixed-bottom-bar">
-        <div
-          className="eb-fixed-bar__summary-tab"
-          onClick={() => setShowOrderBreakdown((prev) => !prev)}
-          role="button"
-          tabIndex={0}
-          aria-label="Toggle order breakdown"
-        >
-          <div className="eb-fixed-bar__summary-text">
-            <span className="eb-fixed-bar__kicker">
-              {/* {step === STEPS.length ? 'Final Payable' : 'Order Total'} */}
-            </span>
-            <strong className="eb-fixed-bar__price">{formatMoney(summary.total)}</strong>
-            <span className="eb-fixed-bar__sub">
-              {summary.ticketCount} {summary.ticketCount === 1 ? 'ticket' : 'tickets'} • {showOrderBreakdown ? 'Hide details ▾' : 'View details ▴'}
-            </span>
+      {step < currentSteps.length ? (
+        <div className="eb-fixed-bottom-bar">
+          <div
+            className="eb-fixed-bar__summary-tab"
+            onClick={() => setShowOrderBreakdown((prev) => !prev)}
+            role="button"
+            tabIndex={0}
+            aria-label="Toggle order breakdown"
+          >
+            <div className="eb-fixed-bar__summary-text">
+              <strong className="eb-fixed-bar__price">{formatMoney(summary.total)}</strong>
+              <span className="eb-fixed-bar__sub">
+                {summary.ticketCount} {summary.ticketCount === 1 ? 'ticket' : 'tickets'} • {showOrderBreakdown ? 'Hide details ▾' : 'View details ▴'}
+              </span>
+            </div>
+          </div>
+
+          <div className="eb-fixed-bar__actions">
+            <button
+              type="button"
+              className="eb-fixed-bar__btn eb-fixed-bar__btn--back"
+              onClick={previous}
+              aria-label="Go back"
+            >
+              <FaArrowLeft style={{ fontSize: '12px', color: 'white' }} />
+            </button>
+
+            <button
+              type="button"
+              className="eb-fixed-bar__btn eb-fixed-bar__btn--continue"
+              onClick={next}
+              disabled={submitting || (step === 1 && summary.ticketCount === 0)}
+              aria-label="Continue booking"
+            >
+              <span>
+                {submitting
+                  ? 'Creating booking...'
+                  : 'Continue'}
+              </span>
+            </button>
           </div>
         </div>
-
-        <div className="eb-fixed-bar__actions">
+      ) : (
+        <div className="eb-pay-mobile-fixed-bar eb-pay-mobile-only">
           <button
             type="button"
-            className="eb-fixed-bar__btn eb-fixed-bar__btn--back"
-            onClick={previous}
-            aria-label="Go back"
-          >
-            <FaArrowLeft style={{ fontSize: '12px',color:'white' }} />
-            {/* <span>Back</span> */}
-          </button>
-
-          <button
-            type="button"
-            className="eb-fixed-bar__btn eb-fixed-bar__btn--continue"
+            className="eb-pay-cta-btn"
             onClick={next}
-            disabled={submitting || (step === 1 && summary.ticketCount === 0)}
-            aria-label="Continue booking"
+            disabled={submitting}
+            aria-label="Pay now"
           >
-            <span>
-              {submitting
-                ? 'Creating booking...'
-                : step === STEPS.length
-                  ? `Pay ${formatMoney(summary.total)}`
-                  : 'Continue'}
-            </span>
+            <div className="eb-pay-cta-btn__total">
+              <strong>{formatMoney(summary.total)}</strong>
+              <span>TOTAL</span>
+            </div>
+            <div className="eb-pay-cta-btn__label">
+              {submitting ? 'Processing...' : 'Pay Now'}
+            </div>
           </button>
         </div>
-      </div>
+      )}
 
       {/* ── Slide-up Order Breakdown Sheet ── */}
       {showOrderBreakdown && (

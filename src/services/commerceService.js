@@ -578,14 +578,40 @@ export const bookEvent = async ({
       throw new Error("This event does not have enough tickets available.");
     }
 
-    // 1. Root bookings collection with essential booking metadata only
+    // 1. Root bookings collection with essential booking metadata and complete snapshot
+    const eventTitle = eventSnapshot.title || eventSnapshot.name || "Nitroxx Motorsports Event";
+    const eventDate = eventSnapshot.startDate || eventSnapshot.date || null;
+    const eventDateText = eventSnapshot.dateText || eventSnapshot.dateTimeText || "";
+    const eventTime = eventSnapshot.time || eventSnapshot.timeRange || "";
+    const eventLocation = eventSnapshot.venue || eventSnapshot.location || eventSnapshot.city || "Venue TBA";
+    const eventVenue = eventSnapshot.venue || eventSnapshot.location || "";
+    const eventCity = eventSnapshot.city || "";
+    const eventBanner = eventSnapshot.banner || eventSnapshot.bannerImage || eventSnapshot.image || "";
+    const eventHostName = eventSnapshot.hostName || eventSnapshot.organizerName || eventSnapshot.host || "Nitroxx Community";
+    const eventHostAvatar = eventSnapshot.hostAvatar || eventSnapshot.organizerAvatar || "";
+
     const payload = compact({
       bookingId,
       bookingDocId: bookingRef.id,
       userId: user.uid,
       hostId,
       eventId,
-      eventTitle: eventSnapshot.title || eventSnapshot.name || "Nitroxx Motorsports Event",
+      title: eventTitle,
+      eventTitle,
+      date: eventDate,
+      startDate: eventDate,
+      dateText: eventDateText,
+      time: eventTime,
+      location: eventLocation,
+      venue: eventVenue,
+      city: eventCity,
+      banner: eventBanner,
+      image: eventBanner,
+      hostName: eventHostName,
+      hostAvatar: eventHostAvatar,
+      category: eventSnapshot.category || "",
+      total: total || normalizedPayment.amount || 0,
+      price: total || normalizedPayment.amount || 0,
       ticketCode,
       qrPayload,
       signature,
@@ -600,23 +626,54 @@ export const bookEvent = async ({
       preferences,
       payment: normalizedPayment,
       notes,
-      status: "pending",
-      approvalStatus: "pending",
+      status: "confirmed",
+      approvalStatus: "confirmed",
       attendanceStatus: "Not Checked In",
       gateStatus: "Pending",
-      statusHistory: [{ status: "pending", at: new Date().toISOString(), note: "Booking created" }],
+      eventSnapshot: {
+        id: eventId,
+        title: eventTitle,
+        name: eventTitle,
+        date: eventDate,
+        startDate: eventDate,
+        dateText: eventDateText,
+        time: eventTime,
+        location: eventLocation,
+        venue: eventVenue,
+        city: eventCity,
+        banner: eventBanner,
+        image: eventBanner,
+        hostName: eventHostName,
+        category: eventSnapshot.category || "",
+      },
+      statusHistory: [{ status: "confirmed", at: new Date().toISOString(), note: "Booking created" }],
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
 
-    // 2. User joined-event subcollection with essential metadata only
+    // 2. User joined-event subcollection with complete snapshot metadata
     const joinedEventData = compact({
       id: eventId || bookingRef.id,
       eventId,
       bookingId,
       bookingRefId: bookingRef.id,
       userId: user.uid,
-      eventTitle: eventSnapshot.title || eventSnapshot.name || "Nitroxx Motorsports Event",
+      title: eventTitle,
+      eventTitle,
+      date: eventDate,
+      startDate: eventDate,
+      dateText: eventDateText,
+      time: eventTime,
+      location: eventLocation,
+      venue: eventVenue,
+      city: eventCity,
+      banner: eventBanner,
+      image: eventBanner,
+      hostName: eventHostName,
+      hostAvatar: eventHostAvatar,
+      category: eventSnapshot.category || "",
+      total: total || normalizedPayment.amount || 0,
+      price: total || normalizedPayment.amount || 0,
       totalTickets,
       ticketCode,
       qrPayload,
@@ -627,9 +684,25 @@ export const bookEvent = async ({
       bikeDetails,
       addOns,
       payment: normalizedPayment,
-      status: "pending",
+      status: "confirmed",
       gateStatus: "Pending",
       attendanceStatus: "Not Checked In",
+      eventSnapshot: {
+        id: eventId,
+        title: eventTitle,
+        name: eventTitle,
+        date: eventDate,
+        startDate: eventDate,
+        dateText: eventDateText,
+        time: eventTime,
+        location: eventLocation,
+        venue: eventVenue,
+        city: eventCity,
+        banner: eventBanner,
+        image: eventBanner,
+        hostName: eventHostName,
+        category: eventSnapshot.category || "",
+      },
       joinedAt: serverTimestamp(),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),

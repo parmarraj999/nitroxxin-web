@@ -1,13 +1,11 @@
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import "./AccessoriesPage.css";
 import { Link } from "react-router-dom";
-import { useAccessoriesContext } from "../../context/AccessoriesContext";
+import { useAccessoriesPageContext } from "../../context/AccessoriesPageContext";
 import AccessoriesHeader from "./accessoriesNav/AccessoriesHeader";
 import AccessoriesHeroSlider from "./accessoriesBanner/AccessoriesHeroSlider";
-import { useBikeBrandsContext } from "../../context/BikeBrandsContext";
 import SuggestedForYou from "./suggestedForYou/SuggestedForYou";
 import ComboSection from "../../components/ComboSection/ComboSection";
-import { isFeatureForYou } from "../../services/normalizers";
 
 function ChevronLeftIcon() {
   return (
@@ -55,45 +53,25 @@ export default function AccessoriesPage() {
   }, []);
 
   const {
-    products,
-    categories,
-    brands,
-    bikeBrands,
+    displayCategories,
+    displayBrands,
+    displayBikeBrands,
     banners,
-  } = useAccessoriesContext();
-  const { bikeBrands: fetchedBikeBrands } = useBikeBrandsContext();
+    slides,
+    layoutData,
+    liveProducts,
+    combos,
+  } = useAccessoriesPageContext();
   const [search, setSearch] = useState("");
-
-  const liveProducts = useMemo(
-    () =>
-      products.filter((product) => ["published", "active", "approved"].includes(product.status)),
-    [products]
-  );
-  const displayCategories = categories;
-  const displayBrands = useMemo(() => {
-    if (!brands || brands.length === 0) return [];
-    return brands.filter(
-      (b) => (b.image || b.imageUrl || b.logo || b.logoUrl || b.label || b.name) && isFeatureForYou(b)
-    );
-  }, [brands]);
-  const displayBikeBrands = useMemo(() => {
-    if (fetchedBikeBrands && fetchedBikeBrands.length > 0) {
-      return fetchedBikeBrands;
-    }
-    if (bikeBrands && bikeBrands.length > 0) {
-      return bikeBrands;
-    }
-    return [];
-  }, [fetchedBikeBrands, bikeBrands]);
 
   return (
     <div className="ap-page">
       <AccessoriesHeader search={search} onSearchChange={setSearch} />
 
       {/* ═══ MARQUEE & HERO SLIDER SECTION ═══ */}
-      <AccessoriesHeroSlider banners={banners} />
+      <AccessoriesHeroSlider banners={banners} slides={slides} layoutData={layoutData} />
 
-      <img src={'/assets/images/strip-banner.png'} style={{ width: '100%', height: '120px', marginTop:'2rem' }} alt='stripe-banner' />
+      <img src={'/assets/images/strip-banner.png'}  alt='stripe-banner' className="stripe-banner" />
 
       {displayCategories.length > 0 && (
         <div className="ap-section">
@@ -165,6 +143,7 @@ export default function AccessoriesPage() {
       {/* ═══ COMBO PACKAGES & GEAR BUNDLES ═══ */}
       <ComboSection
         theme="light"
+        combos={combos}
         sectionTitle="COMBO OFFERS & RIDER BUNDLES"
         sectionSubtitle="Curated protective gear and accessory bundles grouped together for maximum value."
       />

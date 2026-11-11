@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { Link } from "react-router-dom";
 import "./AccessoriesHeroSlider.css";
 import { useDocument } from "../../../hooks/useFirestore";
+import { useAccessoriesPageContext } from "../../../context/AccessoriesPageContext";
 
 const MARQUEE_TEXTS = [
   "NEW ARRIVALS",
@@ -63,19 +64,32 @@ function ChevronRightIcon() {
   );
 }
 
-export default function AccessoriesHeroSlider({ banners = [] }) {
+export default function AccessoriesHeroSlider({
+  banners = [],
+  slides: propSlides,
+  layoutData: propLayoutData,
+}) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const touchStartX = useRef(null);
 
-  // Fetch page layout from Firestore: page_layout > accessories_layout (and page_layouts fallback)
-  const { data: singularDoc } = useDocument("page_layout", "accessories_layout");
-  const { data: pluralDoc } = useDocument("page_layouts", "accessories_layout");
-  const { data: fallbackDoc } = useDocument("page_layouts", "accessories");
-  const layoutData = singularDoc || pluralDoc || fallbackDoc;
+  // Consume layout and slides from AccessoriesPageContext to prevent redundant Firestore fetches
+  const pageContext = useAccessoriesPageContext();
+  const contextLayout = propLayoutData || pageContext?.layoutData;
+  const contextSlides = propSlides || pageContext?.slides;
 
-  // Map dynamic banners from page_layout > accessories_layout
+  // Fallback query only if not already supplied by context
+  const shouldQueryDocs = !contextLayout && (!contextSlides || contextSlides === DEFAULT_SLIDES);
+  const { data: singularDoc } = useDocument(shouldQueryDocs ? "page_layout" : null, "accessories_layout");
+  const { data: pluralDoc } = useDocument(shouldQueryDocs ? "page_layouts" : null, "accessories_layout");
+  const { data: fallbackDoc } = useDocument(shouldQueryDocs ? "page_layouts" : null, "accessories");
+  const layoutData = contextLayout || singularDoc || pluralDoc || fallbackDoc;
+
+  // Map dynamic banners from page_layout > accessories_layout (or use pre-cached slides)
   const slides = useMemo(() => {
+    if (contextSlides && contextSlides.length > 0 && contextSlides !== DEFAULT_SLIDES) {
+      return contextSlides;
+    }
     const rawList =
       layoutData?.banners ||
       layoutData?.data?.banners ||

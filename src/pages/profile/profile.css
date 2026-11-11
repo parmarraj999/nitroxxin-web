@@ -4830,6 +4830,7 @@
   flex-direction: column;
   gap: 20px;
   min-width: 0;
+  width: 100%;
 }
 
 /* ── Big Horizontal Event Card matching reference screenshot ── */
@@ -5113,8 +5114,9 @@
   color: #ffffff;
   font-size: 14px;
   font-weight: 600;
-  padding: 9px 22px;
+  padding: 12px 22px;
   border-radius: 9999px;
+  border: 1px solid #2563eb;
   text-decoration: none;
   box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
   transition: all 0.2s ease;
@@ -5222,7 +5224,7 @@
     font-size: 19px;
   }
   .nx-saved-event-card {
-    padding: 20px;
+    padding: 12px;
     gap: 20px;
   }
   .nx-saved-card-banner-box {

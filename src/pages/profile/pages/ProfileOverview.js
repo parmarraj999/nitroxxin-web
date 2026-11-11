@@ -3,6 +3,43 @@ import { useAuth } from "../../../context/AuthContext";
 import ImageAdjustModal from "../components/ImageAdjustModal";
 import "./ProfileOverview.css";
 
+function NotchedField({
+  label,
+  children,
+  isLocked = false,
+  className = "",
+  error = null,
+}) {
+  return (
+    <div className={`nx-notched-field-group ${className}`}>
+      <label className={`nx-notched-field ${error ? "has-error" : ""}`}>
+        {label && <span className="nx-notched-field__label">{label}</span>}
+        <div className="nx-notched-field__control">
+          {children}
+          {isLocked && (
+            <span className="nx-notched-field__lock" title="Verified detail">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            </span>
+          )}
+        </div>
+      </label>
+      {error && <span className="nx-field-error">{error}</span>}
+    </div>
+  );
+}
+
 export default function ProfileOverview() {
   const {
     user,
@@ -44,6 +81,7 @@ export default function ProfileOverview() {
     phone: "",
     email: "",
     drivingLicense: "",
+    emergencyContactPerson: "",
     emergencyNumber: "",
   });
 
@@ -69,6 +107,25 @@ export default function ProfileOverview() {
           : `@${rawUsername}`
         : "";
 
+      const bestEmergencyName =
+        profile?.emergencyContactPerson ||
+        profile?.emergencyContactName ||
+        profile?.emergencyName ||
+        profile?.emergencyPerson ||
+        profile?.emergencyContact?.name ||
+        profile?.emergencyContact?.fullName ||
+        "";
+
+      const bestEmergencyPhone =
+        profile?.emergencyNumber ||
+        profile?.emergencyPhone ||
+        profile?.emergencyContactPhone ||
+        profile?.emergencyContactNumber ||
+        profile?.emergencyContact?.phone ||
+        profile?.emergencyContact?.mobile ||
+        profile?.emergencyContact?.number ||
+        "";
+
       setForm({
         username: formattedUsername,
         name:
@@ -86,7 +143,8 @@ export default function ProfileOverview() {
           "",
         email: profile?.email || user?.email || "",
         drivingLicense: profile?.drivingLicense || "",
-        emergencyNumber: profile?.emergencyNumber || "",
+        emergencyContactPerson: bestEmergencyName,
+        emergencyNumber: bestEmergencyPhone,
       });
 
       isFormInitializedRef.current = true;
@@ -262,7 +320,8 @@ export default function ProfileOverview() {
       const trimmedPhone = form.phone.trim();
       const trimmedEmail = form.email.trim();
       const trimmedLicense = form.drivingLicense.trim().toUpperCase();
-      const trimmedEmergency = form.emergencyNumber.trim();
+      const trimmedEmergencyPerson = (form.emergencyContactPerson || "").trim();
+      const trimmedEmergencyNumber = (form.emergencyNumber || "").trim();
 
       // If there is a pending avatar blob that hasn't finished uploading
       let finalAvatarUrl = avatarPreview;
@@ -300,7 +359,14 @@ export default function ProfileOverview() {
         phoneNumber: trimmedPhone,
         email: trimmedEmail,
         drivingLicense: trimmedLicense,
-        emergencyNumber: trimmedEmergency,
+        emergencyContactPerson: trimmedEmergencyPerson,
+        emergencyContactName: trimmedEmergencyPerson,
+        emergencyPerson: trimmedEmergencyPerson,
+        emergencyName: trimmedEmergencyPerson,
+        emergencyNumber: trimmedEmergencyNumber,
+        emergencyPhone: trimmedEmergencyNumber,
+        emergencyContactPhone: trimmedEmergencyNumber,
+        emergencyContactNumber: trimmedEmergencyNumber,
         ...(finalAvatarUrl ? { profilePhoto: finalAvatarUrl } : {}),
         ...(finalLicenseUrl ? { drivingLicenseImage: finalLicenseUrl } : {}),
         isProfileComplete: Boolean(
@@ -567,82 +633,106 @@ export default function ProfileOverview() {
 
         {/* Right Column: Personal Info Fields */}
         <div className="nx-details-right-panel">
-          {/* Username */}
-          <div className="nx-details-field">
-            <label className="nx-details-label">Username</label>
-            <input
-              type="text"
-              name="username"
-              className="nx-details-input"
-              value={form.username}
-              onChange={handleInputChange}
-              placeholder="@username"
-            />
+          <div className="nx-details-panel-header">
+            <h2 className="nx-details-section-title">Personal Information</h2>
+            <p className="nx-details-section-sub">
+              Manage your personal credentials, contact info, and emergency details.
+            </p>
           </div>
 
-          {/* Name */}
-          <div className="nx-details-field">
-            <label className="nx-details-label">Name</label>
-            <input
-              type="text"
-              name="name"
-              className="nx-details-input"
-              value={form.name}
-              onChange={handleInputChange}
-              placeholder="Full Name"
-            />
-          </div>
+          <div className="nx-details-fields-grid">
+            {/* Username */}
+            <NotchedField label="Username">
+              <input
+                type="text"
+                name="username"
+                className="nx-notched-input"
+                value={form.username}
+                onChange={handleInputChange}
+                placeholder="@username"
+                autoComplete="username"
+              />
+            </NotchedField>
 
-          {/* Phone */}
-          <div className="nx-details-field">
-            <label className="nx-details-label">Phone</label>
-            <input
-              type="tel"
-              name="phone"
-              className="nx-details-input"
-              value={form.phone}
-              onChange={handleInputChange}
-              placeholder="+919876543210"
-            />
-          </div>
+            {/* Name */}
+            <NotchedField label="Full name">
+              <input
+                type="text"
+                name="name"
+                className="nx-notched-input"
+                value={form.name}
+                onChange={handleInputChange}
+                placeholder="Full name"
+                autoComplete="name"
+              />
+            </NotchedField>
 
-          {/* Email */}
-          <div className="nx-details-field">
-            <label className="nx-details-label">Email</label>
-            <input
-              type="email"
-              name="email"
-              className="nx-details-input"
-              value={form.email}
-              onChange={handleInputChange}
-              placeholder="name@example.com"
-            />
-          </div>
+            {/* Mobile number */}
+            <NotchedField
+              label="Mobile number"
+              isLocked={Boolean(user?.phoneNumber || user?.phone || form.phone)}
+            >
+              <input
+                type="tel"
+                name="phone"
+                className="nx-notched-input"
+                value={form.phone}
+                onChange={handleInputChange}
+                placeholder="Mobile number"
+                autoComplete="tel"
+              />
+            </NotchedField>
 
-          {/* Driving License Number */}
-          <div className="nx-details-field">
-            <label className="nx-details-label">Driving License Number</label>
-            <input
-              type="text"
-              name="drivingLicense"
-              className="nx-details-input"
-              value={form.drivingLicense}
-              onChange={handleInputChange}
-              placeholder="e.g. DL7282627272"
-            />
-          </div>
+            {/* Email */}
+            <NotchedField label="Email">
+              <input
+                type="email"
+                name="email"
+                className="nx-notched-input"
+                value={form.email}
+                onChange={handleInputChange}
+                placeholder="Email address"
+                autoComplete="email"
+              />
+            </NotchedField>
 
-          {/* Emergency Number */}
-          <div className="nx-details-field">
-            <label className="nx-details-label">Emergency Number</label>
-            <input
-              type="tel"
-              name="emergencyNumber"
-              className="nx-details-input"
-              value={form.emergencyNumber}
-              onChange={handleInputChange}
-              placeholder="e.g. 9098959014"
-            />
+            {/* Driving License Number */}
+            <NotchedField label="Driving license number" className="nx-field-col-span-2">
+              <input
+                type="text"
+                name="drivingLicense"
+                className="nx-notched-input nx-input-uppercase"
+                value={form.drivingLicense}
+                onChange={handleInputChange}
+                placeholder="e.g. DL7282627272"
+                autoCapitalize="characters"
+              />
+            </NotchedField>
+
+            {/* Emergency Contact Person */}
+            <NotchedField label="Emergency contact person">
+              <input
+                type="text"
+                name="emergencyContactPerson"
+                className="nx-notched-input"
+                value={form.emergencyContactPerson}
+                onChange={handleInputChange}
+                placeholder="e.g. Parent / Spouse / Friend"
+              />
+            </NotchedField>
+
+            {/* Emergency Number */}
+            <NotchedField label="Emergency contact number">
+              <input
+                type="tel"
+                name="emergencyNumber"
+                className="nx-notched-input"
+                value={form.emergencyNumber}
+                onChange={handleInputChange}
+                placeholder="Emergency contact number"
+                maxLength={15}
+              />
+            </NotchedField>
           </div>
 
           {/* Bottom Full Width Blue Button */}

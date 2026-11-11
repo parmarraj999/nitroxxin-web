@@ -3087,3 +3087,1019 @@
   line-height: 1.5;
   margin: 0;
 }
+
+/* ════════════════════════════════════════════════════════════
+   FINAL PAYMENT / CONFIRM DETAILS PAGE (Matching Reference)
+   ════════════════════════════════════════════════════════════ */
+
+.eb-content.eb-content--full {
+  display: block;
+  grid-template-columns: 1fr;
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.eb-content.eb-content--full main {
+  width: 100%;
+}
+
+.eb-pay-desktop-only {
+  display: block;
+}
+
+.eb-pay-mobile-only {
+  display: none;
+}
+
+.eb-pay-page {
+  width: 100%;
+  padding-bottom: 24px;
+}
+
+.eb-pay-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 390px);
+  gap: 36px;
+  align-items: start;
+}
+
+.eb-pay-col-main {
+  display: flex;
+  flex-direction: column;
+}
+
+.eb-pay-col-side {
+  position: sticky;
+  top: 90px;
+}
+
+.eb-pay-sec-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 16px 0;
+  letter-spacing: -0.015em;
+}
+
+.eb-pay-sec-heading {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 24px 0 12px 0;
+  letter-spacing: -0.01em;
+}
+
+/* Card Shell */
+.eb-pay-card {
+  background: #ffffff;
+  border: 1px solid #eef2f6;
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  overflow: hidden;
+}
+
+.eb-pay-card-divider {
+  height: 1px;
+  background: #f1f5f9;
+  margin: 0;
+}
+
+/* ── Buyer / Invoice Card ── */
+.eb-pay-buyer-card {
+  background: #ffffff;
+  border: 1px solid #eef2f6;
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.eb-pay-buyer-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0f172a;
+  font-size: 20px;
+  flex-shrink: 0;
+  width: auto;
+  height: auto;
+  background: transparent;
+  border: none;
+}
+
+.eb-pay-user-outline-icon {
+  font-size: 20px;
+  color: #0f172a;
+}
+
+.eb-pay-buyer-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.eb-pay-buyer-body h4 {
+  font-size: 15px;
+  font-weight: 500;
+  color: #1e293b;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.eb-pay-buyer-body h4 strong {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.eb-pay-buyer-sub {
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.3;
+}
+
+.eb-pay-buyer-sub .eb-pay-sep {
+  color: #cbd5e1;
+  font-size: 12px;
+}
+
+.eb-pay-buyer-emerg {
+  font-size: 13px;
+  color: #475569;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  line-height: 1.3;
+}
+
+.eb-pay-emerg-label {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.eb-pay-emerg-val {
+  color: #334155;
+  font-weight: 500;
+}
+
+.eb-pay-edit-btn {
+  background: transparent;
+  border: none;
+  color: #334155;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.eb-pay-edit-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+/* ── Offers Section ── */
+.eb-pay-offers-card {
+  padding: 0;
+}
+
+.eb-pay-offer-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+}
+
+.eb-pay-offer-badge {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: #e6f9f0;
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.eb-pay-offer-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.eb-pay-offer-content strong {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  display: block;
+}
+
+.eb-pay-offer-content p {
+  font-size: 12.5px;
+  color: #64748b;
+  margin: 2px 0 4px 0;
+}
+
+.eb-pay-link-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: 12px;
+  color: #2563eb;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.eb-pay-link-btn:hover {
+  text-decoration: underline;
+}
+
+.eb-pay-pill-btn {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  color: #1e293b;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 6px 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.eb-pay-pill-btn:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.eb-pay-pill-btn--remove {
+  border-color: #fca5a5;
+  color: #ef4444;
+}
+
+.eb-pay-pill-btn--remove:hover {
+  background: #fef2f2;
+}
+
+.eb-pay-coupon-drawer {
+  padding: 12px 18px 16px;
+  background: #f8fafc;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.eb-pay-coupon-form {
+  display: flex;
+  gap: 8px;
+}
+
+.eb-pay-coupon-form input {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  outline: none;
+}
+
+.eb-pay-coupon-form input:focus {
+  border-color: #2563eb;
+}
+
+.eb-pay-coupon-err {
+  font-size: 12px;
+  color: #ef4444;
+  margin: 6px 0 0 0;
+}
+
+.eb-pay-offer-row {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  padding: 14px 18px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  box-sizing: border-box !important;
+}
+
+.eb-pay-offer-row:hover {
+  background: #f8fafc;
+}
+
+.eb-pay-offer-row__left {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
+  min-width: 0 !important;
+  flex: 1 !important;
+}
+
+.eb-pay-offer-row__left span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.eb-pay-card-icon {
+  font-size: 16px;
+  color: #475569;
+  flex-shrink: 0;
+}
+
+.eb-pay-mob-percent-badge {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid #1e293b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #1e293b;
+  flex-shrink: 0;
+}
+
+.eb-pay-chevron {
+  font-size: 13px;
+  color: #94a3b8;
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+  display: block !important;
+}
+
+/* ── Payment Summary Card ── */
+.eb-pay-summary-card {
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.eb-pay-summary-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #334155;
+}
+
+.eb-pay-summary-label {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.eb-pay-summary-val {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.eb-fee-strikethrough {
+  text-decoration: line-through;
+  color: #94a3b8;
+  margin-right: 8px;
+  font-weight: 500;
+}
+
+.eb-fee-free {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.eb-pay-summary-line--discount {
+  color: #10b981;
+}
+
+.eb-pay-discount-val {
+  color: #10b981;
+  font-weight: 700;
+}
+
+.eb-pay-summary-line--grand {
+  padding-top: 12px;
+  font-size: 16px;
+}
+
+.eb-pay-summary-line--grand strong {
+  color: #0f172a;
+}
+
+.eb-pay-grand-total {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+/* ── Order Card (Side Column) ── */
+.eb-pay-order-card {
+  background: #ffffff;
+  border: 1px solid #eef2f6;
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.eb-pay-side-event-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.eb-pay-side-event-thumb {
+  width: 58px;
+  height: 58px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.eb-pay-side-event-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.eb-pay-side-event-info h4 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 4px 0;
+  line-height: 1.3;
+}
+
+.eb-pay-side-event-info p {
+  font-size: 12.5px;
+  color: #64748b;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.eb-pay-date-row {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.eb-pay-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.eb-pay-item-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.eb-pay-item-desc strong {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.3;
+  display: block;
+}
+
+.eb-pay-item-pricing {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.eb-pay-item-pricing strong {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  display: block;
+}
+
+.eb-pay-remove-link {
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: 12px;
+  color: #64748b;
+  cursor: pointer;
+  border-bottom: 1px dashed #94a3b8;
+  margin-top: 2px;
+  display: inline-block;
+  line-height: 1.2;
+}
+
+.eb-pay-remove-link:hover {
+  color: #ef4444;
+  border-color: #ef4444;
+}
+
+.eb-pay-mticket-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.eb-pay-mticket-icon {
+  font-size: 16px;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.eb-pay-mticket-row p {
+  font-size: 12.5px;
+  color: #334155;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.eb-pay-mticket-row strong {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* ── Black Pill CTA Button ── */
+.eb-pay-cta-btn {
+  background: #111418;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 13px 20px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.eb-pay-cta-btn:hover:not(:disabled) {
+  background: #000000;
+}
+
+.eb-pay-cta-btn:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.eb-pay-cta-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.eb-pay-cta-btn__total {
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+}
+
+.eb-pay-cta-btn__total strong {
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #ffffff;
+}
+
+.eb-pay-cta-btn__total span {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.eb-pay-cta-btn__label {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+/* ── Payment Step Top Bar & Nav ── */
+.eb-pay-top-bar {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px 8px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.eb-pay-back-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+.eb-pay-back-pill:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+/* ── Event Header (Thumb + Title + Location: Sits Directly Above Ticket Card) ── */
+.eb-pay-event-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.eb-pay-event-thumb {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  object-fit: cover;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.eb-pay-event-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.eb-pay-event-info h4 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 3px 0;
+  line-height: 1.3;
+}
+
+.eb-pay-event-info p {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Edit Buyer Information Modal (Matches Image 1) ── */
+.eb-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 9999999;
+  animation: ebFadeIn 0.2s ease;
+}
+
+.eb-edit-buyer-modal {
+  background: #ffffff;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 460px;
+  padding: 24px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.16);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.eb-edit-buyer-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.eb-edit-buyer-modal__header h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.eb-modal-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  line-height: 1;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.eb-modal-close-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+/* Outlined Card enclosing fields exactly as in Image 1 */
+.eb-edit-buyer-card {
+  border: 1px solid #eaecf0;
+  border-radius: 16px;
+  padding: 22px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: #ffffff;
+}
+
+.eb-buyer-field-box {
+  position: relative;
+  width: 100%;
+}
+
+.eb-buyer-field-label {
+  position: absolute;
+  top: -9px;
+  left: 14px;
+  background: #ffffff;
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.eb-buyer-field-input {
+  width: 100%;
+  padding: 13px 16px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #111827;
+  outline: none;
+  background: #ffffff;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease;
+}
+
+.eb-buyer-field-input:focus {
+  border-color: #111827;
+}
+
+.eb-buyer-field-box--locked .eb-buyer-field-input {
+  padding-right: 42px;
+}
+
+.eb-buyer-field-lock {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.eb-edit-buyer-modal__actions {
+  display: flex;
+  margin-top: 4px;
+}
+
+.eb-modal-save-btn {
+  background: #0f172a;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.2s ease;
+}
+
+.eb-modal-save-btn:hover {
+  background: #000000;
+}
+
+/* ── Responsive Styling (<= 980px) ── */
+@media (max-width: 980px) {
+  .eb-page--payment {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .eb-page--payment .eb-shell {
+    width: 100% !important;
+    max-width: 680px !important;
+    margin: 0 auto !important;
+    padding: 0 16px !important;
+    box-sizing: border-box !important;
+  }
+
+  .eb-page--payment .eb-pay-top-bar {
+    width: 100% !important;
+    max-width: 680px !important;
+    margin: 0 auto !important;
+    padding: 12px 16px 4px !important;
+    box-sizing: border-box !important;
+  }
+
+  .eb-pay-desktop-only {
+    display: none !important;
+  }
+
+  .eb-pay-mobile-only {
+    display: block !important;
+  }
+
+  .eb-pay-offer-row.eb-pay-mobile-only,
+  .eb-pay-offer-row--mob {
+    display: flex !important;
+  }
+
+  .eb-section-divider-bar.eb-pay-mobile-only {
+    display: flex !important;
+  }
+
+  .eb-content.eb-content--full {
+    width: 100% !important;
+    max-width: 100% !important;
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .eb-content.eb-content--full main {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .eb-pay-page {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-bottom: 120px !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+  }
+
+  .eb-pay-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    align-items: stretch !important;
+    gap: 0 !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Right column (Event Header + Order card) moves to top and spans 100% */
+  .eb-pay-col-side {
+    order: 1 !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-bottom: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .eb-pay-event-header {
+    display: flex !important;
+    align-items: center !important;
+    gap: 14px !important;
+    margin-top: 4px !important;
+    margin-bottom: 14px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Main column with sections moves below and spans 100% */
+  .eb-pay-col-main {
+    order: 2 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    align-items: stretch !important;
+    box-sizing: border-box !important;
+  }
+
+  .eb-pay-offers-section,
+  .eb-pay-summary-section,
+  .eb-pay-buyer-section {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .eb-pay-offers-section {
+    order: 1 !important;
+  }
+
+  .eb-pay-summary-section {
+    order: 2 !important;
+  }
+
+  .eb-pay-buyer-section {
+    order: 3 !important;
+  }
+
+  .eb-pay-card,
+  .eb-pay-order-card,
+  .eb-pay-buyer-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .eb-section-divider-bar {
+    display: flex !important;
+    align-items: center;
+    text-align: center;
+    margin: 22px 0 14px 0;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .eb-section-divider-bar::before,
+  .eb-section-divider-bar::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .eb-section-divider-bar span {
+    padding: 0 12px;
+  }
+
+  .eb-pay-buyer-sub.eb-pay-mobile-only {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 2px !important;
+    width: 100% !important;
+  }
+
+  .eb-pay-mobile-fixed-bar {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    background: #ffffff !important;
+    padding: 12px 16px !important;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1) !important;
+    border-top: 1px solid #eef2f6 !important;
+    z-index: 9999999 !important;
+    box-sizing: border-box !important;
+  }
+}
+
+@media (min-width: 981px) {
+  .eb-pay-mobile-fixed-bar {
+    display: none !important;
+  }
+}

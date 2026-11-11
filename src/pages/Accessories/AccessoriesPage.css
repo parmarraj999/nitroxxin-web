@@ -17,7 +17,7 @@
   overflow-x: hidden;
 }
 
-.ap-page::-webkit-scrollbar{
+.ap-page::-webkit-scrollbar {
   display: none;
 }
 
@@ -45,6 +45,18 @@
   letter-spacing: -1px;
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+.stripe-banner {
+  width: 100%;
+  height: 110px;
+  margin-top: 2rem;
+}
+
+@media screen and (max-width:654px) {
+  .stripe-banner {
+    height: 50px;
+  }
 }
 
 .ap-header__logo span {
@@ -292,8 +304,8 @@
 }
 
 .ap-section__title {
-  font-family: 'Inter', sans-serif;
-  font-weight: 700;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
   font-size: 36px;
   text-align: center;
   color: #858585;
@@ -308,7 +320,7 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 2rem;
+  gap: .2rem;
   margin-top: 2rem;
   width: 100%;
   box-sizing: border-box;
@@ -337,8 +349,24 @@
 }
 
 .ap-category-slider__btn svg {
-  width: 10px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
+}
+
+@media screen and (max-width:654px) {
+  .ap-category-slider__btn {
+    width: 35px;
+    height: 35px;
+  }
+
+  .ap-category-slider__btn svg {
+    width: 10px;
+    height: 10px;
+  }
+
+  .ap-section__title{
+    font-size: 18px;
+  }
 }
 
 .ap-category-track {
@@ -520,8 +548,7 @@
 }
 
 /* ===== SHOP BY BRAND ===== */
-.ap-brand-grid {
-}
+.ap-brand-grid {}
 
 .ap-brand-card {
   display: flex;
@@ -544,11 +571,12 @@
   font-size: 14px;
   overflow: hidden;
   border-radius: 18px;
-  margin : auto 0;
+  margin: auto 0;
 }
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1200px) {
+
   .ap-bike-grid,
   .ap-brand-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -560,33 +588,41 @@
     padding-top: 64px;
     padding-bottom: 96px;
   }
+
   .ap-header {
     height: 64px;
     gap: 10px;
   }
+
   .ap-header__divider,
   .ap-header__search {
     display: none;
   }
+
   .ap-header__right {
     margin-left: auto;
   }
+
   .ap-header__icon-btn {
     width: 42px;
     height: 42px;
   }
+
   .ap-tabs-bar {
     overflow-x: auto;
     padding: 10px 16px;
     scrollbar-width: none;
   }
+
   .ap-tabs {
     flex: 0 0 auto;
   }
+
   .ap-tab {
     padding: 8px 13px;
     font-size: 14px;
   }
+
   .ap-category-row {
     justify-content: flex-start;
     overflow-x: auto;
@@ -596,65 +632,80 @@
     overscroll-behavior-inline: contain;
     -webkit-overflow-scrolling: touch;
   }
+
   .ap-category-row::-webkit-scrollbar {
     display: none;
   }
+
   .ap-cat-card {
     scroll-snap-align: start;
   }
+
   .ap-hero__subtitle {
     font-size: 24px;
   }
+
   .ap-section__title {
     font-size: 26px;
   }
 }
 
 @media (max-width: 700px) {
+
   .ap-header,
   .ap-tabs-bar,
   .ap-section {
     padding-left: 20px;
     padding-right: 20px;
   }
+
   .ap-hero {
     padding: 0 20px;
   }
+
   .ap-hero__image-slot {
     height: 280px;
   }
+
   .ap-hero__overlay {
     left: 20px;
     right: 20px;
     height: 280px;
     padding: 30px;
   }
+
   .ap-bike-grid,
   .ap-brand-grid {
     grid-template-columns: 1fr;
   }
+
   .ap-cat-card {
     width: 200px;
     flex-shrink: 0;
   }
+
   .ap-cat-card__image-bg {
     width: 190px;
     height: 190px;
     aspect-ratio: 1 / 1;
   }
+
   .ap-bike-card {
     width: 220px;
     flex-shrink: 0;
   }
+
   .ap-brand-card {
     width: 130px;
     flex-shrink: 0;
   }
+
   .ap-bike-card__image-box {
     width: 100%;
     height: 170px;
     border-radius: 18px;
   }
+
   .ap-brand-card__box {
     width: 100%;
     height: 130px;
@@ -666,20 +717,25 @@
   .ap-header__logo {
     font-size: 22px;
   }
+
   .ap-header__icon-btn:first-of-type {
     display: none;
   }
+
   .ap-hero__overlay {
     padding: 20px;
   }
+
   .ap-hero__title {
     font-size: clamp(26px, 9vw, 38px);
   }
+
   .ap-section {
     padding-left: 16px;
     padding-right: 16px;
     padding-top: 6rem;
   }
+
   .ap-cat-card__image-bg,
   .ap-bike-card__circle,
   .ap-brand-card__box {
@@ -692,12 +748,15 @@
     width: 38px;
     height: 38px;
   }
+
   .ap-hero__title {
     font-size: 24px;
   }
+
   .ap-hero__subtitle {
     font-size: 18px;
   }
+
   .ap-cat-card,
   .ap-brand-card,
   .ap-bike-card {

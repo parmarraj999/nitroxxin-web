@@ -29,9 +29,18 @@ body,
 
 /* Normal pages get zoom: 0.8 on desktop */
 @media (min-width: 901px) {
-  .app-container:not(.is-profile-view):not(.is-privacy-view) {
+  .app-container:not(.is-profile-view):not(.is-privacy-view):not(.is-booking-view) {
     zoom: 0.8;
   }
+}
+
+/* Booking Section: FULL SCREEN CLEAN WHITE - NO ZOOM SCALING DISTORTIONS */
+.app-container.is-booking-view,
+.app-container:has(.eb-page) {
+  zoom: 1 !important;
+  width: 100% !important;
+  background: #ffffff !important;
+  color: #111827 !important;
 }
 
 /* Privacy Policy Section: FULL SCREEN CLEAN WHITE - MATCHING REFERENCE IMAGE */

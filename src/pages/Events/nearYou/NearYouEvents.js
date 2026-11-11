@@ -465,7 +465,7 @@ export default function NearYouEvents() {
       <div className="ny-container">
 
         {/* Hero Crimson Banner */}
-        <div className="ny-hero-card">
+        {/* <div className="ny-hero-card">
           <div className="ny-hero-card__body">
             <span className="ny-hero-card__badge">NEARBY DISCOVERY</span>
             <h1 className="ny-hero-card__title">
@@ -489,7 +489,8 @@ export default function NearYouEvents() {
               <span className="ny-change-tag">Change</span>
             </button>
           </div>
-        </div>
+        </div> */}
+        <h2 style={{fontSize:'24px',fontWeight:'600',marginBottom:'1rem'}}>Event Near You</h2>
 
         {/* Search Bar Row */}
         <div className="ny-search-bar-row">

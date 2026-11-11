@@ -79,14 +79,44 @@ export default function BottomNav() {
                 pathname.startsWith(p)
             ));
 
+    const ACCESSORIES_LIST_ROUTES = [
+        '/accessories/search',
+        '/accessories/collection',
+        '/accessories/category',
+        '/accessories/shop',
+        '/accessories/products',
+        '/accessories/brands',
+        '/accessories/bike',
+        '/accessories/vendor',
+    ];
+
+    const isAccessoriesDetailPage =
+        pathname.startsWith('/product/') ||
+        pathname.startsWith('/combo/') ||
+        pathname.startsWith('/accessories/combo/') ||
+        (pathname.startsWith('/accessories/') &&
+            pathname !== '/accessories' &&
+            pathname !== '/accessories/' &&
+            !ACCESSORIES_LIST_ROUTES.some((route) => pathname.startsWith(route)));
+
+    const isAccessoriesPage =
+        pathname === '/accessories' ||
+        pathname === '/accessories/' ||
+        (pathname.startsWith('/accessories') && !isAccessoriesDetailPage) ||
+        pathname.startsWith('/shop') ||
+        pathname.startsWith('/category') ||
+        pathname.startsWith('/brand');
+
     const isHidden =
         pathname.includes('/profile') ||
         pathname.includes('/book') ||
         pathname.includes('/privacy') ||
-        isEventDetailPage;
+        pathname.includes('/cart') ||
+        isEventDetailPage ||
+        isAccessoriesDetailPage;
 
     return (
-        <div className="bottom-nav-wrapper" style={isHidden ? { display: "none" } : {}}>
+        <div className={`bottom-nav-wrapper ${isAccessoriesPage ? 'bottom-nav-wrapper--light' : ''}`} style={isHidden ? { display: "none" } : {}}>
             <div className="bottom-nav-tabs">
                 <button
                     className={`nav-tab ${pathname === '/' ? 'active-red' : ''}`}

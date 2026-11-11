@@ -9,11 +9,28 @@ import { getTicketQrUrl } from "../../../utils/ticketSecurity";
 
 // Helper to extract detailed date & time information from various date formats
 function extractDateInfo(item) {
-  const rawDate = item.date || item.eventDate || item.startsAt || item.startDate || item.dateTime;
+  const rawDate =
+    item.startDate ||
+    item.date ||
+    item.eventDate ||
+    item.startsAt ||
+    item.dateTime ||
+    item.eventSnapshot?.startDate ||
+    item.eventSnapshot?.date ||
+    item.rawItem?.startDate ||
+    item.rawItem?.date;
   let d = toDate(rawDate);
 
-  if (!d && item.dateText) {
-    const parsed = new Date(item.dateText);
+  const rawDateText =
+    item.dateText ||
+    item.dateTimeText ||
+    item.eventSnapshot?.dateText ||
+    item.eventSnapshot?.dateTimeText ||
+    item.rawItem?.dateText ||
+    "";
+
+  if (!d && rawDateText) {
+    const parsed = new Date(rawDateText);
     if (!isNaN(parsed.getTime())) d = parsed;
   }
   if (!d && item.dates) {
@@ -27,8 +44,8 @@ function extractDateInfo(item) {
   tomorrow.setDate(tomorrow.getDate() + 1);
 
   let dayNumber = "1";
-  let monthName = "Aug";
-  let weekday = "Sunday";
+  let monthName = "Nov";
+  let weekday = "Monday";
   let relativeLabel = null;
   let isPast = false;
   let isNow = false;
@@ -59,7 +76,7 @@ function extractDateInfo(item) {
 
     groupKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   } else {
-    const textStr = String(item.dates || item.dateText || item.dateTimeText || "");
+    const textStr = String(rawDateText || item.dates || "");
     const match = textStr.match(/(\d{1,2})\s+([A-Za-z]{3,9})/);
     if (match) {
       dayNumber = match[1];
@@ -81,9 +98,20 @@ function extractDateInfo(item) {
     }
   }
 
-  let timeStr = item.time || item.timeRange || "";
+  let timeStr =
+    item.time ||
+    item.timeRange ||
+    item.eventSnapshot?.time ||
+    item.eventSnapshot?.timeRange ||
+    item.rawItem?.time ||
+    "";
+
   if (!timeStr && d && !isNaN(d.getTime())) {
-    timeStr = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+    const h = d.getHours();
+    const mins = d.getMinutes();
+    const ampm = h >= 12 ? "PM" : "AM";
+    const hr = h % 12 || 12;
+    timeStr = mins > 0 ? `${hr}:${mins < 10 ? "0" : ""}${mins} ${ampm}` : `${hr} ${ampm}`;
     if (item.duration) {
       timeStr += ` (${item.duration})`;
     }
@@ -92,7 +120,7 @@ function extractDateInfo(item) {
     timeStr = item.duration;
   }
   if (!timeStr) {
-    timeStr = "7:00 AM — 11:30 AM";
+    timeStr = "Check In: 6:00 AM";
   }
 
   return {
@@ -109,94 +137,6 @@ function extractDateInfo(item) {
   };
 }
 
-// Realistic sample joined events when user has 0 registrations yet
-function getMockJoinedEvents() {
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-
-  const pastDate = new Date(today);
-  pastDate.setDate(pastDate.getDate() - 10);
-
-  return [
-    {
-      id: "mock-joined-1",
-      eventId: "mock-joined-1",
-      bookingId: "NX-PASS-9082",
-      title: "Nitroxx Season Kickoff: Morning Breakfast Ride",
-      date: new Date(today.getTime() + 7 * 60 * 60 * 1000), // Today 7 AM
-      time: "7:00 AM — 11:30 AM",
-      location: "Expressway Hub — Sunny's Tollgate Cafe",
-      hostName: "Nitroxx Chapter Lead",
-      hostAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80",
-      banner: "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&w=800&q=80",
-      price: 650,
-      ticketsCount: 2,
-      category: "Breakfast Ride",
-      status: "confirmed",
-      isToday: true,
-      weekday: today.toLocaleDateString("en-US", { weekday: "long" }),
-    },
-    {
-      id: "mock-joined-2",
-      eventId: "mock-joined-2",
-      bookingId: "NX-PASS-6419",
-      title: "Apex Track Clinic: Level 2 Cornering & Trail Braking",
-      date: new Date(today.getTime() + 15 * 60 * 60 * 1000), // Today 3 PM
-      time: "3:00 PM — 6:00 PM",
-      location: "Buddh International Circuit (BIC), Pit Garage 4",
-      hostName: "Claire de Lune",
-      hostAvatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80",
-      banner: "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?auto=format&fit=crop&w=800&q=80",
-      price: 3499,
-      ticketsCount: 1,
-      category: "Track Clinic",
-      status: "confirmed",
-      isToday: true,
-      weekday: today.toLocaleDateString("en-US", { weekday: "long" }),
-    },
-    {
-      id: "mock-joined-3",
-      eventId: "mock-joined-3",
-      bookingId: "NX-PASS-4712",
-      title: "Virtual Route Masterclass: GPS Trails & Offroad Navigation",
-      date: new Date(tomorrow.getTime() + 18 * 60 * 60 * 1000), // Tomorrow 6 PM
-      time: "6:00 PM — 7:30 PM",
-      location: "Zoom",
-      hostName: "Claire de Lune",
-      hostAvatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80",
-      banner: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=800&q=80",
-      price: 0,
-      ticketsCount: 1,
-      category: "Workshop",
-      isOnline: true,
-      joinLink: "https://zoom.us",
-      isTomorrow: true,
-      weekday: tomorrow.toLocaleDateString("en-US", { weekday: "long" }),
-    },
-    {
-      id: "mock-joined-4",
-      eventId: "mock-joined-4",
-      bookingId: "NX-PASS-2104",
-      title: "Western Ghats Monsoon Odyssey 2026",
-      date: pastDate,
-      time: "5:30 AM — 7:00 PM",
-      location: "Tamhini Ghat to Mahabaleshwar",
-      hostName: "Western Riders Club",
-      hostAvatar: null,
-      banner: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&q=80",
-      price: 1800,
-      ticketsCount: 1,
-      category: "Adventure Tour",
-      status: "completed",
-      isOnline: false,
-      joinLink: null,
-      weekday: pastDate.toLocaleDateString("en-US", { weekday: "long" }),
-    },
-  ];
-}
-
 export default function JoinedEvents() {
   const { user } = useAuth();
   const { events: contextEvents = [] } = useEventsContext();
@@ -209,37 +149,38 @@ export default function JoinedEvents() {
     where: user?.uid ? [["userId", "==", user.uid]] : [["userId", "==", "NO_USER"]],
     limit: 50,
   });
+  console.log(bookingsData)
 
   const { data: singleBookingData } = useCollection("booking", {
     where: user?.uid ? [["userId", "==", user.uid]] : [["userId", "==", "NO_USER"]],
     limit: 50,
   });
 
-  const { data: savedEventsData } = useCollection(
-    user?.uid ? `users/${user.uid}/saved-events` : null
+  const { data: joinedEventsData, loading: loadingJoined } = useCollection(
+    user?.uid ? `users/${user.uid}/joined-event` : null
   );
 
-  const { data: userSingularSavedData } = useCollection(
-    user?.uid ? `user/${user.uid}/saved-events` : null
+  const { data: joinedEventsPluralData } = useCollection(
+    user?.uid ? `users/${user.uid}/joined-events` : null
+  );
+
+  const { data: userBookingsData } = useCollection(
+    user?.uid ? `users/${user.uid}/bookings` : null
   );
 
   const { data: myEventsData } = useCollection(
     user?.uid ? `users/${user.uid}/my-events` : null
   );
 
-  const { data: joinedEventsData, loading: loadingJoined } = useCollection(
-    user?.uid ? `users/${user.uid}/joined-event` : null
-  );
-
   const loading = (loadingBookings || loadingJoined) && user?.uid;
 
-  // Deduplicate and merge user bookings/joined events
+  // Deduplicate and merge user bookings/joined events from all sources + localStorage cache
   const userJoinedList = useMemo(() => {
     const map = new Map();
 
     const addEvents = (list) => {
       (list || []).forEach((item) => {
-        const id = item.bookingId || item.eventId || item.id;
+        const id = item.bookingId || item.bookingRefId || item.id || item.eventId;
         if (id && !map.has(id)) {
           map.set(id, {
             ...item,
@@ -249,25 +190,27 @@ export default function JoinedEvents() {
       });
     };
 
+    // 1. Live Firestore sources
     addEvents(joinedEventsData);
+    addEvents(joinedEventsPluralData);
+    addEvents(userBookingsData);
     addEvents(bookingsData);
     addEvents(singleBookingData);
     addEvents(myEventsData);
-    addEvents(savedEventsData);
-    addEvents(userSingularSavedData);
+
+    // 2. LocalStorage fast cache for instant booking reflection
+    try {
+      const localCached = JSON.parse(localStorage.getItem('nx_user_bookings') || '[]');
+      if (Array.isArray(localCached)) {
+        addEvents(localCached);
+      }
+    } catch (_) {}
 
     return Array.from(map.values());
-  }, [joinedEventsData, bookingsData, singleBookingData, myEventsData, savedEventsData, userSingularSavedData]);
+  }, [joinedEventsData, joinedEventsPluralData, userBookingsData, bookingsData, singleBookingData, myEventsData]);
 
-  // Preview mode toggle if user hasn't registered for any events yet
-  const isPreviewMode = userJoinedList.length === 0;
-
-  const rawEventsList = useMemo(() => {
-    if (!isPreviewMode) {
-      return userJoinedList;
-    }
-    return getMockJoinedEvents();
-  }, [isPreviewMode, userJoinedList]);
+  // Real events list (No mock dummy fallback)
+  const rawEventsList = userJoinedList;
 
   // Handle Add to Calendar (.ics download)
   const handleAddToCalendar = (event, e) => {
@@ -309,12 +252,12 @@ export default function JoinedEvents() {
   const parsedEvents = useMemo(() => {
     return rawEventsList.map((item) => {
       const eventId = item.eventId || item.id;
-      const contextMatch = contextEvents.find((e) => e.id === eventId);
+      const contextMatch = contextEvents.find((e) => String(e.id) === String(eventId));
       const event = item.eventSnapshot || item;
-      const merged = contextMatch ? { ...event, ...contextMatch, ...item } : { ...event, ...item };
+      const merged = contextMatch ? { ...contextMatch, ...event, ...item } : { ...event, ...item };
 
-      const title = merged.eventTitle || merged.title || merged.name || "Motorcycle Event";
-      const location = merged.location || merged.venue || "Location TBA";
+      const title = merged.eventTitle || merged.title || merged.name || contextMatch?.title || "Nitroxx Motorsports Event";
+      const location = merged.venue || merged.location || merged.city || contextMatch?.venue || contextMatch?.location || "Venue TBA";
       const isOnline =
         merged.isOnline ||
         location.toLowerCase().includes("zoom") ||
@@ -325,7 +268,9 @@ export default function JoinedEvents() {
         merged.banner ||
         merged.image ||
         merged.bannerImage ||
-        "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&w=800&q=80";
+        contextMatch?.image ||
+        contextMatch?.banner ||
+        "/assets/images/mandu-fort-ride.png";
 
       const ticketsCount =
         merged.totalTickets ||
@@ -333,10 +278,18 @@ export default function JoinedEvents() {
         (merged.attendees ? merged.attendees.length : null) ||
         1;
 
-      const bookingId = merged.bookingId || merged.id || "NX-PASS-2026";
-      const hostName = merged.hostName || merged.organizerName || merged.host || "Nitroxx Community";
-      const hostAvatar = merged.hostAvatar || merged.organizerAvatar || null;
-      const category = merged.category || merged.badge || (isOnline ? "Virtual Meetup" : "Official Ride");
+      const primaryAttendee = (merged.attendees && merged.attendees[0]) || {};
+      const ticketTier =
+        primaryAttendee.ticketTier ||
+        merged.ticketTier ||
+        (merged.ticketPlan?.tiers && merged.ticketPlan.tiers[0]?.name) ||
+        "General Pass";
+
+      const totalPrice = Number(merged.total ?? merged.price ?? merged.payment?.amount ?? 0);
+      const bookingId = merged.bookingId || merged.bookingRefId || merged.id || "NX-PASS-2026";
+      const hostName = merged.hostName || merged.organizerName || merged.host || contextMatch?.hostName || "Nitroxx Community";
+      const hostAvatar = merged.hostAvatar || merged.organizerAvatar || contextMatch?.hostAvatar || null;
+      const category = merged.category || contextMatch?.category || (isOnline ? "Virtual Meetup" : "Official Ride");
       const joinLink = merged.joinLink || (isOnline ? "https://zoom.us" : null);
 
       const dateInfo = extractDateInfo(merged);
@@ -350,6 +303,8 @@ export default function JoinedEvents() {
         isOnline,
         banner,
         ticketsCount,
+        ticketTier,
+        totalPrice,
         hostName,
         hostAvatar,
         category,
@@ -462,16 +417,6 @@ export default function JoinedEvents() {
           )}
         </div>
       </div>
-
-      {/* Preview Mode Notification Banner when no user registrations exist yet */}
-      {isPreviewMode && (
-        <div className="nx-saved-preview-banner">
-          <div>
-            ✨ <strong>Preview Mode:</strong> Showing your confirmed entry passes. Book any ride from the{" "}
-            <Link to="/events" className="nx-saved-preview-link">Events Catalog</Link> to see real tickets here!
-          </div>
-        </div>
-      )}
 
       {/* Temporary Floating Toast Feedback */}
       {showToast && (
@@ -674,33 +619,12 @@ export default function JoinedEvents() {
                               style={{ cursor: "pointer" }}
                               onClick={() => setSelectedTicket(event)}
                             >
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7" />
-                                <path d="M16 3v4" />
-                                <path d="M8 3v4" />
-                                <rect x="7" y="11" width="10" height="4" />
-                              </svg>
-                              <span className="nx-relatable-price">{event.bookingId}</span>
+                              <span className="nx-relatable-price">{event.ticketCode}</span>
                               <span className="nx-relatable-spots">
-                                • {event.ticketsCount} {event.ticketsCount === 1 ? "Rider" : "Riders"}
+                                • {event.ticketTier} • {event.ticketsCount} {event.ticketsCount === 1 ? "Rider" : "Riders"}
+                                {event.totalPrice > 0 ? ` • ₹ ${event.totalPrice.toLocaleString('en-IN')}` : ''}
                               </span>
                             </div>
-
-                            {/* View Digital Ticket Pass Button */}
-                            <button
-                              type="button"
-                              className="nx-relatable-saved-btn"
-                              style={{ color: "#38bdf8", background: "rgba(56, 189, 248, 0.08)", borderColor: "rgba(56, 189, 248, 0.25)" }}
-                              onClick={() => setSelectedTicket(event)}
-                              title="Open verified entry QR code"
-                            >
-                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <rect x="3" y="3" width="7" height="7" />
-                                <rect x="14" y="3" width="7" height="7" />
-                                <rect x="3" y="14" width="7" height="7" />
-                              </svg>
-                              <span>View Pass</span>
-                            </button>
 
                             {/* Add to Calendar Button */}
                             <button
@@ -811,11 +735,19 @@ export default function JoinedEvents() {
                   </div>
                   <div className="nx-ticket-pass-cell">
                     <label>Rider / Guest</label>
-                    <span>{user?.displayName || "Nitroxx Rider"}</span>
+                    <span>{selectedTicket.rawItem?.attendees?.[0]?.name || user?.displayName || "Nitroxx Rider"}</span>
                   </div>
                   <div className="nx-ticket-pass-cell">
                     <label>Pass / Booking ID</label>
                     <span className="nx-ticket-pass-id">{selectedTicket.bookingId}</span>
+                  </div>
+                  <div className="nx-ticket-pass-cell">
+                    <label>Ticket Tier</label>
+                    <span>{selectedTicket.ticketTier}</span>
+                  </div>
+                  <div className="nx-ticket-pass-cell">
+                    <label>Total Paid</label>
+                    <span>₹ {selectedTicket.totalPrice.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
 

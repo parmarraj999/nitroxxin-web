@@ -88,6 +88,57 @@
   /* Bright green pin */
 }
 
+/* ── White / Light Theme for Accessories & Shop Pages ── */
+.bottom-nav-wrapper--light .bottom-nav-tabs,
+.bottom-nav-wrapper--light .bottom-nav-location {
+  background: rgba(68, 68, 68, 0.15);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 0, 0, 0.5);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.bottom-nav-wrapper--light .nav-tab {
+  color: #000000;
+}
+
+.bottom-nav-wrapper--light .nav-tab:hover {
+  color: #0f172a;
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.bottom-nav-wrapper--light .nav-tab.active-red {
+  background: #ff2244;
+  color: #ffffff;
+  border: 1px solid rgba(255, 34, 68, 0.2);
+  /* box-shadow: 0 4px 14px rgba(255, 34, 68, 0.35); */
+}
+
+.bottom-nav-wrapper--light .nav-tab.active-red svg {
+  stroke: #ffffff;
+}
+
+.bottom-nav-wrapper--light .location-btn {
+ background: rgba(53, 178, 0, 0.15);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgb(3, 200, 13);
+  color: #0f172a;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+}
+
+.bottom-nav-wrapper--light .location-btn:hover {
+  background: #ffffff;
+}
+
+.bottom-nav-wrapper--light .location-btn svg:first-child {
+  stroke: #16a34a;
+}
+
+.bottom-nav-wrapper--light .location-btn svg:last-child {
+  stroke: #64748b;
+}
+
 @media (max-width: 900px) {
   .bottom-nav-wrapper {
     left: 10px;
