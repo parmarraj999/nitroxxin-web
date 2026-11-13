@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { useAuthModal } from '../../../components/AuthModal/useAuthModal';
 import { useAccessoriesContext } from '../../../context/AccessoriesContext';
+import { useCart } from '../../../context/CartContext';
 import SearchPopup from './SearchPopup';
 import BecomePartner from '../../../components/Partner/BecomePartner';
 import './AccessoriesHeader.css';
@@ -154,6 +155,7 @@ export default function AccessoriesHeader({ showBack = false, search = '', onSea
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { openLogin } = useAuthModal();
+  const { cartCount } = useCart();
   const accessoriesContext = useAccessoriesContext();
 
   const [activeHoveredCat, setActiveHoveredCat] = useState(null);
@@ -491,6 +493,11 @@ export default function AccessoriesHeader({ showBack = false, search = '', onSea
 
         <Link to="/cart" className="ap-header__icon-btn" aria-label="Cart">
           <CartIcon />
+          {cartCount > 0 && (
+            <span className="ap-header__cart-badge">
+              {cartCount > 99 ? '99+' : cartCount}
+            </span>
+          )}
         </Link>
 
         {/* Removed Logout button - only display Log In when unauthenticated */}

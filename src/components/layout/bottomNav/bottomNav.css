@@ -177,7 +177,17 @@
   .location-btn {
     max-width: 20%;
     font-size: 12px;
+    display: flex;
+  }
+  .location-btn span{
     display: none;
+  }
+  .location-btn .arrow{
+    display: none;
+  }
+  .location-btn svg{
+    width: 20px;
+    height: 20px;
   }
 }
 

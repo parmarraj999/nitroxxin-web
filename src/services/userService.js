@@ -139,10 +139,22 @@ export const ensureUserProfile = async (uid, userData = {}) => {
     const userRef = doc(firestoreInstance, "users", uid);
     const docSnap = await getDoc(userRef);
     if (!docSnap.exists()) {
+      // Guard: Never auto-create a consumer user document for Event Hosts, Vendors, or Applicants
+      const [hostSnap, vendorSnap, hostAppSnap] = await Promise.all([
+        getDoc(doc(firestoreInstance, "event_host", uid)).catch(() => null),
+        getDoc(doc(firestoreInstance, "vendors", uid)).catch(() => null),
+        getDoc(doc(firestoreInstance, "host_applications", uid)).catch(() => null),
+      ]);
+      if (hostSnap?.exists() || vendorSnap?.exists() || hostAppSnap?.exists()) {
+        console.warn(`Prevented creating users document for dashboard host/vendor account: ${uid}`);
+        return null;
+      }
+
       const initialData = {
         uid,
         phone: userData.phone || "",
         fullName: userData.fullName || userData.name || userData.displayName || "",
+        email: userData.email || "",
         isProfileComplete: false,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),

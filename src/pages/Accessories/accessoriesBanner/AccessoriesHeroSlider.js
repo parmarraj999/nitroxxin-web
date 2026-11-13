@@ -176,7 +176,7 @@ export default function AccessoriesHeroSlider({
     }
 
     return DEFAULT_SLIDES;
-  }, [layoutData, banners]);
+  }, [layoutData, banners, contextSlides]);
 
   const total = slides.length;
 

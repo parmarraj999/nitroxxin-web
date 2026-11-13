@@ -8,7 +8,6 @@ import {
   FaChevronDown,
   FaChevronRight,
   FaCreditCard,
-  FaEdit,
   FaIdCard,
   FaLock,
   FaMapMarkerAlt,
@@ -17,9 +16,7 @@ import {
   FaRegUser,
   FaShieldAlt,
   FaTicketAlt,
-  FaUser,
   FaUserFriends,
-  FaWallet,
 } from 'react-icons/fa';
 import './EventBooking.css';
 import { useDocument, useCollection } from '../../../hooks/useFirestore';
@@ -2346,12 +2343,12 @@ export default function EventBooking() {
     experience: 'Intermediate',
     pace: 'Balanced',
     notes: '',
-    helmetConfirmed: false,
+    // helmetConfirmed: false,
     termsAccepted: false,
     whatsappUpdates: true,
   });
   const [selectedAddOns, setSelectedAddOns] = useState([]);
-  const [payment, setPayment] = useState({ method: 'upi', reference: '' });
+  const [payment] = useState({ method: 'upi', reference: '' });
   const [couponInput, setCouponInput] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponError, setCouponError] = useState('');

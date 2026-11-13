@@ -36,6 +36,7 @@ export function AccessoriesHero({ product }) {
   const [lightboxIndex, setLightboxIndex] = useState(null);
   const [wishlistAdded, setWishlistAdded] = useState(false);
   const [cartAdded, setCartAdded] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   // ── Normalize raw variants array from vendor data ──
   const rawVariants = useMemo(() => {
@@ -183,6 +184,22 @@ export function AccessoriesHero({ product }) {
   const isLowStock = stockQty !== null && stockQty > 0 && stockQty <= (product?.inventory?.lowStockThreshold || 5);
   const isOutOfStock = stockQty !== null && stockQty <= 0;
 
+  // ── Limited Order Quantity (max 5 per order or limited to available stock) ──
+  const MAX_PURCHASE_LIMIT = 5;
+  const maxAllowedQty = useMemo(() => {
+    if (stockQty !== null && Number.isFinite(stockQty)) {
+      if (stockQty <= 0) return 0;
+      return Math.min(stockQty, MAX_PURCHASE_LIMIT);
+    }
+    return MAX_PURCHASE_LIMIT;
+  }, [stockQty]);
+
+  useEffect(() => {
+    if (maxAllowedQty > 0 && qty > maxAllowedQty) {
+      setQty(maxAllowedQty);
+    }
+  }, [maxAllowedQty, qty]);
+
   // ── Dynamic SKU ──
   const currentSku = activeVariant?.sku || product?.sku || null;
 
@@ -244,31 +261,44 @@ export function AccessoriesHero({ product }) {
     );
   }
 
-  // ── Add to Cart ──
+  // ── Add to Cart (with button loader and limited quantity protection) ──
   const handleAddToCart = async () => {
     if (!user) return openLogin();
-    const cartOptions = {
-      ...selectedOptions,
-      variantId: activeVariant?.id || "",
-      sku: currentSku || "",
-      price: currentSellingPrice,
-      size: selectedOptions.size || "",
-      color: selectedOptions.color || "",
-    };
+    if (isOutOfStock || isAddingToCart) return;
 
-    await addToCart({
-      userId: user.uid,
-      product: {
-        ...product,
-        price: currentMrp || currentSellingPrice,
-        offerPrice: currentSellingPrice,
-        sku: currentSku || product.sku,
-      },
-      quantity: qty,
-      options: cartOptions,
-    });
-    setCartAdded(true);
-    setTimeout(() => setCartAdded(false), 2000);
+    try {
+      setIsAddingToCart(true);
+      const cartOptions = {
+        ...selectedOptions,
+        variantId: activeVariant?.id || "",
+        sku: currentSku || "",
+        price: currentSellingPrice,
+        size: selectedOptions.size || "",
+        color: selectedOptions.color || "",
+        stock: stockQty,
+      };
+
+      const finalQuantity = Math.max(1, Math.min(qty, maxAllowedQty || 5));
+
+      await addToCart({
+        userId: user.uid,
+        product: {
+          ...product,
+          price: currentMrp || currentSellingPrice,
+          offerPrice: currentSellingPrice,
+          sku: currentSku || product.sku,
+        },
+        quantity: finalQuantity,
+        options: cartOptions,
+      });
+
+      setCartAdded(true);
+      setTimeout(() => setCartAdded(false), 2500);
+    } catch (err) {
+      console.error("Error adding to cart:", err);
+    } finally {
+      setIsAddingToCart(false);
+    }
   };
 
   const handleWishlist = async () => {
@@ -470,14 +500,21 @@ export function AccessoriesHero({ product }) {
           );
         })}
 
-        {/* Quantity */}
-        <p className="product-hero__qty-label">Quantity</p>
+        {/* Quantity (Limited quantity control) */}
+        <div className="product-hero__qty-header">
+          <p className="product-hero__qty-label">Quantity</p>
+          <span className="product-hero__qty-limit-tag">
+            (Max {maxAllowedQty} units per order)
+          </span>
+        </div>
         <div className="product-hero__qty-control">
           <button
             type="button"
             className="product-hero__qty-btn"
-            onClick={() => setQty(Math.max(1, qty - 1))}
-            disabled={isOutOfStock}
+            onClick={() => setQty((prev) => Math.max(1, prev - 1))}
+            disabled={isOutOfStock || qty <= 1 || isAddingToCart}
+            title={qty <= 1 ? "Minimum 1 item" : "Decrease quantity"}
+            aria-label="Decrease quantity"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M5 12h14" />
@@ -489,8 +526,10 @@ export function AccessoriesHero({ product }) {
           <button
             type="button"
             className="product-hero__qty-btn"
-            onClick={() => setQty(qty + 1)}
-            disabled={isOutOfStock}
+            onClick={() => setQty((prev) => Math.min(maxAllowedQty, prev + 1))}
+            disabled={isOutOfStock || qty >= maxAllowedQty || isAddingToCart}
+            title={qty >= maxAllowedQty ? `Maximum limited quantity of ${maxAllowedQty} reached` : "Increase quantity"}
+            aria-label="Increase quantity"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M5 12h14" />
@@ -499,26 +538,36 @@ export function AccessoriesHero({ product }) {
           </button>
         </div>
 
-        {/* Action buttons */}
+        {/* Action buttons (with Add to Cart loader button) */}
         <div className="product-hero__actions">
           <button
             type="button"
-            className={`product-hero__btn-cart${cartAdded ? " added" : ""}`}
+            className={`product-hero__btn-cart${cartAdded ? " added" : ""}${isAddingToCart ? " loading" : ""}`}
             onClick={handleAddToCart}
-            disabled={isOutOfStock}
+            disabled={isOutOfStock || isAddingToCart}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              {cartAdded ? (
-                <polyline points="20 6 9 17 4 12" />
-              ) : (
-                <>
+            {isAddingToCart ? (
+              <>
+                <span className="product-hero__btn-spinner" />
+                <span>Adding to Cart...</span>
+              </>
+            ) : cartAdded ? (
+              <>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <span>Added to Cart!</span>
+              </>
+            ) : (
+              <>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
                   <line x1="3" y1="6" x2="21" y2="6" />
                   <path d="M16 10a4 4 0 0 1-8 0" />
-                </>
-              )}
-            </svg>
-            {cartAdded ? "Added to Cart!" : isOutOfStock ? "Out of Stock" : "Add to Cart"}
+                </svg>
+                <span>{isOutOfStock ? "Out of Stock" : "Add to Cart"}</span>
+              </>
+            )}
           </button>
           <button
             type="button"

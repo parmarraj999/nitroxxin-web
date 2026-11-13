@@ -36,6 +36,7 @@ import { AccessoriesProvider } from './context/AccessoriesContext';
 import { BikeBrandsProvider } from './context/BikeBrandsContext';
 import { ForYouProvider } from './context/ForYouContext';
 import { AccessoriesPageProvider } from './context/AccessoriesPageContext';
+import { CartProvider } from './context/CartContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Profile from './pages/profile/profile';
 import ProfileOverview from './pages/profile/pages/ProfileOverview';
@@ -233,7 +234,9 @@ function App() {
                   <Router>
                     <ScrollToTop />
                     <AuthProvider>
-                      <AppShell />
+                      <CartProvider>
+                        <AppShell />
+                      </CartProvider>
                     </AuthProvider>
                   </Router>
                 </AccessoriesPageProvider>

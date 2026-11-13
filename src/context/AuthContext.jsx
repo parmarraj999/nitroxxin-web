@@ -17,10 +17,36 @@ import { uploadProfileImage, uploadDrivingLicenseImage } from "../services/stora
 
 const AuthContext = createContext(null);
 
+const isVendorOrHostAccount = (data) => {
+  if (!data || typeof data !== "object") return false;
+  const role = String(data.role || "").toLowerCase();
+  const email = String(data.email || "").toLowerCase();
+  return (
+    role === "host" ||
+    role === "vendor" ||
+    role === "organizer" ||
+    Boolean(data.isHost) ||
+    Boolean(data.isVendor) ||
+    email.includes("vendor") ||
+    email.includes("host")
+  );
+};
+
 const getInitialUser = () => {
   try {
     const savedUser = localStorage.getItem("nitroxxin_user");
-    if (savedUser) return JSON.parse(savedUser);
+    if (savedUser) {
+      const parsed = JSON.parse(savedUser);
+      // Evict any vendor/host account mistakenly cached in localStorage
+      if (isVendorOrHostAccount(parsed)) {
+        localStorage.removeItem("nitroxxin_user");
+        localStorage.removeItem("nitroxxin_profile");
+        localStorage.removeItem("userId");
+        localStorage.removeItem("nitroxxin_auth_uid");
+        return null;
+      }
+      return parsed;
+    }
     const devUid = localStorage.getItem("nitroxxin_dev_test_uid");
     if (devUid) {
       return {
@@ -39,7 +65,14 @@ const getInitialUser = () => {
 const getInitialProfile = () => {
   try {
     const savedProfile = localStorage.getItem("nitroxxin_profile");
-    if (savedProfile) return JSON.parse(savedProfile);
+    if (savedProfile) {
+      const parsed = JSON.parse(savedProfile);
+      if (isVendorOrHostAccount(parsed)) {
+        localStorage.removeItem("nitroxxin_profile");
+        return null;
+      }
+      return parsed;
+    }
   } catch (e) {
     console.warn("Error reading cached profile:", e);
   }
@@ -66,10 +99,23 @@ export const FirebaseAuthProvider = ({ children }) => {
 
   // Subscribe to Firebase Auth and sync with Firestore profile (supports both real Auth & Dev Test UID)
   useEffect(() => {
-    let unsubscribeProfile;
+    let unsubscribeProfile = null;
+
+    const clearWebSession = () => {
+      localStorage.removeItem("nitroxxin_user");
+      localStorage.removeItem("nitroxxin_profile");
+      localStorage.removeItem("userId");
+      localStorage.removeItem("nitroxxin_auth_uid");
+      setUser(null);
+      setProfile(null);
+      setLoading(false);
+    };
 
     const unsubscribeAuth = subscribeToAuth(async (firebaseUser) => {
-      if (unsubscribeProfile) unsubscribeProfile();
+      if (unsubscribeProfile) {
+        unsubscribeProfile();
+        unsubscribeProfile = null;
+      }
 
       if (pendingGoogleLoginRef.current) {
         setLoading(false);
@@ -77,54 +123,83 @@ export const FirebaseAuthProvider = ({ children }) => {
       }
 
       if (firebaseUser) {
-        localStorage.removeItem("nitroxxin_dev_test_uid");
-        localStorage.setItem("userId", firebaseUser.uid);
-        localStorage.setItem("nitroxxin_auth_uid", firebaseUser.uid);
+        try {
+          // 1. Guard against Event Hosts, Vendors, and Organizers logged into dashboards
+          // E.g. rajparmarvendor@gmail.com logged into Events-Host-Dashboard or Products-Vendor-Dashboard.
+          // They must NEVER be automatically signed up or logged in as a consumer on nitroxx-web,
+          // and must NEVER have a document auto-created in the "users" collection!
+          const [hostSnap, vendorSnap, hostAppSnap] = await Promise.all([
+            getDoc(doc(firestoreInstance, "event_host", firebaseUser.uid)).catch(() => null),
+            getDoc(doc(firestoreInstance, "vendors", firebaseUser.uid)).catch(() => null),
+            getDoc(doc(firestoreInstance, "host_applications", firebaseUser.uid)).catch(() => null),
+          ]);
 
-        const basePayload = {
-          uid: firebaseUser.uid,
-          phone: firebaseUser.phoneNumber || "",
-          phoneNumber: firebaseUser.phoneNumber || "",
-          email: firebaseUser.email || "",
-          fullName: firebaseUser.displayName || "",
-          displayName: firebaseUser.displayName || "",
-          photoURL: firebaseUser.photoURL || "",
-        };
-        localStorage.setItem("nitroxxin_user", JSON.stringify(basePayload));
-        setUser((prev) => ({ ...basePayload, ...(prev || {}), ...firebaseUser }));
+          const isDashboardAccount = Boolean(
+            hostSnap?.exists() || vendorSnap?.exists() || hostAppSnap?.exists()
+          );
 
-        // Realtime listener to users/{uid} document
-        const docRef = doc(firestoreInstance, "users", firebaseUser.uid);
-        unsubscribeProfile = onSnapshot(
-          docRef,
-          (docSnap) => {
-            if (docSnap.exists()) {
-              const profileData = { id: docSnap.id, ...docSnap.data() };
-              setProfile(profileData);
-              localStorage.setItem("nitroxxin_profile", JSON.stringify(profileData));
-            } else {
-              // Ensure user profile document exists so we don't end up with an empty state
-              ensureUserProfile(firebaseUser.uid, {
-                phone: firebaseUser.phoneNumber || "",
-                fullName: firebaseUser.displayName || "",
-                email: firebaseUser.email || "",
-              })
-                .then((ensured) => {
-                  setProfile(ensured);
-                  localStorage.setItem("nitroxxin_profile", JSON.stringify(ensured));
-                })
-                .catch((pErr) => {
-                  console.warn("Could not ensure profile document:", pErr);
-                });
-            }
-            setLoading(false);
-          },
-          (snapError) => {
-            console.error("Firestore sync error:", snapError);
-            // DO NOT log out on snapshot error; preserve user session
-            setLoading(false);
+          if (isDashboardAccount) {
+            console.info("Firebase Auth session belongs to an Event Host/Vendor Dashboard account; ignoring on public web store.");
+            clearWebSession();
+            return;
           }
-        );
+
+          // 2. Realtime listener to users/{uid} document
+          const docRef = doc(firestoreInstance, "users", firebaseUser.uid);
+          unsubscribeProfile = onSnapshot(
+            docRef,
+            (docSnap) => {
+              if (docSnap.exists()) {
+                const profileData = { id: docSnap.id, ...docSnap.data() };
+
+                // Guard: If document has role 'Host', 'Vendor', or 'Organizer', do not treat as customer
+                if (
+                  profileData.role === "Host" ||
+                  profileData.role === "Vendor" ||
+                  profileData.role === "Organizer" ||
+                  profileData.isHost ||
+                  profileData.isVendor
+                ) {
+                  clearWebSession();
+                  return;
+                }
+
+                // Legitimate registered customer user on nitroxx-web
+                localStorage.removeItem("nitroxxin_dev_test_uid");
+                localStorage.setItem("userId", firebaseUser.uid);
+                localStorage.setItem("nitroxxin_auth_uid", firebaseUser.uid);
+
+                const basePayload = {
+                  uid: firebaseUser.uid,
+                  phone: profileData.phone || profileData.phoneNumber || firebaseUser.phoneNumber || "",
+                  phoneNumber: profileData.phone || profileData.phoneNumber || firebaseUser.phoneNumber || "",
+                  email: profileData.email || firebaseUser.email || "",
+                  fullName: profileData.fullName || profileData.name || firebaseUser.displayName || "",
+                  displayName: profileData.displayName || profileData.fullName || firebaseUser.displayName || "",
+                  photoURL: profileData.profilePhoto || profileData.photoURL || firebaseUser.photoURL || "",
+                };
+
+                localStorage.setItem("nitroxxin_user", JSON.stringify(basePayload));
+                localStorage.setItem("nitroxxin_profile", JSON.stringify(profileData));
+                setUser(basePayload);
+                setProfile(profileData);
+              } else {
+                // User does NOT exist in the website's `users` collection!
+                // NEVER auto-create a document in `users` collection on auth state change!
+                // Legitimate users are created only during explicit OTP verification or registration.
+                clearWebSession();
+              }
+              setLoading(false);
+            },
+            (snapError) => {
+              console.error("Firestore sync error:", snapError);
+              setLoading(false);
+            }
+          );
+        } catch (err) {
+          console.error("Error in auth session check:", err);
+          clearWebSession();
+        }
       } else {
         // Firebase has no active user in authInstance
         const savedDevUid = localStorage.getItem("nitroxxin_dev_test_uid");

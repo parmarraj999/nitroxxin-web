@@ -1,11 +1,13 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../../context/AuthContext";
+import { useCart } from "../../../../context/CartContext";
 import "./accessoriesNav.css";
 
 export function AccessoriesNav() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const { cartCount } = useCart();
 
   const handleBack = () => {
     if (window.history.length > 1) {
@@ -94,6 +96,11 @@ export function AccessoriesNav() {
             <circle cx="19" cy="21" r="1" />
             <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
           </svg>
+          {cartCount > 0 && (
+            <span className="accessories-nav__cart-badge">
+              {cartCount > 99 ? "99+" : cartCount}
+            </span>
+          )}
         </Link>
       </div>
     </nav>

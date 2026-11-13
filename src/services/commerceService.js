@@ -15,8 +15,20 @@ const toNumber = (value, fallback = 0) => {
 };
 
 const compact = (value) => {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
   if (Array.isArray(value)) return value.map(compact).filter((item) => item !== undefined);
-  if (value && typeof value === "object" && !(value instanceof Date)) {
+  if (typeof value === "object") {
+    // Preserve Dates, Firestore FieldValues, Timestamps, and special objects
+    if (
+      value instanceof Date ||
+      typeof value.isEqual === "function" ||
+      value.constructor?.name === "FieldValue" ||
+      value._methodName !== undefined ||
+      value._delegate !== undefined
+    ) {
+      return value;
+    }
     return Object.fromEntries(
       Object.entries(value)
         .map(([key, item]) => [key, compact(item)])
@@ -58,6 +70,30 @@ export const addToCart = async ({ userId, product, quantity = 1, options = {} })
   const cartPrice = Number(options.price || item.offerPrice || item.price || item.mrp || 0);
   const cartMrp = Number(item.price || item.mrp || cartPrice);
 
+  // Validate incoming quantity safely
+  const parsedQty = Number(quantity);
+  const addQty = Number.isFinite(parsedQty) && parsedQty > 0 ? Math.round(parsedQty) : 1;
+
+  // Maximum allowed per item (limited quantity)
+  const MAX_LIMIT_PER_ITEM = 5;
+
+  // Query existing item to update quantity safely without NaN or corrupted object
+  const docRef = db().collection("users").doc(uid).collection("cart").doc(id);
+  let existingQty = 0;
+  try {
+    const existingDoc = await docRef.get();
+    if (existingDoc.exists) {
+      const existingData = existingDoc.data();
+      if (typeof existingData?.quantity === "number" && Number.isFinite(existingData.quantity)) {
+        existingQty = existingData.quantity;
+      }
+    }
+  } catch (err) {
+    console.warn("Could not check existing cart item quantity:", err);
+  }
+
+  const finalQty = Math.max(1, Math.min(existingQty + addQty, MAX_LIMIT_PER_ITEM));
+
   // Only store fields essential for cart page, transactions, and order placement
   const cartPayload = compact({
     id,
@@ -73,7 +109,7 @@ export const addToCart = async ({ userId, product, quantity = 1, options = {} })
     category: item.category || item.categoryName || "",
     vendorId: vendorId || DEFAULT_VENDOR_ID,
     vendorName: vendorName || item.brand || "Authorized Vendor",
-    quantity: increment(quantity),
+    quantity: finalQty, // Clean numeric integer, NEVER an object or NaN!
     options: {
       ...options,
       size: options.size || "",
@@ -90,20 +126,18 @@ export const addToCart = async ({ userId, product, quantity = 1, options = {} })
   cartPayload.productSnapshot = deleteField();
 
   // Store in users/userId/cart
-  await db()
-    .collection("users")
-    .doc(uid)
-    .collection("cart")
-    .doc(id)
-    .set(cartPayload, { merge: true });
+  await docRef.set(cartPayload, { merge: true });
 };
 
 export const updateCartQuantity = async (cartItemId, quantity, userId) => {
   const uid = userId || auth().currentUser?.uid;
   if (!uid || !cartItemId) return;
 
+  const parsed = Number(quantity);
+  const validQty = Math.max(1, Math.min(Number.isFinite(parsed) ? Math.round(parsed) : 1, 5));
+
   const updateData = {
-    quantity,
+    quantity: validQty,
     updatedAt: serverTimestamp(),
   };
 

@@ -7,6 +7,7 @@ import { useCollection } from "../../hooks/useFirestore";
 import { COLLECTIONS, db, serverTimestamp } from "../../services/firebase";
 import { normalizeProduct } from "../../services/normalizers";
 import { removeCartItem, updateCartQuantity } from "../../services/commerceService";
+import { parseCartQuantity } from "../../context/CartContext";
 import { makePayment } from "../../payments/makePayment";
 import "./CartPage.css";
 
@@ -159,7 +160,9 @@ export default function CartPage() {
   const summary = useMemo(() => {
     const subtotal = cartItems.reduce((sum, item) => {
       const product = normalizeProduct(item.productSnapshot || item);
-      return sum + Number(item.offerPrice ?? product.offerPrice ?? item.price ?? product.price ?? 0) * Number(item.quantity || 1);
+      const price = Number(item.offerPrice ?? product.offerPrice ?? item.price ?? product.price ?? 0);
+      const validPrice = Number.isFinite(price) ? price : 0;
+      return sum + validPrice * parseCartQuantity(item.quantity);
     }, 0);
     const gst = Math.round(subtotal * 0.18);
     const shippingFee = deliveryMethod === "express" ? 249 : deliveryMethod === "same-day" ? 499 : subtotal > 2999 ? 0 : 99;
@@ -283,7 +286,7 @@ export default function CartPage() {
           <main className="cart-page__items">
             {cartItems.map((item) => {
               const product = normalizeProduct(item.productSnapshot || item);
-              const quantity = Number(item.quantity || 1);
+              const quantity = parseCartQuantity(item.quantity);
               const targetProductId = item.productId || product.productId || product.id;
               return (
                 <article className="cart-item" key={item.id}>
@@ -297,10 +300,24 @@ export default function CartPage() {
                     {item.sku && <span className="cart-item__sku" style={{ fontSize: "12px", color: "#64748b", margin: "2px 0" }}>SKU: {item.sku}</span>}
                     <strong>{money(item.offerPrice || item.price || product.offerPrice || product.price)}</strong>
                     <div className="cart-item__actions">
-                      <button onClick={() => updateCartQuantity(item.id, Math.max(1, quantity - 1), user?.uid)}>-</button>
+                      <button
+                        type="button"
+                        onClick={() => updateCartQuantity(item.id, Math.max(1, quantity - 1), user?.uid)}
+                        disabled={quantity <= 1}
+                        title={quantity <= 1 ? "Minimum 1 item" : "Decrease quantity"}
+                      >
+                        -
+                      </button>
                       <span>{quantity}</span>
-                      <button onClick={() => updateCartQuantity(item.id, quantity + 1, user?.uid)}>+</button>
-                      <button onClick={() => removeCartItem(item.id, user?.uid)}>Remove</button>
+                      <button
+                        type="button"
+                        onClick={() => updateCartQuantity(item.id, Math.min(5, quantity + 1), user?.uid)}
+                        disabled={quantity >= 5}
+                        title={quantity >= 5 ? "Maximum limit of 5 per order reached" : "Increase quantity"}
+                      >
+                        +
+                      </button>
+                      <button type="button" onClick={() => removeCartItem(item.id, user?.uid)}>Remove</button>
                     </div>
                   </div>
                 </article>

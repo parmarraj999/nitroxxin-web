@@ -148,6 +148,41 @@ function getSocialIcon(url = '') {
   );
 }
 
+// ── Notched Floating-Label Field (Matches Profile Detail Page & Booking Rider Detail) ──
+function NotchedField({
+  label,
+  required = false,
+  icon = null,
+  prefix = null,
+  className = '',
+  error = null,
+  children,
+  isTextarea = false,
+  subtag = null,
+  hint = null,
+}) {
+  return (
+    <div className={`bp-notched-field-group ${className}`}>
+      <label className={`bp-notched-field ${isTextarea ? 'bp-notched-field--textarea' : ''} ${error ? 'has-error' : ''}`}>
+        {label && (
+          <span className="bp-notched-field__label">
+            {label}
+            {subtag && <span className="bp-field-subtag">{subtag}</span>}
+            {required && <span className="bp-required-star">*</span>}
+          </span>
+        )}
+        <div className="bp-notched-field__control">
+          {prefix && <span className="bp-notched-field__prefix">{prefix}</span>}
+          {icon && <span className="bp-notched-field__icon">{icon}</span>}
+          {children}
+        </div>
+      </label>
+      {hint && <span className="bp-notched-field__hint">{hint}</span>}
+      {error && <span className="bp-field-error">{error}</span>}
+    </div>
+  );
+}
+
 export default function BecomePartner({ theme = 'dark', className = '' }) {
   const { user } = useAuth() || {};
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -514,11 +549,11 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
               role="dialog"
               aria-modal="true"
             >
-              {/* Modal Top Bar: Track Badge & Close */}
+              {/* Modal Top Bar: Header, Track Badges & Close */}
               <div className="bp-modal-header">
                 <div className="bp-modal-header-top">
                   <div className="bp-modal-title-group">
-                    <p className="bp-modal-title">{selectedOption.title}</p>
+                    <h2 className="bp-modal-title">{selectedOption.title}</h2>
                     <span className="bp-modal-track-badge">
                       <span className="bp-modal-track-dot" />
                       {selectedOption.badge}
@@ -533,6 +568,24 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
                   >
                     ✕
                   </button>
+                </div>
+
+                {/* Option Switcher Tabs so user can easily switch partnership tracks */}
+                <div className="bp-tabs-switcher">
+                  {PARTNER_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      className={`bp-tab-btn ${selectedOption.id === opt.id ? 'is-active' : ''}`}
+                      onClick={() => {
+                        setSelectedOption(opt);
+                        setSubmitError(null);
+                      }}
+                    >
+                      <span className="bp-tab-btn-icon">{opt.icon}</span>
+                      <span>{opt.title}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -561,71 +614,80 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
 
                       {/* Row 1: Full Name & Instagram Username */}
                       <div className="bp-field-row-2">
-                        {/* Field 1: Name */}
-                        <div className="bp-field-group">
-                          <label htmlFor="bp-creator-name" className="bp-field-label">
-                            Name <span className="bp-required-star">*</span>
-                          </label>
+                        <NotchedField label="Full Name" required>
                           <input
                             id="bp-creator-name"
                             type="text"
                             name="name"
-                            className="bp-field-input"
+                            className="bp-notched-input"
                             required
                             placeholder="e.g. Alex Rivera"
                             value={creatorData.name}
                             onChange={handleCreatorChange}
                           />
-                        </div>
+                        </NotchedField>
 
-                        {/* Field 2: Instagram Username (Social Media) */}
-                        <div className="bp-field-group">
-                          <label htmlFor="bp-creator-instagram" className="bp-field-label">
-                            Instagram Username <span className="bp-field-subtag">(Social Media)</span> <span className="bp-required-star">*</span>
-                          </label>
-                          <div className="bp-input-prefix-wrap">
-                            <span className="bp-input-prefix">@</span>
-                            <input
-                              id="bp-creator-instagram"
-                              type="text"
-                              name="instagramUsername"
-                              className="bp-field-input bp-field-input--prefixed"
-                              required
-                              placeholder="username"
-                              value={creatorData.instagramUsername}
-                              onChange={(e) => {
-                                const cleanVal = e.target.value.replace(/^@+/, '');
-                                setCreatorData((prev) => ({ ...prev, instagramUsername: cleanVal }));
-                              }}
-                            />
-                          </div>
-                        </div>
+                        <NotchedField label="Instagram Username" required prefix="@" subtag="Social">
+                          <input
+                            id="bp-creator-instagram"
+                            type="text"
+                            name="instagramUsername"
+                            className="bp-notched-input"
+                            required
+                            placeholder="username"
+                            value={creatorData.instagramUsername}
+                            onChange={(e) => {
+                              const cleanVal = e.target.value.replace(/^@+/, '');
+                              setCreatorData((prev) => ({ ...prev, instagramUsername: cleanVal }));
+                            }}
+                          />
+                        </NotchedField>
                       </div>
 
-                      {/* Field 3: Social Media Profile URLs (Multiple) */}
-                      <div className="bp-field-group">
-                        <div className="bp-label-with-hint">
-                          <label className="bp-field-label">
-                            Social Media Profile URLs <span className="bp-field-subtag">(Multiple)</span>
-                          </label>
-                          <span className="bp-field-hint">YouTube, TikTok, X, Twitch, etc.</span>
+                      {/* Viral Video Link */}
+                      <NotchedField
+                        label="Viral Video Link"
+                        hint="Best-performing Reel, Short, or Video (optional)"
+                        icon={
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polygon points="5 3 19 12 5 21 5 3" />
+                          </svg>
+                        }
+                      >
+                        <input
+                          id="bp-creator-viral"
+                          type="url"
+                          name="viralVideoLink"
+                          className="bp-notched-input"
+                          placeholder="https://instagram.com/reel/... or https://youtube.com/shorts/..."
+                          value={creatorData.viralVideoLink}
+                          onChange={handleCreatorChange}
+                        />
+                      </NotchedField>
+
+                      {/* Social Media Profile URLs (Multiple) */}
+                      <div className="bp-social-section">
+                        <div className="bp-section-subhead">
+                          <span className="bp-section-label">Social Media Profile URLs</span>
+                          <span className="bp-section-hint">YouTube, TikTok, X, Twitch, etc.</span>
                         </div>
 
                         <div className="bp-social-links-list">
                           {creatorData.socialLinks.map((url, idx) => (
                             <div key={idx} className="bp-social-link-row">
-                              <div className="bp-social-link-input-wrap">
-                                <span className="bp-social-platform-icon" title="Detected platform">
-                                  {getSocialIcon(url)}
-                                </span>
+                              <NotchedField
+                                label={`Profile URL ${idx + 1}`}
+                                icon={getSocialIcon(url)}
+                                className="bp-social-notched-wrap"
+                              >
                                 <input
                                   type="url"
-                                  className="bp-field-input bp-social-input"
+                                  className="bp-notched-input"
                                   placeholder={idx === 0 ? "https://youtube.com/@channel or tiktok.com/@user" : "https://..."}
                                   value={url}
                                   onChange={(e) => handleSocialLinkChange(idx, e.target.value)}
                                 />
-                              </div>
+                              </NotchedField>
                               {creatorData.socialLinks.length > 1 && (
                                 <button
                                   type="button"
@@ -659,57 +721,30 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
                         )}
                       </div>
 
-                      {/* Field 4: Viral Video Link */}
-                      <div className="bp-field-group">
-                        <div className="bp-label-with-hint">
-                          <label htmlFor="bp-creator-viral" className="bp-field-label">
-                            Viral Video Link
-                          </label>
-                          <span className="bp-field-hint">Best-performing Reel, Short, or Video</span>
-                        </div>
-                        <div className="bp-input-with-icon">
-                          <span className="bp-input-icon">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <polygon points="5 3 19 12 5 21 5 3" />
-                            </svg>
-                          </span>
-                          <input
-                            id="bp-creator-viral"
-                            type="url"
-                            name="viralVideoLink"
-                            className="bp-field-input bp-field-input--with-icon"
-                            placeholder="https://instagram.com/reel/... or https://youtube.com/shorts/..."
-                            value={creatorData.viralVideoLink}
-                            onChange={handleCreatorChange}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Field 5: Short Description */}
-                      <div className="bp-field-group">
-                        <div className="bp-label-with-hint">
-                          <label htmlFor="bp-creator-desc" className="bp-field-label">
-                            Short Description <span className="bp-required-star">*</span>
-                          </label>
-                          <span className="bp-field-hint">Content style, audience & motorcycle niche</span>
-                        </div>
-                        <div className="bp-textarea-wrapper">
+                      {/* Short Description */}
+                      <NotchedField
+                        label="Short Description"
+                        required
+                        isTextarea
+                        hint="Content style, motorcycle build/riding niche & reach"
+                      >
+                        <div className="bp-notched-textarea-wrapper">
                           <textarea
                             id="bp-creator-desc"
                             name="shortDescription"
-                            className="bp-field-textarea"
-                            rows="4"
+                            className="bp-notched-textarea"
+                            rows="3"
                             maxLength={500}
                             required
-                            placeholder="Tell us about your content, motorcycle build/riding style, current audience reach, and how you want to collaborate with Nitroxx..."
+                            placeholder="Tell us about your content, motorcycle riding style, current audience reach, and how you want to collaborate with Nitroxx..."
                             value={creatorData.shortDescription}
                             onChange={handleCreatorChange}
                           />
-                          <span className="bp-char-counter">
+                          <span className="bp-notched-char-counter">
                             {creatorData.shortDescription.length} / 500
                           </span>
                         </div>
-                      </div>
+                      </NotchedField>
 
                       {/* Bottom Action Row */}
                       <div className="bp-bottom-action-bar">
@@ -742,7 +777,14 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
                             className="bp-btn-next"
                             disabled={isSubmitting}
                           >
-                            {isSubmitting ? 'Submitting...' : 'Submit Application \u203a'}
+                            {isSubmitting ? (
+                              <>
+                                <span className="bp-btn-spinner" />
+                                <span>Submitting...</span>
+                              </>
+                            ) : (
+                              <span>Submit Application &rsaquo;</span>
+                            )}
                           </button>
                         </div>
                       </div>
@@ -766,154 +808,132 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
 
                       {/* Row 1: Company Name & Legal Name */}
                       <div className="bp-field-row-2">
-                        <div className="bp-field-group">
-                          <label htmlFor="bp-org-company" className="bp-field-label">
-                            Company Name <span className="bp-required-star">*</span>
-                          </label>
+                        <NotchedField label="Company / Club Name" required>
                           <input
                             id="bp-org-company"
                             type="text"
                             name="companyName"
-                            className="bp-field-input"
+                            className="bp-notched-input"
                             required
                             placeholder="e.g. Apex Moto Club"
                             value={organizerData.companyName}
                             onChange={handleOrganizerChange}
                           />
-                        </div>
+                        </NotchedField>
 
-                        <div className="bp-field-group">
-                          <label htmlFor="bp-org-legal" className="bp-field-label">
-                            Legal Name <span className="bp-required-star">*</span>
-                          </label>
+                        <NotchedField label="Legal Registered Name" required>
                           <input
                             id="bp-org-legal"
                             type="text"
                             name="legalName"
-                            className="bp-field-input"
+                            className="bp-notched-input"
                             required
                             placeholder="e.g. Apex Motorsports Pvt. Ltd."
                             value={organizerData.legalName}
                             onChange={handleOrganizerChange}
                           />
-                        </div>
+                        </NotchedField>
                       </div>
 
                       {/* Row 2: Phone Number & Email */}
                       <div className="bp-field-row-2">
-                        <div className="bp-field-group">
-                          <label htmlFor="bp-org-phone" className="bp-field-label">
-                            Phone Number <span className="bp-required-star">*</span>
-                          </label>
-                          <div className="bp-input-with-icon">
-                            <span className="bp-input-icon">
-                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                              </svg>
-                            </span>
-                            <input
-                              id="bp-org-phone"
-                              type="tel"
-                              name="phone"
-                              className="bp-field-input bp-field-input--with-icon"
-                              required
-                              placeholder="+91 98765 43210 or +1 (555) 019-2834"
-                              value={organizerData.phone}
-                              onChange={handleOrganizerChange}
-                            />
-                          </div>
-                        </div>
+                        <NotchedField
+                          label="Phone Number"
+                          required
+                          icon={
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                            </svg>
+                          }
+                        >
+                          <input
+                            id="bp-org-phone"
+                            type="tel"
+                            name="phone"
+                            className="bp-notched-input"
+                            required
+                            placeholder="+91 98765 43210"
+                            value={organizerData.phone}
+                            onChange={handleOrganizerChange}
+                          />
+                        </NotchedField>
 
-                        <div className="bp-field-group">
-                          <label htmlFor="bp-org-email" className="bp-field-label">
-                            Email <span className="bp-required-star">*</span>
-                          </label>
-                          <div className="bp-input-with-icon">
-                            <span className="bp-input-icon">
-                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <rect x="2" y="4" width="20" height="16" rx="2" />
-                                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                              </svg>
-                            </span>
-                            <input
-                              id="bp-org-email"
-                              type="email"
-                              name="email"
-                              className="bp-field-input bp-field-input--with-icon"
-                              required
-                              placeholder="contact@apexmoto.com"
-                              value={organizerData.email}
-                              onChange={handleOrganizerChange}
-                            />
-                          </div>
-                        </div>
+                        <NotchedField
+                          label="Business Email"
+                          required
+                          icon={
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <rect x="2" y="4" width="20" height="16" rx="2" />
+                              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                            </svg>
+                          }
+                        >
+                          <input
+                            id="bp-org-email"
+                            type="email"
+                            name="email"
+                            className="bp-notched-input"
+                            required
+                            placeholder="contact@apexmoto.com"
+                            value={organizerData.email}
+                            onChange={handleOrganizerChange}
+                          />
+                        </NotchedField>
                       </div>
 
                       {/* Address Line (Headquarters / Venue) */}
-                      <div className="bp-field-group">
-                        <div className="bp-label-with-hint">
-                          <label htmlFor="bp-org-street" className="bp-field-label">
-                            Address <span className="bp-field-subtag">(Headquarters / Venue)</span>
-                          </label>
-                          <span className="bp-field-hint">Street or registered building (optional)</span>
-                        </div>
+                      <NotchedField
+                        label="Address (Headquarters / Venue)"
+                        hint="Street address or registered building (optional)"
+                      >
                         <input
                           id="bp-org-street"
                           type="text"
                           name="streetAddress"
-                          className="bp-field-input"
+                          className="bp-notched-input"
                           placeholder="e.g. 104 Circuit Drive, Sector 5"
                           value={organizerData.streetAddress}
                           onChange={handleOrganizerChange}
                         />
-                      </div>
+                      </NotchedField>
 
                       {/* Address: City, State, Country/County */}
                       <div className="bp-field-row-3">
-                        <div className="bp-field-group">
-                          <label htmlFor="bp-org-city" className="bp-field-label">
-                            City <span className="bp-required-star">*</span>
-                          </label>
+                        <NotchedField label="City" required>
                           <input
                             id="bp-org-city"
                             type="text"
                             name="city"
-                            className="bp-field-input"
+                            className="bp-notched-input"
                             required
-                            placeholder="e.g. Austin"
+                            placeholder="e.g. Pune"
                             value={organizerData.city}
                             onChange={handleOrganizerChange}
                           />
-                        </div>
+                        </NotchedField>
 
-                        <div className="bp-field-group">
-                          <label htmlFor="bp-org-state" className="bp-field-label">
-                            State <span className="bp-required-star">*</span>
-                          </label>
+                        <NotchedField label="State" required>
                           <input
                             id="bp-org-state"
                             type="text"
                             name="state"
-                            className="bp-field-input"
+                            className="bp-notched-input"
                             required
-                            placeholder="e.g. Texas"
+                            placeholder="e.g. Maharashtra"
                             value={organizerData.state}
                             onChange={handleOrganizerChange}
                           />
-                        </div>
+                        </NotchedField>
 
-                        <div className="bp-field-group">
-                          <label htmlFor="bp-org-country" className="bp-field-label">
-                            Country / County <span className="bp-required-star">*</span>
-                          </label>
+                        <NotchedField label="Country" required>
                           <input
                             id="bp-org-country"
                             type="text"
                             name="country"
                             list="bp-country-suggestions"
-                            className="bp-field-input"
+                            className="bp-notched-input"
                             required
-                            placeholder="e.g. USA / Travis County"
+                            placeholder="e.g. India"
                             value={organizerData.country}
                             onChange={handleOrganizerChange}
                           />
@@ -928,22 +948,16 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
                             <option value="UAE" />
                             <option value="Canada" />
                           </datalist>
-                        </div>
+                        </NotchedField>
                       </div>
 
                       {/* No. of Events per Month */}
-                      <div className="bp-field-group">
-                        <div className="bp-label-with-hint">
-                          <label htmlFor="bp-org-events-month" className="bp-field-label">
-                            No. of Events per Month <span className="bp-required-star">*</span>
-                          </label>
-                          <span className="bp-field-hint">Average monthly rides & track meets</span>
-                        </div>
-                        <div className="bp-select-wrapper">
+                      <NotchedField label="Average Events per Month" required>
+                        <div className="bp-notched-select-wrapper">
                           <select
                             id="bp-org-events-month"
                             name="eventsPerMonth"
-                            className="bp-field-select"
+                            className="bp-notched-select"
                             value={organizerData.eventsPerMonth}
                             onChange={handleOrganizerChange}
                             required
@@ -952,36 +966,35 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
                               <option key={idx} value={freq}>{freq}</option>
                             ))}
                           </select>
-                          <svg className="bp-select-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <svg className="bp-notched-select-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="m6 9 6 6 6-6" />
                           </svg>
                         </div>
-                      </div>
+                      </NotchedField>
 
                       {/* Social Media Links (Multiple) */}
-                      <div className="bp-field-group">
-                        <div className="bp-label-with-hint">
-                          <label className="bp-field-label">
-                            Social Media Links <span className="bp-field-subtag">(Multiple)</span>
-                          </label>
-                          <span className="bp-field-hint">Instagram, Facebook, YouTube, X, etc.</span>
+                      <div className="bp-social-section">
+                        <div className="bp-section-subhead">
+                          <span className="bp-section-label">Social Media Links</span>
+                          <span className="bp-section-hint">Instagram, Facebook, YouTube, X, etc.</span>
                         </div>
 
                         <div className="bp-social-links-list">
                           {organizerData.socialLinks.map((url, idx) => (
                             <div key={idx} className="bp-social-link-row">
-                              <div className="bp-social-link-input-wrap">
-                                <span className="bp-social-platform-icon" title="Detected platform">
-                                  {getSocialIcon(url)}
-                                </span>
+                              <NotchedField
+                                label={`Social Link ${idx + 1}`}
+                                icon={getSocialIcon(url)}
+                                className="bp-social-notched-wrap"
+                              >
                                 <input
                                   type="url"
-                                  className="bp-field-input bp-social-input"
+                                  className="bp-notched-input"
                                   placeholder={idx === 0 ? "https://instagram.com/apexmoto or https://facebook.com/..." : "https://..."}
                                   value={url}
                                   onChange={(e) => handleOrganizerSocialChange(idx, e.target.value)}
                                 />
-                              </div>
+                              </NotchedField>
                               {organizerData.socialLinks.length > 1 && (
                                 <button
                                   type="button"
@@ -1010,7 +1023,7 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
                               <line x1="12" y1="5" x2="12" y2="19" />
                               <line x1="5" y1="12" x2="19" y2="12" />
                             </svg>
-                            <span>Add another social profile URL</span>
+                            <span>Add another social link</span>
                           </button>
                         )}
                       </div>
@@ -1046,7 +1059,14 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
                             className="bp-btn-next"
                             disabled={isSubmitting}
                           >
-                            {isSubmitting ? 'Submitting...' : 'Submit Application \u203a'}
+                            {isSubmitting ? (
+                              <>
+                                <span className="bp-btn-spinner" />
+                                <span>Submitting...</span>
+                              </>
+                            ) : (
+                              <span>Submit Application &rsaquo;</span>
+                            )}
                           </button>
                         </div>
                       </div>
@@ -1054,91 +1074,102 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
                   ) : (
                     /* ── BRAND BUSINESS PARTNER FORM ── */
                     <form className="bp-form-content" onSubmit={handleFormSubmit}>
-                      {/* Field 1: Legal Business Name */}
-                      <div className="bp-field-group">
-                        <label htmlFor="bp-business-name" className="bp-field-label">
-                          Legal Business Name
-                        </label>
-                        <input
-                          id="bp-business-name"
-                          type="text"
-                          name="legalBusinessName"
-                          className="bp-field-input"
-                          required
-                          placeholder="Acme Corp"
-                          value={formData.legalBusinessName}
-                          onChange={handleFormChange}
-                        />
-                      </div>
-
-                      {/* Field 2: Business Website */}
-                      <div className="bp-field-group">
-                        <label htmlFor="bp-website" className="bp-field-label">
-                          Business Website
-                        </label>
-                        <input
-                          id="bp-website"
-                          type="text"
-                          name="businessWebsite"
-                          className="bp-field-input"
-                          placeholder="acme.corp.org"
-                          value={formData.businessWebsite}
-                          onChange={handleFormChange}
-                        />
-                      </div>
-
-                      {/* Field 3: Industry (Dropdown) */}
-                      <div className="bp-field-group">
-                        <label htmlFor="bp-industry" className="bp-field-label">
-                          Industry
-                        </label>
-                        <div className="bp-select-wrapper">
-                          <select
-                            id="bp-industry"
-                            name="industry"
-                            className="bp-field-select"
-                            value={formData.industry}
-                            onChange={handleFormChange}
-                            required
-                          >
-                            <option value="" disabled>Select industry</option>
-                            {INDUSTRY_OPTIONS.map((ind, i) => (
-                              <option key={i} value={ind}>{ind}</option>
-                            ))}
-                          </select>
-                          <svg className="bp-select-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="m6 9 6 6 6-6" />
-                          </svg>
+                      {/* Brand Perks Strip */}
+                      {selectedOption.highlights && (
+                        <div className="bp-creator-perks-strip">
+                          {selectedOption.highlights.map((h, i) => (
+                            <div key={i} className="bp-creator-perk-item">
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ff2d20" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                              <span>{h}</span>
+                            </div>
+                          ))}
                         </div>
+                      )}
+
+                      {/* Row 1: Legal Business Name & Business Website */}
+                      <div className="bp-field-row-2">
+                        <NotchedField label="Legal Business Name" required>
+                          <input
+                            id="bp-business-name"
+                            type="text"
+                            name="legalBusinessName"
+                            className="bp-notched-input"
+                            required
+                            placeholder="e.g. Acme Moto Gear Corp"
+                            value={formData.legalBusinessName}
+                            onChange={handleFormChange}
+                          />
+                        </NotchedField>
+
+                        <NotchedField
+                          label="Business Website"
+                          icon={
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="12" cy="12" r="10" />
+                              <line x1="2" y1="12" x2="22" y2="12" />
+                              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                            </svg>
+                          }
+                        >
+                          <input
+                            id="bp-website"
+                            type="text"
+                            name="businessWebsite"
+                            className="bp-notched-input"
+                            placeholder="acmegear.com"
+                            value={formData.businessWebsite}
+                            onChange={handleFormChange}
+                          />
+                        </NotchedField>
                       </div>
 
-                      {/* Row 4 & 5: Employee Count & Primary Operating Country */}
+                      {/* Row 2: Industry & Employee Count */}
                       <div className="bp-field-row-2">
-                        <div className="bp-field-group">
-                          <label htmlFor="bp-employees" className="bp-field-label">
-                            Employee Count
-                          </label>
+                        <NotchedField label="Industry" required>
+                          <div className="bp-notched-select-wrapper">
+                            <select
+                              id="bp-industry"
+                              name="industry"
+                              className="bp-notched-select"
+                              value={formData.industry}
+                              onChange={handleFormChange}
+                              required
+                            >
+                              <option value="" disabled>Select industry</option>
+                              {INDUSTRY_OPTIONS.map((ind, i) => (
+                                <option key={i} value={ind}>{ind}</option>
+                              ))}
+                            </select>
+                            <svg className="bp-notched-select-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="m6 9 6 6 6-6" />
+                            </svg>
+                          </div>
+                        </NotchedField>
+
+                        <NotchedField label="Employee Count">
                           <input
                             id="bp-employees"
                             type="number"
                             name="employeeCount"
-                            className="bp-field-input bp-field-input--stepper"
+                            className="bp-notched-input bp-field-input--stepper"
                             min="1"
-                            placeholder="34"
+                            placeholder="e.g. 25"
                             value={formData.employeeCount}
                             onChange={handleFormChange}
                           />
-                        </div>
+                        </NotchedField>
+                      </div>
 
-                        <div className="bp-field-group">
-                          <label htmlFor="bp-country" className="bp-field-label">
-                            Primary Operating Country
-                          </label>
-                          <div className="bp-select-wrapper">
+                      {/* Row 3: Primary Country & Company Registration Number */}
+                      <div className="bp-field-row-2">
+                        <NotchedField label="Primary Operating Country" required>
+                          <div className="bp-notched-select-wrapper">
                             <select
                               id="bp-country"
                               name="primaryCountry"
-                              className="bp-field-select"
+                              className="bp-notched-select"
                               value={formData.primaryCountry}
                               onChange={handleFormChange}
                             >
@@ -1148,77 +1179,70 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
                                 </option>
                               ))}
                             </select>
-                            <svg className="bp-select-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <svg className="bp-notched-select-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                               <path d="m6 9 6 6 6-6" />
                             </svg>
                           </div>
-                        </div>
-                      </div>
+                        </NotchedField>
 
-                      {/* Row 6 & 7: Company Registration Number & Annual Revenue Range */}
-                      <div className="bp-field-row-2">
-                        <div className="bp-field-group">
-                          <label htmlFor="bp-reg-num" className="bp-field-label">
-                            Company Registration Number
-                          </label>
+                        <NotchedField label="Company Reg. Number (CIN / GST / EIN)">
                           <input
                             id="bp-reg-num"
                             type="text"
                             name="companyRegNumber"
-                            className="bp-field-input"
-                            placeholder="12-3456789"
+                            className="bp-notched-input"
+                            placeholder="e.g. U74999DL2021PTC..."
                             value={formData.companyRegNumber}
                             onChange={handleFormChange}
                           />
-                        </div>
-
-                        <div className="bp-field-group">
-                          <label htmlFor="bp-revenue" className="bp-field-label">
-                            Annual Revenue Range
-                          </label>
-                          <div className="bp-select-wrapper">
-                            <select
-                              id="bp-revenue"
-                              name="annualRevenueRange"
-                              className="bp-field-select"
-                              value={formData.annualRevenueRange}
-                              onChange={handleFormChange}
-                            >
-                              <option value="" disabled>Select Revenue Range</option>
-                              {REVENUE_RANGES.map((rev, i) => (
-                                <option key={i} value={rev}>{rev}</option>
-                              ))}
-                            </select>
-                            <svg className="bp-select-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="m6 9 6 6 6-6" />
-                            </svg>
-                          </div>
-                        </div>
+                        </NotchedField>
                       </div>
 
-                      {/* Field 8: Brief Company Description with Character Counter */}
-                      <div className="bp-field-group">
-                        <label htmlFor="bp-desc" className="bp-field-label">
-                          Brief Company Description
-                        </label>
-                        <div className="bp-textarea-wrapper">
+                      {/* Annual Revenue Range */}
+                      <NotchedField label="Annual Revenue Range">
+                        <div className="bp-notched-select-wrapper">
+                          <select
+                            id="bp-revenue"
+                            name="annualRevenueRange"
+                            className="bp-notched-select"
+                            value={formData.annualRevenueRange}
+                            onChange={handleFormChange}
+                          >
+                            <option value="" disabled>Select Revenue Range</option>
+                            {REVENUE_RANGES.map((rev, i) => (
+                              <option key={i} value={rev}>{rev}</option>
+                            ))}
+                          </select>
+                          <svg className="bp-notched-select-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="m6 9 6 6 6-6" />
+                          </svg>
+                        </div>
+                      </NotchedField>
+
+                      {/* Brief Company Description */}
+                      <NotchedField
+                        label="Brief Company Description"
+                        isTextarea
+                        hint="Tell us about your brand, accessories/gear lineup & distribution goals"
+                      >
+                        <div className="bp-notched-textarea-wrapper">
                           <textarea
                             id="bp-desc"
                             name="briefDescription"
-                            className="bp-field-textarea"
-                            rows="4"
+                            className="bp-notched-textarea"
+                            rows="3"
                             maxLength={500}
-                            placeholder="We provide scalable cloud infrastructure for modern enterprise teams..."
+                            placeholder="Tell us about your motorcycle gear/accessories, dealer presence, and how you want to scale with Nitroxx Marketplace..."
                             value={formData.briefDescription}
                             onChange={handleFormChange}
                           />
-                          <span className="bp-char-counter">
+                          <span className="bp-notched-char-counter">
                             {formData.briefDescription.length} / 500
                           </span>
                         </div>
-                      </div>
+                      </NotchedField>
 
-                      {/* Bottom Action Row Matching Reference Image */}
+                      {/* Bottom Action Row */}
                       <div className="bp-bottom-action-bar">
                         <button
                           type="button"
@@ -1249,7 +1273,14 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
                             className="bp-btn-next"
                             disabled={isSubmitting}
                           >
-                            {isSubmitting ? 'Submitting...' : 'Submit Application \u203a'}
+                            {isSubmitting ? (
+                              <>
+                                <span className="bp-btn-spinner" />
+                                <span>Submitting...</span>
+                              </>
+                            ) : (
+                              <span>Submit Application &rsaquo;</span>
+                            )}
                           </button>
                         </div>
                       </div>

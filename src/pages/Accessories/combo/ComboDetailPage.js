@@ -5,6 +5,7 @@ import { useCollection, useDocument } from '../../../hooks/useFirestore';
 import { useAccessoriesContext } from '../../../context/AccessoriesContext';
 import { useAuth } from '../../../context/AuthContext';
 import { useAuthModal } from '../../../components/AuthModal/useAuthModal';
+import { useCart } from '../../../context/CartContext';
 import { addToCart } from '../../../services/commerceService';
 import { db } from '../../../services/firebase';
 
@@ -242,16 +243,8 @@ export default function ComboDetailPage() {
     };
   }, [selectedPopupBundle]);
 
-  // Cart counting
-  const { data: userCartItems = [] } = useCollection(
-    user?.uid ? `user/${user.uid}/cart` : null,
-    { limit: 50 }
-  );
-  const { data: usersPluralCartItems = [] } = useCollection(
-    user?.uid ? `users/${user.uid}/cart` : null,
-    { limit: 50 }
-  );
-  const cartCount = (userCartItems.length + usersPluralCartItems.length) || 0;
+  // Real-time cart count from CartContext
+  const { cartCount } = useCart();
 
   // 1. Fetch live Combo Category Document from Firestore `combo/comboId`
   const { data: comboDoc, loading: comboDocLoading } = useDocument('combo', comboId);

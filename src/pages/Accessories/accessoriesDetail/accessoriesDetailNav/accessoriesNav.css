@@ -76,6 +76,7 @@
 }
 
 .accessories-nav__icon-btn {
+  position: relative;
   width: 44px;
   height: 44px;
   border-radius: 50%;
@@ -98,4 +99,32 @@
   width: 22px;
   height: 22px;
   stroke: currentColor;
+}
+
+.accessories-nav__cart-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  background: #ff1f1f;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  min-width: 19px;
+  height: 19px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(255, 31, 31, 0.4);
+  pointer-events: none;
+  line-height: 1;
+  font-family: 'Inter', -apple-system, sans-serif;
+  animation: navBadgePop 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes navBadgePop {
+  0% { transform: scale(0.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
 }

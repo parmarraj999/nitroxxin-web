@@ -665,8 +665,13 @@
 
 /* Animations */
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 @keyframes slideUp {
@@ -674,6 +679,7 @@
         opacity: 0;
         transform: translateY(12px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -681,8 +687,13 @@
 }
 
 @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* Responsiveness */
@@ -691,11 +702,11 @@
         padding: 28px 20px;
         border-radius: 20px;
     }
-    
+
     .location-modal-cities-grid {
         grid-template-columns: repeat(3, 1fr);
     }
-    
+
     .location-modal-title {
         font-size: 1.35rem;
         margin-bottom: 24px;
@@ -714,7 +725,7 @@
         align-items: stretch;
         gap: 10px;
     }
-    
+
     .auto-detect-btn {
         justify-content: center;
         padding: 11px 20px;
@@ -724,7 +735,7 @@
         grid-template-columns: repeat(2, 1fr);
         max-height: 220px;
     }
-    
+
     .location-modal-close {
         top: 18px;
         right: 18px;
