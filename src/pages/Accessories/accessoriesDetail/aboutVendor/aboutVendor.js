@@ -53,27 +53,6 @@ export function AboutVendor({ product }) {
     vendorId === "nitroxx-default-vendor" ||
     !vendorDoc; // Default partner verified
 
-  const supportEmail =
-    vendorDoc?.businessDetails?.supportEmail ||
-    vendorDoc?.email ||
-    "support@nitroxxin.com";
-
-  const supportPhone =
-    vendorDoc?.businessDetails?.supportPhone ||
-    vendorDoc?.phone ||
-    "+91 88699 59066";
-
-  const warehouseAddress =
-    vendorDoc?.warehouseAddress?.addressLine1 ||
-    vendorDoc?.pickupAddress?.addressLine1 ||
-    (vendorDoc?.warehouseAddress?.city ? `${vendorDoc.warehouseAddress.city}, ${vendorDoc.warehouseAddress.state || ""}` : "") ||
-    "Central Fulfillment Hub, Bhopal, MP";
-
-  const gstNumber =
-    vendorDoc?.gstNumber ||
-    vendorDoc?.gstDetails?.gstNumber ||
-    "23AAACN1234F1Z5 (Verified)";
-
   const initialLetter = (businessName || "N").charAt(0).toUpperCase();
 
   return (

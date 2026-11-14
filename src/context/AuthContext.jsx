@@ -12,7 +12,7 @@ import {
   resetRecaptchaVerifier,
   formatAuthError,
 } from "../services/authService";
-import { createUserProfile, updateUserProfile, ensureUserProfile, findExistingUser } from "../services/userService";
+import { createUserProfile, updateUserProfile, findExistingUser } from "../services/userService";
 import { uploadProfileImage, uploadDrivingLicenseImage } from "../services/storageService";
 
 const AuthContext = createContext(null);
