@@ -139,7 +139,7 @@ export default function LoginModal() {
         </button>
 
         {/* Dev Testing Option: Login directly without OTP (Available on Mobile & Desktop) */}
-        <button
+        {/* <button
           type="button"
           className="login-action-btn login-btn-no-otp"
           onClick={handleNoOtpSubmit}
@@ -156,7 +156,7 @@ export default function LoginModal() {
               <span>Login without OTP</span>
             </>
           )}
-        </button>
+        </button> */}
 
         {/* Secondary Action Button: Continue with Google (Dark Pill with Google Icon) */}
         <button
