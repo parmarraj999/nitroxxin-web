@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import "./eventDetail.css";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useDocument } from "../../../hooks/useFirestore";
@@ -119,8 +119,22 @@ export default function EventDetail() {
   }, [event]);
 
   const relatedEvents = events;
-  const { user } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const { openLogin } = useAuthModal();
+  const hasPromptedLoginRef = useRef(false);
+
+  // Reset prompt ref if event id changes
+  useEffect(() => {
+    hasPromptedLoginRef.current = false;
+  }, [id]);
+
+  // Open login popup if user opens event detail page without login
+  useEffect(() => {
+    if (!authLoading && (!isAuthenticated || !user) && !hasPromptedLoginRef.current) {
+      hasPromptedLoginRef.current = true;
+      openLogin();
+    }
+  }, [authLoading, isAuthenticated, user, openLogin]);
 
   const [lightboxIndex, setLightboxIndex] = useState(null);
   const [showTerms, setShowTerms] = useState(false);
@@ -402,7 +416,116 @@ export default function EventDetail() {
     }
   };
 
-  const gallery = event?.images?.length ? event.images : [event?.image || event?.banner].filter(Boolean);
+  const primaryBanner = useMemo(() => {
+    if (!event) return "";
+    return (
+      event.primaryBanner ||
+      event.bannerImage ||
+      event.banner ||
+      event.bannerUrl ||
+      event.image ||
+      event.imageUrl ||
+      event.media?.primaryImage ||
+      event.media?.banner ||
+      event.media?.bannerImage ||
+      ""
+    );
+  }, [event]);
+
+  const gallery = useMemo(() => {
+    if (!event) return [];
+
+    const candidates = [];
+
+    // 1. Primary banner is always first in gallery so it shows when clicking banner
+    if (primaryBanner && typeof primaryBanner === "string" && primaryBanner.trim()) {
+      candidates.push(primaryBanner.trim());
+    }
+
+    // 2. Add remaining gallery images from all possible sources
+    const rawSources = [
+      ...(Array.isArray(event.images) ? event.images : []),
+      ...(Array.isArray(event.galleryImages) ? event.galleryImages : []),
+      ...(Array.isArray(event.gallery) ? event.gallery : []),
+      ...(Array.isArray(event.media?.galleryImages) ? event.media.galleryImages : []),
+    ];
+
+    rawSources.forEach((item) => {
+      if (!item) return;
+      const url = typeof item === "string" ? item.trim() : item.url || item.src || "";
+      if (url && typeof url === "string" && url.trim()) {
+        const cleanUrl = url.trim();
+        if (!candidates.includes(cleanUrl)) {
+          candidates.push(cleanUrl);
+        }
+      }
+    });
+
+    // 3. Fallback if candidates is empty
+    if (candidates.length === 0) {
+      const fallback = event.image || event.banner || event.bannerImage;
+      if (fallback && typeof fallback === "string" && fallback.trim()) {
+        candidates.push(fallback.trim());
+      }
+    }
+
+    return candidates;
+  }, [event, primaryBanner]);
+
+  // Google Maps Venue Redirection Link
+  const venueMapUrl = useMemo(() => {
+    if (!event) return "";
+    const explicit =
+      event.mapUrl ||
+      event.mapLink ||
+      event.googleMapsUrl ||
+      event.googleMapUrl ||
+      event.locationUrl ||
+      event.venueUrl ||
+      event.directionsUrl;
+    if (explicit && typeof explicit === "string" && explicit.trim().startsWith("http")) {
+      return explicit.trim();
+    }
+
+    const lat = event.latitude || event.lat || event.coords?.latitude || event.coords?.lat;
+    const lng = event.longitude || event.lng || event.coords?.longitude || event.coords?.lng;
+    if (lat && lng) {
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lng}`)}`;
+    }
+
+    const queryParts = [
+      event.venue,
+      event.address,
+      event.location,
+      event.city,
+      event.state,
+    ]
+      .filter((v) => typeof v === "string" && v.trim())
+      .map((v) => v.trim());
+
+    const deduped = [];
+    const seen = new Set();
+    for (const part of queryParts) {
+      const lower = part.toLowerCase();
+      if (!seen.has(lower)) {
+        seen.add(lower);
+        deduped.push(part);
+      }
+    }
+
+    if (deduped.length === 0) return "";
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(deduped.join(", "))}`;
+  }, [event]);
+
+  const handleOpenMap = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (venueMapUrl) {
+      window.open(venueMapUrl, "_blank", "noopener,noreferrer");
+    }
+  };
 
   useEffect(() => {
     if (lightboxIndex === null && !showTerms) {
@@ -595,7 +718,7 @@ export default function EventDetail() {
             {gallery[0] && (
               <div className="ed-gallery-banner" onClick={() => openLightbox(0)}>
                 <ImageWithLoader
-                  src={event.bannerImage || gallery[0]}
+                  src={gallery[0]}
                   alt={event?.title || event?.name}
                   className="ed-gallery-banner-img"
                   loading="eager"
@@ -636,14 +759,42 @@ export default function EventDetail() {
             <p className="ed-event-meta">
               {event.category && <span className="ed-event-category">{event.category}</span>}
               <span className="ed-event-date">{event.dateTimeText || event.dateText}</span>
-              <span className="ed-event-location"> | {event.location}</span>
+              {event.location && (
+                <span
+                  className={`ed-event-location ${venueMapUrl ? "ed-event-location--clickable" : ""}`}
+                  onClick={venueMapUrl ? handleOpenMap : undefined}
+                  title={venueMapUrl ? "View venue in Google Maps" : undefined}
+                  role={venueMapUrl ? "button" : undefined}
+                  tabIndex={venueMapUrl ? 0 : undefined}
+                >
+                  {" "}| {event.location}
+                  {venueMapUrl && (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="ed-event-location-icon"
+                      style={{ marginLeft: 4, verticalAlign: "middle", opacity: 0.8 }}
+                    >
+                      <path d="M7 17L17 7" />
+                      <polyline points="7 7 17 7 17 17" />
+                    </svg>
+                  )}
+                </span>
+              )}
             </p>
-            {!statusInfo.canBook && (
+            {/* {!statusInfo.canBook && (
               <span className={`ed-header-status-badge ${statusInfo.badgeClass}`}>
                 <span className="ed-status-tag-dot" />
                 {statusInfo.badgeText}
               </span>
-            )}
+            )} */}
           </div>
 
           <div className="ed-body-row">
@@ -806,12 +957,64 @@ export default function EventDetail() {
             <div className="ed-right-col">
               {/* Info Card */}
               <div className="ed-info-card">
-                <div className="ed-info-row">
-                  <div className="ed-info-icon-box"><svg xmlns="http://www.w3.org/2000/svg" color="white" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" /><circle cx="12" cy="10" r="3" /></svg></div>
+                <div
+                  className={`ed-info-row ${venueMapUrl ? "ed-info-row--venue" : ""}`}
+                  onClick={venueMapUrl ? handleOpenMap : undefined}
+                  role={venueMapUrl ? "button" : undefined}
+                  tabIndex={venueMapUrl ? 0 : undefined}
+                  onKeyDown={
+                    venueMapUrl
+                      ? (e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            handleOpenMap();
+                          }
+                        }
+                      : undefined
+                  }
+                  title={venueMapUrl ? "Open venue in Google Maps" : undefined}
+                >
+                  <div className="ed-info-icon-box ed-info-icon-box--venue">
+                    <svg xmlns="http://www.w3.org/2000/svg" color="white" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
+                      <circle cx="12" cy="10" r="3" />
+                    </svg>
+                  </div>
                   <div className="ed-info-text">
                     <p className="ed-info-label">{event.location || event.city}</p>
-                    <p className="ed-info-sub">{event.venue || event.address || "Venue details from organizer"}{event.city ? `, ${event.city}` : ""}{event.state ? `, ${event.state}` : ""}</p>
+                    <p className="ed-info-sub">
+                      {event.venue || event.address || "Venue details from organizer"}
+                      {event.city ? `, ${event.city}` : ""}
+                      {event.state ? `, ${event.state}` : ""}
+                    </p>
                   </div>
+                  {venueMapUrl && (
+                    <a
+                      href={venueMapUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ed-venue-map-link-btn"
+                      onClick={(e) => e.stopPropagation()}
+                      title="Open venue in Google Maps"
+                      aria-label="Open venue in Google Maps"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="ed-venue-map-icon"
+                      >
+                        <path d="M7 17L17 7" />
+                        <polyline points="7 7 17 7 17 17" />
+                      </svg>
+                    </a>
+                  )}
                 </div>
 
                 {/* Date Section (like '10 Dec, 2026') */}
@@ -868,8 +1071,8 @@ export default function EventDetail() {
                       <div className="ed-info-text">
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                           <p className="ed-info-label" style={{ margin: 0 }}>Registration</p>
-                          <span className={`ed-reg-pill ${statusInfo.isRegistrationClosed || statusInfo.isCompleted ? 'ed-reg-pill--closed' : statusInfo.isRegistrationUpcoming ? 'ed-reg-pill--upcoming' : 'ed-reg-pill--open'}`}>
-                            {statusInfo.isCompleted ? 'Concluded' : statusInfo.isRegistrationClosed ? 'Closed' : statusInfo.isRegistrationUpcoming ? 'Opens Soon' : 'Open'}
+                          <span className={`ed-reg-pill ${statusInfo.isSoldOut ? 'ed-reg-pill--soldout' : (statusInfo.isRegistrationClosed || statusInfo.isCompleted ? 'ed-reg-pill--closed' : statusInfo.isRegistrationUpcoming ? 'ed-reg-pill--upcoming' : 'ed-reg-pill--open')}`}>
+                            {statusInfo.isSoldOut ? 'Sold Out' : statusInfo.isCompleted ? 'Concluded' : statusInfo.isRegistrationClosed ? 'Closed' : statusInfo.isRegistrationUpcoming ? 'Opens Soon' : 'Open'}
                           </span>
                         </div>
                         <p className="ed-info-sub">{formattedRegStart} → {formattedRegEnd}</p>
@@ -888,22 +1091,33 @@ export default function EventDetail() {
                   {statusInfo.canBook ? (
                     <button
                       className="ed-book-btn"
-                      onClick={() => navigate(`/event/${event.id}/book`, {
-                        state: {
-                          event,
-                          ticketTemplateUrl: event.ticketTemplateUrl,
-                          fromDetail: true,
-                          fromPath: location.pathname,
+                      onClick={() => {
+                        if (!user) {
+                          openLogin();
+                          return;
                         }
-                      })}
+                        navigate(`/event/${event.id}/book`, {
+                          state: {
+                            event,
+                            ticketTemplateUrl: event.ticketTemplateUrl,
+                            fromDetail: true,
+                            fromPath: location.pathname,
+                          }
+                        });
+                      }}
                     >
                       Book Ticket
                     </button>
                   ) : (
-                    <div className={`ed-status-tag ${statusInfo.badgeClass}`} title={statusInfo.message}>
+                    <button
+                      type="button"
+                      className={`ed-book-btn ed-book-btn--disabled ${statusInfo.badgeClass}`}
+                      disabled
+                      title={statusInfo.message}
+                    >
                       <span className="ed-status-tag-dot" />
-                      {statusInfo.badgeText}
-                    </div>
+                      <span>{statusInfo.badgeText}</span>
+                    </button>
                   )}
                 </div>
               </div>
@@ -1105,23 +1319,35 @@ export default function EventDetail() {
             <button
               type="button"
               className="ed-mobile-bar-btn"
-              onClick={() => navigate(`/event/${event.id}/book`, {
-                state: {
-                  event,
-                  ticketTemplateUrl: event.ticketTemplateUrl,
-                  fromDetail: true,
-                  fromPath: location.pathname,
+              onClick={() => {
+                if (!user) {
+                  openLogin();
+                  return;
                 }
-              })}
+                navigate(`/event/${event.id}/book`, {
+                  state: {
+                    event,
+                    ticketTemplateUrl: event.ticketTemplateUrl,
+                    fromDetail: true,
+                    fromPath: location.pathname,
+                  }
+                });
+              }}
               aria-label="Book Ticket"
             >
               <span className="ed-mobile-bar-btn-line">Book Ticket</span>
             </button>
           ) : (
-            <div className={`ed-mobile-bar-tag ${statusInfo.badgeClass}`} title={statusInfo.message}>
+            <button
+              type="button"
+              className={`ed-mobile-bar-btn ed-mobile-bar-btn--disabled ${statusInfo.badgeClass}`}
+              disabled
+              title={statusInfo.message}
+              aria-label={statusInfo.badgeText}
+            >
               <span className="ed-status-tag-dot" />
-              <span>{statusInfo.badgeText}</span>
-            </div>
+              <span className="ed-mobile-bar-btn-line">{statusInfo.badgeText}</span>
+            </button>
           )}
         </div>
       )}

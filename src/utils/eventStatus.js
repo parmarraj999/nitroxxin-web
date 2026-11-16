@@ -42,6 +42,7 @@ export const getEventStatusInfo = (event) => {
 
   const now = new Date();
   const rawStatus = String(event.status || "").toLowerCase().trim();
+  const cleanStatus = rawStatus.replace(/[_\s-]+/g, "");
 
   // 1. Check Explicit Cancellation
   if (rawStatus === "cancelled" || rawStatus === "canceled" || event.isCancelled === true) {
@@ -59,7 +60,49 @@ export const getEventStatusInfo = (event) => {
     };
   }
 
-  // 2. Check Event Completion
+  // 2. Check Capacity / Sold Out (Prioritize explicit Sold Out status/button)
+  const capacity = Number(event.capacity || event.totalTickets || event.maxCapacity || 0);
+  const registered = Number(
+    event.registeredCount ||
+    event.bookedCount ||
+    event.soldCount ||
+    event.totalBookings ||
+    0
+  );
+
+  const cleanTicketStatus = String(event.ticketStatus || "").toLowerCase().replace(/[_\s-]+/g, "");
+  const cleanBookingStatus = String(event.bookingStatus || "").toLowerCase().replace(/[_\s-]+/g, "");
+  const cleanEventStatus = String(event.eventStatus || "").toLowerCase().replace(/[_\s-]+/g, "");
+
+  const isExplicitSoldOut =
+    event.isSoldOut === true ||
+    event.soldOut === true ||
+    event.ticketsLeft === 0 ||
+    cleanStatus === "soldout" ||
+    rawStatus.includes("sold out") ||
+    rawStatus.includes("soldout") ||
+    cleanTicketStatus === "soldout" ||
+    cleanBookingStatus === "soldout" ||
+    cleanEventStatus === "soldout";
+
+  const isCapacityFull = capacity > 0 && registered >= capacity;
+
+  if (isExplicitSoldOut || isCapacityFull) {
+    return {
+      isCompleted: false,
+      isCancelled: false,
+      isSoldOut: true,
+      isRegistrationClosed: true,
+      isRegistrationUpcoming: false,
+      canBook: false,
+      statusKey: "sold_out",
+      badgeText: "Sold Out",
+      badgeClass: "ed-status--soldout",
+      message: "All tickets for this event are sold out.",
+    };
+  }
+
+  // 3. Check Event Completion
   // A: Explicit status flag in Firestore (e.g. "Completed", "Complete", "Ended")
   const isExplicitComplete =
     rawStatus === "complete" ||
@@ -86,36 +129,6 @@ export const getEventStatusInfo = (event) => {
       badgeText: "Completed",
       badgeClass: "ed-status--completed",
       message: "This event is completed.",
-    };
-  }
-
-  // 3. Check Capacity / Sold Out
-  const capacity = Number(event.capacity || event.totalTickets || event.maxCapacity || 0);
-  const registered = Number(
-    event.registeredCount ||
-    event.bookedCount ||
-    event.soldCount ||
-    event.totalBookings ||
-    0
-  );
-  const isExplicitSoldOut =
-    event.isSoldOut === true ||
-    rawStatus === "sold_out" ||
-    rawStatus === "soldout";
-  const isCapacityFull = capacity > 0 && registered >= capacity;
-
-  if (isExplicitSoldOut || isCapacityFull) {
-    return {
-      isCompleted: false,
-      isCancelled: false,
-      isSoldOut: true,
-      isRegistrationClosed: true,
-      isRegistrationUpcoming: false,
-      canBook: false,
-      statusKey: "sold_out",
-      badgeText: "Sold Out",
-      badgeClass: "ed-status--soldout",
-      message: "All tickets for this event are sold out.",
     };
   }
 

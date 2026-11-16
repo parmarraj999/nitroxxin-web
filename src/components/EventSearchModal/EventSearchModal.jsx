@@ -427,8 +427,9 @@ export default function EventSearchModal({
   // Normalize live Firestore events
   const normalizedEvents = useMemo(() => {
     const live = (events || []).filter((e) => {
-      const st = String(e.status || "published").toLowerCase();
-      return st === "published" || st === "active" || st === "approved";
+      const st = String(e.status || "published").toLowerCase().trim();
+      const clean = st.replace(/[_\s-]+/g, "");
+      return st === "published" || st === "active" || st === "approved" || clean === "soldout" || st.includes("sold out");
     });
 
     const mapped = live.map((e) => {

@@ -116,7 +116,7 @@ const Navbar = () => {
                     </nav>
                 </div>
                 <div className='navbar-action-btn'>
-                    <BecomePartner theme="dark" />
+                    {/* <BecomePartner theme="dark" /> */}
 
                     {/* Desktop Search Bar (Marketplace Navbar Style) */}
                     <div

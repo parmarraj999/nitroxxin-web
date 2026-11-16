@@ -829,6 +829,102 @@
   border-color: rgba(80, 215, 53, 0.28);
 }
 
+/* ── Clickable Venue Row & Map Button ── */
+.ed-info-row--venue {
+  cursor: pointer;
+  border-radius: 12px;
+  padding: 8px 6px 8px 8px;
+  margin: 0 -8px;
+  transition: all var(--transition);
+  user-select: none;
+}
+
+.ed-info-row--venue:hover {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.ed-info-row--venue:hover .ed-info-icon-box--venue {
+  background: rgba(255, 31, 31, 0.12) !important;
+  border-color: rgba(255, 31, 31, 0.4) !important;
+  transform: scale(1.05);
+}
+
+.ed-info-row--venue:hover .ed-info-icon-box--venue svg {
+  stroke: #ff1f1f !important;
+}
+
+.ed-info-row--venue:hover .ed-info-label {
+  color: #ffffff;
+}
+
+.ed-info-row--venue:hover .ed-venue-map-link-btn {
+  background: rgba(255, 31, 31, 0.18);
+  border-color: rgba(255, 31, 31, 0.55);
+  color: #ff1f1f;
+  transform: translate(2px, -2px) scale(1.06);
+  box-shadow: 0 4px 14px rgba(255, 31, 31, 0.28);
+}
+
+/* Venue Map Link Button */
+.ed-venue-map-link-btn {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  margin-left: 6px;
+}
+
+.ed-venue-map-link-btn:hover {
+  background: #ff1f1f !important;
+  border-color: #ff1f1f !important;
+  color: #ffffff !important;
+  transform: translate(2px, -2px) scale(1.1) !important;
+  box-shadow: 0 4px 16px rgba(255, 31, 31, 0.5) !important;
+}
+
+.ed-venue-map-icon {
+  display: block;
+  transition: transform 0.2s ease;
+}
+
+.ed-venue-map-link-btn:hover .ed-venue-map-icon {
+  transform: translate(1px, -1px);
+}
+
+/* Header Meta Clickable Location */
+.ed-event-location--clickable {
+  cursor: pointer;
+  transition: color 0.18s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.ed-event-location--clickable:hover {
+  color: #ffffff;
+}
+
+.ed-event-location-icon {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.ed-event-location--clickable:hover .ed-event-location-icon {
+  transform: translate(1px, -1px);
+  stroke: #ff1f1f;
+  opacity: 1 !important;
+}
+
 .ed-info-text {
   flex: 1;
   min-width: 0;
@@ -1478,6 +1574,24 @@
   .ed-info-row {
     padding: 8px 0;
     gap: 12px;
+  }
+
+  .ed-info-row--venue {
+    padding: 6px 4px 6px 6px;
+    margin: 0 -4px;
+  }
+
+  .ed-venue-map-link-btn {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    border-radius: 8px;
+    margin-left: 4px;
+  }
+
+  .ed-venue-map-link-btn svg {
+    width: 15px;
+    height: 15px;
   }
 
   .ed-info-icon-box {
@@ -2222,4 +2336,59 @@
   background: rgba(59, 130, 246, 0.15);
   color: #93c5fd;
   border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.ed-reg-pill--soldout {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fcd34d;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+/* Disabled Book Buttons with Status Integration */
+.ed-book-btn--disabled {
+  cursor: not-allowed !important;
+  opacity: 0.95 !important;
+  gap: 8px;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+.ed-book-btn--disabled.ed-status--soldout {
+  background: rgba(245, 158, 11, 0.16) !important;
+  color: #fcd34d !important;
+  border: 1.5px solid rgba(245, 158, 11, 0.38) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.ed-book-btn--disabled.ed-status--soldout .ed-status-tag-dot {
+  background: #f59e0b;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.8);
+}
+
+.ed-mobile-bar-btn--disabled {
+  cursor: not-allowed !important;
+  gap: 6px;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.ed-mobile-bar-btn--disabled.ed-status--soldout {
+  background: rgba(245, 158, 11, 0.18) !important;
+  color: #fcd34d !important;
+  border: 1px solid rgba(245, 158, 11, 0.4) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.ed-mobile-bar-btn--disabled.ed-status--soldout .ed-mobile-bar-btn-line {
+  color: #fcd34d !important;
+}
+
+.ed-mobile-bar-btn--disabled.ed-status--soldout .ed-status-tag-dot {
+  background: #f59e0b;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.8);
 }

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import './BecomePartner.css';
 import { useAuth } from '../../context/AuthContext';
 import { submitPartnerQuery } from '../../services/queryService';
+import { uploadPartnerScreenshot } from '../../services/storageService';
 
 // ── 3 Partnership Options ──
 export const PARTNER_OPTIONS = [
@@ -213,6 +214,14 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
     shortDescription: '',
   });
 
+  // Instagram Professional Dashboard Screenshot state
+  const [screenshotFile, setScreenshotFile] = useState(null);
+  const [screenshotPreview, setScreenshotPreview] = useState(null);
+  const [isDragOverScreenshot, setIsDragOverScreenshot] = useState(false);
+  const [screenshotError, setScreenshotError] = useState(null);
+  const [showScreenshotModal, setShowScreenshotModal] = useState(false);
+  const screenshotInputRef = useRef(null);
+
   // Event Host / Organizer form state
   const [organizerData, setOrganizerData] = useState({
     companyName: '',
@@ -315,6 +324,52 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
     });
   };
 
+  // Screenshot handlers for Creator Affiliate Program
+  const handleScreenshotSelect = (file) => {
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setScreenshotError('Please upload an image file (PNG, JPG, JPEG, WEBP).');
+      return;
+    }
+
+    if (file.size > 15 * 1024 * 1024) {
+      setScreenshotError('Screenshot size exceeds 15MB. Please choose a smaller image.');
+      return;
+    }
+
+    setScreenshotError(null);
+    setScreenshotFile(file);
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setScreenshotPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleScreenshotInputChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) handleScreenshotSelect(file);
+  };
+
+  const handleRemoveScreenshot = (e) => {
+    if (e) e.stopPropagation();
+    setScreenshotFile(null);
+    setScreenshotPreview(null);
+    setScreenshotError(null);
+    if (screenshotInputRef.current) {
+      screenshotInputRef.current.value = '';
+    }
+  };
+
+  const handleScreenshotDrop = (e) => {
+    e.preventDefault();
+    setIsDragOverScreenshot(false);
+    const file = e.dataTransfer?.files?.[0];
+    if (file) handleScreenshotSelect(file);
+  };
+
   // Organizer change handlers
   const handleOrganizerChange = (e) => {
     const { name, value } = e.target;
@@ -377,6 +432,16 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
 
       if (selectedOption.id === 'creator') {
         // Affiliate Program (Creator)
+        let uploadedScreenshotUrl = null;
+        if (screenshotFile) {
+          try {
+            uploadedScreenshotUrl = await uploadPartnerScreenshot(user?.uid || 'guest', screenshotFile);
+          } catch (uploadErr) {
+            console.warn('Firebase Storage screenshot upload failed, using data URL fallback:', uploadErr);
+            uploadedScreenshotUrl = screenshotPreview;
+          }
+        }
+
         const activeSocials = (creatorData.socialLinks || [])
           .map((s) => s.trim())
           .filter(Boolean);
@@ -389,6 +454,7 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
           badge: selectedOption.badge,
           name: (creatorData.name || '').trim(),
           instagramUsername: (creatorData.instagramUsername || '').trim(),
+          instagramDashboardScreenshot: uploadedScreenshotUrl || null,
           socialLinks: activeSocials,
           viralVideoLink: (creatorData.viralVideoLink || '').trim(),
           shortDescription: (creatorData.shortDescription || '').trim(),
@@ -399,6 +465,8 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
           details: {
             name: (creatorData.name || '').trim(),
             instagramUsername: (creatorData.instagramUsername || '').trim(),
+            instagramDashboardScreenshot: uploadedScreenshotUrl || null,
+            screenshotFileName: screenshotFile?.name || null,
             socialLinks: activeSocials,
             viralVideoLink: (creatorData.viralVideoLink || '').trim(),
             shortDescription: (creatorData.shortDescription || '').trim(),
@@ -549,7 +617,7 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
               role="dialog"
               aria-modal="true"
             >
-              {/* Modal Top Bar: Header, Track Badges & Close */}
+              {/* Modal Top Bar: Header, Track Badges & Close (No tabs switcher - opens directly for chosen program) */}
               <div className="bp-modal-header">
                 <div className="bp-modal-header-top">
                   <div className="bp-modal-title-group">
@@ -568,24 +636,6 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
                   >
                     ✕
                   </button>
-                </div>
-
-                {/* Option Switcher Tabs so user can easily switch partnership tracks */}
-                <div className="bp-tabs-switcher">
-                  {PARTNER_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      className={`bp-tab-btn ${selectedOption.id === opt.id ? 'is-active' : ''}`}
-                      onClick={() => {
-                        setSelectedOption(opt);
-                        setSubmitError(null);
-                      }}
-                    >
-                      <span className="bp-tab-btn-icon">{opt.icon}</span>
-                      <span>{opt.title}</span>
-                    </button>
-                  ))}
                 </div>
               </div>
 
@@ -642,6 +692,147 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
                             }}
                           />
                         </NotchedField>
+                      </div>
+
+                      {/* Instagram Professional Dashboard Screenshot Upload (Current Stats) */}
+                      <div className="bp-screenshot-field-group">
+                        <div className="bp-screenshot-label-row">
+                          <div className="bp-screenshot-label-left">
+                            <span className="bp-screenshot-label">Instagram Professional Dashboard Screenshot</span>
+                            <span className="bp-field-subtag">Current Stats</span>
+                          </div>
+                          {screenshotPreview && (
+                            <span className="bp-screenshot-attached-badge">
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                              Screenshot Attached
+                            </span>
+                          )}
+                        </div>
+
+                        <p className="bp-screenshot-hint">
+                          Upload a screenshot from your Instagram app showing your Professional Dashboard insights (Accounts Reached, Engaged & Total Followers).
+                        </p>
+
+                        <input
+                          ref={screenshotInputRef}
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp,image/jpg"
+                          className="bp-screenshot-hidden-input"
+                          onChange={handleScreenshotInputChange}
+                        />
+
+                        {screenshotPreview ? (
+                          <div className="bp-screenshot-preview-card">
+                            <div
+                              className="bp-screenshot-thumb-wrap"
+                              onClick={() => setShowScreenshotModal(true)}
+                              title="Click to view full screenshot"
+                            >
+                              <img
+                                src={screenshotPreview}
+                                alt="Instagram Professional Dashboard Screenshot"
+                                className="bp-screenshot-thumb-img"
+                              />
+                              <div className="bp-screenshot-zoom-overlay">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                  <circle cx="11" cy="11" r="8" />
+                                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                                  <line x1="11" y1="8" x2="11" y2="14" />
+                                  <line x1="8" y1="11" x2="14" y2="11" />
+                                </svg>
+                                <span>Tap to preview full screenshot</span>
+                              </div>
+                            </div>
+
+                            <div className="bp-screenshot-meta-row">
+                              <div className="bp-screenshot-file-info">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e1306c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+                                </svg>
+                                <span className="bp-screenshot-file-name" title={screenshotFile?.name}>
+                                  {screenshotFile?.name || "dashboard_screenshot.jpg"}
+                                </span>
+                                {screenshotFile?.size && (
+                                  <span className="bp-screenshot-file-size">
+                                    ({(screenshotFile.size / (1024 * 1024)).toFixed(2)} MB)
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="bp-screenshot-actions">
+                                <button
+                                  type="button"
+                                  className="bp-screenshot-action-btn bp-screenshot-action-btn--change"
+                                  onClick={() => screenshotInputRef.current?.click()}
+                                >
+                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M12 20h9" />
+                                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                                  </svg>
+                                  <span>Change</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  className="bp-screenshot-action-btn bp-screenshot-action-btn--remove"
+                                  onClick={handleRemoveScreenshot}
+                                  title="Remove screenshot"
+                                >
+                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18" />
+                                    <line x1="6" y1="6" x2="18" y2="18" />
+                                  </svg>
+                                  <span>Remove</span>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div
+                            className={`bp-screenshot-dropzone ${isDragOverScreenshot ? 'is-dragover' : ''} ${screenshotError ? 'has-error' : ''}`}
+                            onClick={() => screenshotInputRef.current?.click()}
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              setIsDragOverScreenshot(true);
+                            }}
+                            onDragLeave={() => setIsDragOverScreenshot(false)}
+                            onDrop={handleScreenshotDrop}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                screenshotInputRef.current?.click();
+                              }
+                            }}
+                          >
+                            <div className="bp-screenshot-dropzone-icon">
+                              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+                              </svg>
+                            </div>
+                            <div className="bp-screenshot-dropzone-content">
+                              <span className="bp-screenshot-dropzone-title">
+                                Upload Instagram Professional Dashboard Screenshot
+                              </span>
+                              <span className="bp-screenshot-dropzone-desc">
+                                Attach screenshot showing accounts reached, engaged & follower analytics
+                              </span>
+                              <span className="bp-screenshot-dropzone-formats">
+                                Supports PNG, JPG, JPEG, WEBP (Max 15MB)
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                        {screenshotError && (
+                          <span className="bp-field-error" style={{ marginTop: '6px' }}>{screenshotError}</span>
+                        )}
                       </div>
 
                       {/* Viral Video Link */}
@@ -1306,6 +1497,9 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
                         <div><span>Name:</span> {creatorData.name || 'N/A'}</div>
                         <div><span>Instagram:</span> {creatorData.instagramUsername ? `@${creatorData.instagramUsername}` : 'N/A'}</div>
                         <div><span>Track:</span> {selectedOption.badge}</div>
+                        {screenshotPreview && (
+                          <div><span>Stats Screenshot:</span> Attached (Verified)</div>
+                        )}
                         <div><span>Social Profiles:</span> {creatorData.socialLinks.filter(l => l.trim().length > 0).length || 0} linked</div>
                         {creatorData.viralVideoLink && (
                           <div style={{ wordBreak: 'break-all' }}><span>Viral Video:</span> {creatorData.viralVideoLink}</div>
@@ -1340,6 +1534,43 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
                 )}
               </div>
             </div>
+
+            {/* Lightbox Fullscreen Preview for Instagram Screenshot */}
+            {showScreenshotModal && screenshotPreview && (
+              <div
+                className="bp-lightbox-overlay"
+                onClick={() => setShowScreenshotModal(false)}
+              >
+                <div
+                  className="bp-lightbox-modal"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="bp-lightbox-header">
+                    <div className="bp-lightbox-title-group">
+                      <span className="bp-lightbox-title">
+                        Instagram Professional Dashboard Screenshot
+                      </span>
+                      <span className="bp-field-subtag">Current Stats</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="bp-lightbox-close-btn"
+                      onClick={() => setShowScreenshotModal(false)}
+                      aria-label="Close preview"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <div className="bp-lightbox-img-wrap">
+                    <img
+                      src={screenshotPreview}
+                      alt="Instagram Stats Dashboard Full Screenshot"
+                      className="bp-lightbox-img"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>,
           document.body
         )}

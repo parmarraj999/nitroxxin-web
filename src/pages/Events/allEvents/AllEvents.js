@@ -12,7 +12,19 @@ import { saveFavoriteEvent, removeFavoriteEvent } from "../../../services/commer
 import { EventCard } from "../Events";
 import LocationModal from "../../../components/layout/bottomNav/LocationModal";
 
-const isVisibleEvent = (event) => String(event.status || "").toLowerCase() === "published";
+const isVisibleEvent = (event) => {
+  const st = String(event?.status || "").toLowerCase().trim();
+  const clean = st.replace(/[_\s-]+/g, "");
+  return (
+    st === "published" ||
+    st === "active" ||
+    st === "approved" ||
+    clean === "soldout" ||
+    st.includes("sold out") ||
+    st === "completed" ||
+    !st
+  );
+};
 
 const eventSortTime = (event) => {
   const date = toDate(event.date || event.eventDate || event.startsAt || event.startDate || event.createdAt);

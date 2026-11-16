@@ -197,14 +197,27 @@ export const normalizeEvent = (doc) => {
     data.ticketTemplate?.image ||
     "";
 
+  const banner =
+    data.bannerImage ||
+    data.primaryBanner ||
+    data.banner ||
+    data.bannerUrl ||
+    data.image ||
+    firstImage(data);
+
+  const rawGallery = data.galleryImages || data.images || data.gallery || [];
+  const normalizedImages = Array.isArray(rawGallery) && rawGallery.length
+    ? [banner, ...rawGallery].filter(Boolean).filter((img, idx, arr) => arr.indexOf(img) === idx)
+    : [banner].filter(Boolean);
+
   return {
     ...data,
     id,
     name: data.name || data.title || "Event",
     title: data.title || data.name || "Event",
-    image: data.bannerImage || firstImage(data),
-    images: data.galleryImages || data.images || data.gallery || [data.bannerImage || firstImage(data)].filter(Boolean),
-    banner: data.bannerImage || data.banner || data.bannerUrl || firstImage(data),
+    image: banner,
+    images: normalizedImages,
+    banner: banner,
     date: data.date || data.eventDate || data.startsAt || data.startDate,
     dateText: data.dateText || formatDate(data.date || data.eventDate || data.startsAt || data.startDate),
     dateTimeText: data.dateTimeText || formatDateTime(data.date || data.eventDate || data.startsAt || data.startDate),

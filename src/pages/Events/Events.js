@@ -16,7 +16,19 @@ import { getEventStatusInfo } from "../../utils/eventStatus";
 import ImageWithLoader from "../../components/common/ImageWithLoader";
 
 const timeFilters = ["All", "Today", "Upcoming", "Free", "Paid", "VIP"];
-const isVisibleEvent = (event) => String(event.status || "").toLowerCase() === "published";
+const isVisibleEvent = (event) => {
+  const st = String(event?.status || "").toLowerCase().trim();
+  const clean = st.replace(/[_\s-]+/g, "");
+  return (
+    st === "published" ||
+    st === "active" ||
+    st === "approved" ||
+    clean === "soldout" ||
+    st.includes("sold out") ||
+    st === "completed" ||
+    !st
+  );
+};
 
 const eventSortTime = (event) => {
   const date = toDate(event.date || event.eventDate || event.startsAt || event.startDate || event.createdAt);
@@ -1022,10 +1034,15 @@ export default function Events() {
                       Book tickets
                     </button>
                   ) : (
-                    <div className={`ep-featured__status-tag ${currentEventStatus.badgeClass}`} title={currentEventStatus.message}>
+                    <button
+                      type="button"
+                      className={`ep-featured__book-btn ep-featured__book-btn--disabled ${currentEventStatus.badgeClass}`}
+                      disabled
+                      title={currentEventStatus.message}
+                    >
                       <span className="ed-status-tag-dot" />
-                      {currentEventStatus.badgeText}
-                    </div>
+                      <span>{currentEventStatus.badgeText}</span>
+                    </button>
                   )}
                 </div>
 
