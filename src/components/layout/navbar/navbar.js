@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthModal } from '../../AuthModal/useAuthModal';
 import { useAuth } from '../../../context/AuthContext';
 import { useEventsContext } from '../../../context/EventsContext';
-import BecomePartner from '../../Partner/BecomePartner';
+// import BecomePartner from '../../Partner/BecomePartner';
 import EventSearchModal from '../../EventSearchModal/EventSearchModal';
 
 const DEFAULT_EVENT_CATEGORIES = [
