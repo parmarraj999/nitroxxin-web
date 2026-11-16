@@ -50,15 +50,16 @@ export const getOrCreateRecaptchaVerifier = (containerId = "recaptcha-container"
 /**
  * Clears and resets the RecaptchaVerifier instance.
  * @param {string} containerId - Element ID for the reCAPTCHA container.
+ * @param {function} [onExpired] - Optional callback when reCAPTCHA token expires.
  */
-export const resetRecaptchaVerifier = (containerId = "recaptcha-container") => {
+export const resetRecaptchaVerifier = (containerId = "recaptcha-container", onExpired) => {
   if (typeof window === "undefined") return null;
 
   if (window.recaptchaVerifier) {
     try {
       window.recaptchaVerifier.clear();
     } catch (e) {
-      // ignore
+      console.warn("Could not clear recaptchaVerifier:", e);
     }
     window.recaptchaVerifier = null;
   }
@@ -68,7 +69,7 @@ export const resetRecaptchaVerifier = (containerId = "recaptcha-container") => {
     container.innerHTML = "";
   }
 
-  return getOrCreateRecaptchaVerifier(containerId);
+  return getOrCreateRecaptchaVerifier(containerId, onExpired);
 };
 
 /**
@@ -80,6 +81,14 @@ export const formatAuthError = (error) => {
   if (!error) return "An unexpected error occurred. Please try again.";
   const code = error.code || "";
   switch (code) {
+    case "auth/invalid-verification-code":
+      return "Invalid OTP. Please check the 6-digit code and try again.";
+    case "auth/code-expired":
+      return "This OTP has expired. Please click Resend OTP to get a new code.";
+    case "auth/session-expired":
+      return "Verification session has expired. Please request a new OTP.";
+    case "auth/missing-verification-code":
+      return "Please enter the complete 6-digit verification code.";
     case "auth/invalid-app-credential":
       return "Verification failed (invalid app credential). If running locally, ensure 'localhost' is listed under Firebase Console > Authentication > Settings > Authorized domains.";
     case "auth/captcha-check-failed": {
@@ -90,13 +99,22 @@ export const formatAuthError = (error) => {
       return "reCAPTCHA verification failed. Please check your network and try again.";
     }
     case "auth/too-many-requests":
-      return "Too many requests. Please wait a few moments before trying again.";
+      return "Too many attempts. Please wait a few moments before trying again.";
     case "auth/quota-exceeded":
-      return "SMS quota exceeded. Please try again later.";
+      return "SMS quota exceeded for today. Please try again later or continue with Google.";
     case "auth/invalid-phone-number":
-      return "Please enter a valid phone number.";
-    default:
-      return error.message || "Failed to send verification code. Please try again.";
+      return "Please enter a valid 10-digit mobile number.";
+    case "auth/credential-already-in-use":
+      return "This phone number is already linked to another account.";
+    case "auth/network-request-failed":
+      return "Network error. Please check your internet connection and try again.";
+    case "auth/popup-closed-by-user":
+      return "Sign in cancelled.";
+    default: {
+      const raw = error.message || "";
+      const clean = raw.replace(/^Firebase:\s*(Error\s*)?\(auth\/[^\)]+\)\.?\s*/i, "").trim();
+      return clean || "Failed to process verification. Please try again.";
+    }
   }
 };
 
@@ -113,9 +131,30 @@ export const sendOTP = async (phoneNumber, recaptchaVerifier) => {
       phoneNumber,
       recaptchaVerifier
     );
+    // After successful dispatch, reset cached verifier so next resend or number change creates a fresh one
+    if (window.recaptchaVerifier) {
+      try {
+        window.recaptchaVerifier.clear();
+      } catch (e) {
+        // ignore
+      }
+      window.recaptchaVerifier = null;
+    }
+    const container = document.getElementById("recaptcha-container");
+    if (container) container.innerHTML = "";
     return confirmationResult;
   } catch (error) {
     console.error("Error sending OTP:", error);
+    if (window.recaptchaVerifier) {
+      try {
+        window.recaptchaVerifier.clear();
+      } catch (e) {
+        // ignore
+      }
+      window.recaptchaVerifier = null;
+    }
+    const container = document.getElementById("recaptcha-container");
+    if (container) container.innerHTML = "";
     throw error;
   }
 };

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
-import { getOrCreateRecaptchaVerifier, formatAuthError } from "../../services/authService";
+import { resetRecaptchaVerifier, formatAuthError } from "../../services/authService";
 import "./OTPModal.css";
 
 export default function OTPModal() {
@@ -17,10 +17,10 @@ export default function OTPModal() {
     setActiveView,
   } = useAuth();
 
-
   const [otp, setOtp] = useState(new Array(6).fill(""));
   const [timer, setTimer] = useState(30);
   const inputRefs = useRef([]);
+  const isSubmittingRef = useRef(false);
 
   // Auto-focus first input on mount
   useEffect(() => {
@@ -34,7 +34,7 @@ export default function OTPModal() {
     let interval = null;
     if (timer > 0) {
       interval = setInterval(() => {
-        setTimer((prev) => prev - 1);
+        setTimer((prev) => (prev > 0 ? prev - 1 : 0));
       }, 1000);
     }
     return () => {
@@ -42,15 +42,49 @@ export default function OTPModal() {
     };
   }, [timer]);
 
+  const handleVerification = async (code) => {
+    if (isSubmittingRef.current || modalLoading) return;
+    isSubmittingRef.current = true;
+    try {
+      await confirmOTP(code);
+    } catch (err) {
+      console.error("OTP verification failed:", err);
+      setOtp(new Array(6).fill(""));
+      inputRefs.current[0]?.focus();
+    } finally {
+      isSubmittingRef.current = false;
+    }
+  };
+
   const handleChange = (value, index) => {
-    if (!/^\d*$/.test(value)) return;
+    setModalError(null);
+    const cleanDigits = value.replace(/\D/g, "");
+    if (!cleanDigits && value !== "") return;
+
+    // Support mobile SMS autofill and pasting multiple digits
+    if (cleanDigits.length > 1) {
+      const digitsArr = cleanDigits.slice(0, 6).split("");
+      const newOtp = [...otp];
+      const startIdx = digitsArr.length === 6 ? 0 : index;
+      for (let i = 0; i < digitsArr.length && (startIdx + i) < 6; i++) {
+        newOtp[startIdx + i] = digitsArr[i];
+      }
+      setOtp(newOtp);
+      const nextFocus = Math.min(startIdx + digitsArr.length, 5);
+      inputRefs.current[nextFocus]?.focus();
+      const completeCode = newOtp.join("");
+      if (completeCode.length === 6) {
+        handleVerification(completeCode);
+      }
+      return;
+    }
 
     const newOtp = [...otp];
-    newOtp[index] = value.slice(-1);
+    newOtp[index] = cleanDigits.slice(-1);
     setOtp(newOtp);
 
     // Auto-advance to next input box
-    if (value && index < 5 && inputRefs.current[index + 1]) {
+    if (cleanDigits && index < 5 && inputRefs.current[index + 1]) {
       inputRefs.current[index + 1].focus();
     }
 
@@ -62,40 +96,58 @@ export default function OTPModal() {
   };
 
   const handleKeyDown = (e, index) => {
-    if (e.key === "Backspace" && !otp[index] && index > 0 && inputRefs.current[index - 1]) {
+    if (e.key === "Backspace") {
+      setModalError(null);
+      if (!otp[index] && index > 0 && inputRefs.current[index - 1]) {
+        e.preventDefault();
+        const newOtp = [...otp];
+        newOtp[index - 1] = "";
+        setOtp(newOtp);
+        inputRefs.current[index - 1].focus();
+      } else if (otp[index]) {
+        e.preventDefault();
+        const newOtp = [...otp];
+        newOtp[index] = "";
+        setOtp(newOtp);
+      }
+    } else if (e.key === "ArrowLeft" && index > 0 && inputRefs.current[index - 1]) {
+      e.preventDefault();
       inputRefs.current[index - 1].focus();
+    } else if (e.key === "ArrowRight" && index < 5 && inputRefs.current[index + 1]) {
+      e.preventDefault();
+      inputRefs.current[index + 1].focus();
     }
   };
 
   const handlePaste = (e) => {
     e.preventDefault();
-    const pasteData = e.clipboardData.getData("text").trim();
-    if (/^\d{6}$/.test(pasteData)) {
-      const digits = pasteData.split("");
+    setModalError(null);
+    const pasteData = (e.clipboardData || window.clipboardData)?.getData("text")?.trim() || "";
+    const cleanDigits = pasteData.replace(/\D/g, "");
+    if (cleanDigits.length >= 6) {
+      const digits = cleanDigits.slice(0, 6).split("");
       setOtp(digits);
       inputRefs.current[5]?.focus();
-      handleVerification(pasteData);
-    }
-  };
-
-  const handleVerification = async (code) => {
-    try {
-      await confirmOTP(code);
-    } catch (err) {
-      console.error("OTP verification failed:", err);
-      setOtp(new Array(6).fill(""));
-      inputRefs.current[0]?.focus();
+      handleVerification(cleanDigits.slice(0, 6));
+    } else if (cleanDigits.length > 0) {
+      const digits = cleanDigits.split("");
+      const newOtp = [...otp];
+      digits.forEach((d, i) => {
+        if (i < 6) newOtp[i] = d;
+      });
+      setOtp(newOtp);
+      inputRefs.current[Math.min(digits.length, 5)]?.focus();
     }
   };
 
   const handleResend = async () => {
-    if (timer > 0 || modalLoading) return;
+    if (timer > 0 || modalLoading || isSubmittingRef.current) return;
     setModalError(null);
     setOtp(new Array(6).fill(""));
     try {
-      const verifier = getOrCreateRecaptchaVerifier("recaptcha-container");
+      const verifier = resetRecaptchaVerifier("recaptcha-container");
       if (!verifier) {
-        throw new Error("Verification service is unavailable. Please restart.");
+        throw new Error("Verification service is unavailable. Please reload the page.");
       }
       await triggerOTP(phoneNumber, verifier);
       setTimer(30);
@@ -140,13 +192,13 @@ export default function OTPModal() {
               ref={(el) => (inputRefs.current[idx] = el)}
               type="text"
               inputMode="numeric"
-              maxLength={1}
+              maxLength={6}
               value={digit}
               onChange={(e) => handleChange(e.target.value, idx)}
               onKeyDown={(e) => handleKeyDown(e, idx)}
               disabled={modalLoading}
               className={`otp-digit-box ${digit ? "otp-digit-box--filled" : ""}`}
-              autoComplete="one-time-code"
+              autoComplete={idx === 0 ? "one-time-code" : "off"}
             />
           ))}
         </div>

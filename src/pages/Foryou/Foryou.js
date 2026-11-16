@@ -10,6 +10,7 @@ import ComboSection from '../../components/ComboSection/ComboSection'
 import ShopByCategory from './shopByCategory/shopByCategory'
 import ShopByBrands from './shopByBrand/shopByBrand'
 import FAQ from './FAQ/faq'
+import WelcomeModal from '../../components/WelcomeModal/WelcomeModal'
 import { useForYouContext } from '../../context/ForYouContext'
 
 function Foryou() {
@@ -17,6 +18,7 @@ function Foryou() {
 
     return (
         <section className='foryou-section'>
+            <WelcomeModal />
             <Header banners={banners} />
             <Marquee />
             <CategoriesSection categories={categories} />

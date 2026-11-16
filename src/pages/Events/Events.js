@@ -310,7 +310,8 @@ export default function Events() {
   const [activeFilter, setActiveFilter] = useState("All");
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const [selectedCity, setSelectedCity] = useState(localStorage.getItem('selectedCity') || "");
+  const [userCity, setUserCity] = useState(localStorage.getItem('selectedCity') || "");
+  const [allEventsCity, setAllEventsCity] = useState(() => searchParams.get("city") || "");
 
   // Advanced Filter state
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
@@ -407,10 +408,10 @@ export default function Events() {
     }
   };
 
-  // Listen to city changes
+  // Listen to city changes for user's location (Near You section)
   useEffect(() => {
     const handleLocationChange = () => {
-      setSelectedCity(localStorage.getItem('selectedCity') || "");
+      setUserCity(localStorage.getItem('selectedCity') || "");
     };
     window.addEventListener('locationChanged', handleLocationChange);
     window.addEventListener('storage', handleLocationChange);
@@ -423,7 +424,7 @@ export default function Events() {
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
 
   const handleSelectCity = (city) => {
-    setSelectedCity(city);
+    setUserCity(city);
     localStorage.setItem("selectedCity", city);
     window.dispatchEvent(new Event("locationChanged"));
     setIsLocationModalOpen(false);
@@ -472,20 +473,19 @@ export default function Events() {
     if (activeCategory !== "All") count++;
     if (filterDate !== "All") count++;
     if (filterPrice !== "All") count++;
-    if (selectedCity) count++;
+    if (allEventsCity) count++;
     return count;
-  }, [sortBy, activeCategory, filterDate, filterPrice, selectedCity]);
+  }, [sortBy, activeCategory, filterDate, filterPrice, allEventsCity]);
 
-  // Reset all filters in drawer
+  // Reset all filters in drawer (clears All Events manual filters without clearing user's global location)
   const handleResetAllDrawerFilters = () => {
     setFilterDate("All");
     setFilterPrice("All");
     setSortBy("DateSoonest");
-    setSelectedCity("");
-    localStorage.removeItem("selectedCity");
-    window.dispatchEvent(new Event("locationChanged"));
+    setAllEventsCity("");
     const newParams = new URLSearchParams(searchParams);
     newParams.delete("category");
+    newParams.delete("city");
     setSearchParams(newParams);
   };
 
@@ -583,8 +583,8 @@ export default function Events() {
   const nearMeEvents = useMemo(() => {
     if (!liveEvents || liveEvents.length === 0) return [];
 
-    if (selectedCity && selectedCity.trim()) {
-      const cityLower = selectedCity.trim().toLowerCase();
+    if (userCity && userCity.trim()) {
+      const cityLower = userCity.trim().toLowerCase();
       const matched = liveEvents.filter((event) => {
         const loc = String(event.location || "").toLowerCase();
         const city = String(event.city || "").toLowerCase();
@@ -604,7 +604,7 @@ export default function Events() {
       (event) => event.location || event.city || event.venue
     );
     return withLocation.length > 0 ? withLocation : liveEvents;
-  }, [liveEvents, selectedCity]);
+  }, [liveEvents, userCity]);
 
   // Section 2: Upcoming Events
   const upcomingEventsList = useMemo(() => {
@@ -671,11 +671,14 @@ export default function Events() {
           .some((value) => String(value || "").toLowerCase().includes(term));
       if (!matchesSearch) return false;
 
-      // Location match (selected city)
-      if (selectedCity) {
+      // Location match (manual All Events city filter)
+      if (allEventsCity && allEventsCity !== "All") {
+        const cityLower = allEventsCity.toLowerCase();
         const matchesCity =
-          String(event.location || "").toLowerCase().includes(selectedCity.toLowerCase()) ||
-          String(event.city || "").toLowerCase().includes(selectedCity.toLowerCase());
+          String(event.location || "").toLowerCase().includes(cityLower) ||
+          String(event.city || "").toLowerCase().includes(cityLower) ||
+          String(event.venue || "").toLowerCase().includes(cityLower) ||
+          String(event.address || "").toLowerCase().includes(cityLower);
         if (!matchesCity) return false;
       }
 
@@ -754,7 +757,7 @@ export default function Events() {
     });
 
     return result;
-  }, [activeFilter, activeCategory, displayedCategories, liveEvents, query, selectedCity, filterDate, filterPrice, sortBy]);
+  }, [activeFilter, activeCategory, displayedCategories, liveEvents, query, allEventsCity, filterDate, filterPrice, sortBy]);
 
   const currentEvent = useMemo(
     () => heroEvents[activeSlide] || heroEvents[0] || {},
@@ -943,7 +946,7 @@ export default function Events() {
         isOpen={isLocationModalOpen}
         onClose={() => setIsLocationModalOpen(false)}
         onSelectCity={handleSelectCity}
-        currentCity={selectedCity}
+        currentCity={userCity}
         onAutoDetect={() => { }}
         isDetecting={false}
       />
@@ -1165,8 +1168,8 @@ export default function Events() {
               <div className="ep-near-you-banner__content">
                 <h3 className="ep-near-you-banner__title">Events Near You</h3>
                 <p className="ep-near-you-banner__subtitle">
-                  {selectedCity
-                    ? `There are ${nearMeEvents.length} events in ${selectedCity}`
+                  {userCity
+                    ? `There are ${nearMeEvents.length} events in ${userCity}`
                     : `There are ${liveEvents.length} events near you`}
                 </p>
               </div>
@@ -1298,21 +1301,27 @@ export default function Events() {
             </div>
 
             {/* Active Filter Tags */}
-            {(filterDate !== "All" || filterPrice !== "All" || activeCategory !== "All" || selectedCity) && (
+            {(filterDate !== "All" || filterPrice !== "All" || activeCategory !== "All" || (allEventsCity && allEventsCity !== "All")) && (
               <div className="ep-active-tags">
-                {selectedCity && (
+                {allEventsCity && allEventsCity !== "All" && (
                   <span className="ep-tag">
-                    City: {selectedCity}
+                    City: {allEventsCity}
                     <button className="ep-tag__close" onClick={() => {
-                      localStorage.removeItem('selectedCity');
-                      window.dispatchEvent(new Event('locationChanged'));
+                      setAllEventsCity("");
+                      const newParams = new URLSearchParams(searchParams);
+                      newParams.delete("city");
+                      setSearchParams(newParams);
                     }}>×</button>
                   </span>
                 )}
                 {activeCategory !== "All" && (
                   <span className="ep-tag">
                     Category: {displayedCategories.find(c => c.id === activeCategory)?.label || activeCategory}
-                    <button className="ep-tag__close" onClick={() => setSearchParams({})}>×</button>
+                    <button className="ep-tag__close" onClick={() => {
+                      const newParams = new URLSearchParams(searchParams);
+                      newParams.delete("category");
+                      setSearchParams(newParams);
+                    }}>×</button>
                   </span>
                 )}
                 {filterDate !== "All" && (
@@ -1330,7 +1339,11 @@ export default function Events() {
                 <button className="ep-clear-all-btn" onClick={() => {
                   setFilterDate("All");
                   setFilterPrice("All");
-                  setSearchParams({});
+                  setAllEventsCity("");
+                  const newParams = new URLSearchParams(searchParams);
+                  newParams.delete("category");
+                  newParams.delete("city");
+                  setSearchParams(newParams);
                 }}>Clear All</button>
               </div>
             )}
@@ -1420,18 +1433,19 @@ export default function Events() {
               <div className="ep-drawer__section">
                 <div className="ep-drawer__section-header">
                   <h4>City / Location</h4>
-                  {selectedCity && (
-                    <span style={{ fontSize: "12px", color: "#ff1f1f", fontWeight: 600 }}>{selectedCity}</span>
+                  {allEventsCity && allEventsCity !== "All" && (
+                    <span style={{ fontSize: "12px", color: "#ff1f1f", fontWeight: 600 }}>{allEventsCity}</span>
                   )}
                 </div>
                 <div className="ep-drawer__options-grid">
                   <button
                     type="button"
-                    className={`ep-drawer__option-btn${!selectedCity ? " active" : ""}`}
+                    className={`ep-drawer__option-btn${!allEventsCity || allEventsCity === "All" ? " active" : ""}`}
                     onClick={() => {
-                      setSelectedCity("");
-                      localStorage.removeItem("selectedCity");
-                      window.dispatchEvent(new Event("locationChanged"));
+                      setAllEventsCity("");
+                      const newParams = new URLSearchParams(searchParams);
+                      newParams.delete("city");
+                      setSearchParams(newParams);
                     }}
                   >
                     All Cities
@@ -1440,8 +1454,18 @@ export default function Events() {
                     <button
                       key={city}
                       type="button"
-                      className={`ep-drawer__option-btn${selectedCity.toLowerCase() === city.toLowerCase() ? " active" : ""}`}
-                      onClick={() => handleSelectCity(city)}
+                      className={`ep-drawer__option-btn${allEventsCity.toLowerCase() === city.toLowerCase() ? " active" : ""}`}
+                      onClick={() => {
+                        const newCity = allEventsCity.toLowerCase() === city.toLowerCase() ? "" : city;
+                        setAllEventsCity(newCity);
+                        const newParams = new URLSearchParams(searchParams);
+                        if (newCity) {
+                          newParams.set("city", newCity);
+                        } else {
+                          newParams.delete("city");
+                        }
+                        setSearchParams(newParams);
+                      }}
                     >
                       {city}
                     </button>

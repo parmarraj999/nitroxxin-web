@@ -96,6 +96,7 @@ export const FirebaseAuthProvider = ({ children }) => {
   // Google Sign-In pending verification state
   const [pendingGoogleUser, setPendingGoogleUser] = useState(null);
   const pendingGoogleLoginRef = useRef(false);
+  const isVerifyingOtpRef = useRef(false);
 
   // Subscribe to Firebase Auth and sync with Firestore profile (supports both real Auth & Dev Test UID)
   useEffect(() => {
@@ -117,7 +118,7 @@ export const FirebaseAuthProvider = ({ children }) => {
         unsubscribeProfile = null;
       }
 
-      if (pendingGoogleLoginRef.current) {
+      if (pendingGoogleLoginRef.current || isVerifyingOtpRef.current) {
         setLoading(false);
         return;
       }
@@ -125,23 +126,23 @@ export const FirebaseAuthProvider = ({ children }) => {
       if (firebaseUser) {
         try {
           // 1. Guard against Event Hosts, Vendors, and Organizers logged into dashboards
-          // E.g. rajparmarvendor@gmail.com logged into Events-Host-Dashboard or Products-Vendor-Dashboard.
-          // They must NEVER be automatically signed up or logged in as a consumer on nitroxx-web,
-          // and must NEVER have a document auto-created in the "users" collection!
-          const [hostSnap, vendorSnap, hostAppSnap] = await Promise.all([
-            getDoc(doc(firestoreInstance, "event_host", firebaseUser.uid)).catch(() => null),
-            getDoc(doc(firestoreInstance, "vendors", firebaseUser.uid)).catch(() => null),
-            getDoc(doc(firestoreInstance, "host_applications", firebaseUser.uid)).catch(() => null),
-          ]);
+          // Only run dashboard check if user has an email, avoiding 3 roundtrips for normal mobile customer logins
+          if (firebaseUser.email) {
+            const [hostSnap, vendorSnap, hostAppSnap] = await Promise.all([
+              getDoc(doc(firestoreInstance, "event_host", firebaseUser.uid)).catch(() => null),
+              getDoc(doc(firestoreInstance, "vendors", firebaseUser.uid)).catch(() => null),
+              getDoc(doc(firestoreInstance, "host_applications", firebaseUser.uid)).catch(() => null),
+            ]);
 
-          const isDashboardAccount = Boolean(
-            hostSnap?.exists() || vendorSnap?.exists() || hostAppSnap?.exists()
-          );
+            const isDashboardAccount = Boolean(
+              hostSnap?.exists() || vendorSnap?.exists() || hostAppSnap?.exists()
+            );
 
-          if (isDashboardAccount) {
-            console.info("Firebase Auth session belongs to an Event Host/Vendor Dashboard account; ignoring on public web store.");
-            clearWebSession();
-            return;
+            if (isDashboardAccount) {
+              console.info("Firebase Auth session belongs to an Event Host/Vendor Dashboard account; ignoring on public web store.");
+              clearWebSession();
+              return;
+            }
           }
 
           // 2. Realtime listener to users/{uid} document
@@ -184,9 +185,11 @@ export const FirebaseAuthProvider = ({ children }) => {
                 setUser(basePayload);
                 setProfile(profileData);
               } else {
-                // User does NOT exist in the website's `users` collection!
-                // NEVER auto-create a document in `users` collection on auth state change!
-                // Legitimate users are created only during explicit OTP verification or registration.
+                // User does not yet exist in the website's `users` collection.
+                // If an OTP verification write is in flight, do not prematurely clear session.
+                if (isVerifyingOtpRef.current) {
+                  return;
+                }
                 clearWebSession();
               }
               setLoading(false);
@@ -270,7 +273,7 @@ export const FirebaseAuthProvider = ({ children }) => {
       pendingGoogleLoginRef.current = false;
     }
     setModalError(null);
-    setPhoneNumber("");
+    // Keep phoneNumber intact so user doesn't have to re-type on Edit
     setConfirmationResult(null);
     setActiveView("login");
     setIsAuthOpen(true);
@@ -346,6 +349,7 @@ export const FirebaseAuthProvider = ({ children }) => {
   const confirmOTP = useCallback(async (code) => {
     setModalLoading(true);
     setModalError(null);
+    isVerifyingOtpRef.current = true;
     try {
       if (!confirmationResult) throw new Error("No verification context found. Please request OTP again.");
       const firebaseUser = await verifyOTP(confirmationResult, code);
@@ -354,14 +358,19 @@ export const FirebaseAuthProvider = ({ children }) => {
       const targetUid = finalUser.uid;
       const verifiedPhone = phoneNumber || firebaseUser.phoneNumber || "";
 
+      // Ensure profile has a readable default name for phone-only logins
+      const cleanLast4 = verifiedPhone.replace(/\D/g, "").slice(-4);
+      const defaultName = `Rider ${cleanLast4 || "Nitro"}`;
+      const resolvedName = finalUser.displayName || finalUser.fullName || defaultName;
+
       localStorage.setItem("userId", targetUid);
       localStorage.setItem("nitroxxin_auth_uid", targetUid);
       const userPayload = {
         uid: targetUid,
         phoneNumber: verifiedPhone,
         phone: verifiedPhone,
-        fullName: finalUser.displayName || finalUser.fullName || "",
-        displayName: finalUser.displayName || finalUser.fullName || "",
+        fullName: resolvedName,
+        displayName: resolvedName,
         email: finalUser.email || "",
         profilePhoto: finalUser.photoURL || "",
         photoURL: finalUser.photoURL || "",
@@ -377,8 +386,8 @@ export const FirebaseAuthProvider = ({ children }) => {
           uid: targetUid,
           phone: verifiedPhone,
           phoneNumber: verifiedPhone,
-          fullName: finalUser.displayName || finalUser.fullName || "",
-          displayName: finalUser.displayName || finalUser.fullName || "",
+          fullName: resolvedName,
+          displayName: resolvedName,
           email: finalUser.email || "",
           profilePhoto: finalUser.photoURL || "",
           photoURL: finalUser.photoURL || "",
@@ -403,6 +412,7 @@ export const FirebaseAuthProvider = ({ children }) => {
       setModalError(formatAuthError(err));
       throw err;
     } finally {
+      isVerifyingOtpRef.current = false;
       setModalLoading(false);
     }
   }, [confirmationResult, phoneNumber, pendingGoogleUser]);
@@ -487,13 +497,20 @@ export const FirebaseAuthProvider = ({ children }) => {
   }, []);
 
   const loginWithPhoneNoOtp = useCallback(async (rawPhone) => {
-    const trimmed = (rawPhone || phoneNumber || "").trim().replace(/\D/g, "");
-    if (!trimmed || trimmed.length !== 10) {
+    let cleanDigits = (rawPhone || phoneNumber || "").trim().replace(/\D/g, "");
+    if (cleanDigits.startsWith("91") && cleanDigits.length === 12) {
+      cleanDigits = cleanDigits.slice(2);
+    } else if (cleanDigits.startsWith("0") && cleanDigits.length === 11) {
+      cleanDigits = cleanDigits.slice(1);
+    }
+
+    if (!cleanDigits || cleanDigits.length !== 10) {
       const err = new Error("Please enter a valid 10-digit mobile number.");
       setModalError(err.message);
       throw err;
     }
 
+    const trimmed = cleanDigits;
     const fullPhoneNumber = `+91${trimmed}`;
     setModalLoading(true);
     setModalError(null);

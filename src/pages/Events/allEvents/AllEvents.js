@@ -126,7 +126,7 @@ export default function AllEvents() {
   const [searchInput, setSearchInput] = useState(paramSearch);
   const [query, setQuery] = useState(paramSearch);
   const [activeCategory, setActiveCategory] = useState(paramCategory);
-  const [selectedCity, setSelectedCity] = useState(() => paramCity || localStorage.getItem("selectedCity") || "");
+  const [selectedCity, setSelectedCity] = useState(() => paramCity || "");
   const [filterDate, setFilterDate] = useState(paramDate);
   const [filterPrice, setFilterPrice] = useState(paramPrice);
   const [sortBy, setSortBy] = useState(paramSort);
@@ -194,16 +194,12 @@ export default function AllEvents() {
   // City select handler
   const handleSelectCity = (city) => {
     setSelectedCity(city);
-    localStorage.setItem("selectedCity", city);
-    window.dispatchEvent(new Event("locationChanged"));
     setIsLocationModalOpen(false);
     updateUrl({ city });
   };
 
   const handleClearCity = () => {
     setSelectedCity("");
-    localStorage.removeItem("selectedCity");
-    window.dispatchEvent(new Event("locationChanged"));
     updateUrl({ city: "" });
   };
 
@@ -236,8 +232,6 @@ export default function AllEvents() {
     setFilterPrice("All");
     setSortBy("DateSoonest");
     setSelectedCity("");
-    localStorage.removeItem("selectedCity");
-    window.dispatchEvent(new Event("locationChanged"));
     setSearchParams({}, { replace: true });
   };
 

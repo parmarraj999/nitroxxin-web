@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { getOrCreateRecaptchaVerifier, resetRecaptchaVerifier, formatAuthError } from "../../services/authService";
 import "./LoginModal.css";
 
 export default function LoginModal() {
   const {
+    phoneNumber,
     triggerOTP,
     signInWithGoogle,
     loginWithPhoneNoOtp,
@@ -12,13 +13,43 @@ export default function LoginModal() {
     modalError,
     setModalError,
   } = useAuth();
-  const [phone, setPhone] = useState("");
+
+  const [phone, setPhone] = useState(() => {
+    if (!phoneNumber) return "";
+    const digits = String(phoneNumber).replace(/\D/g, "");
+    return digits.startsWith("91") && digits.length === 12 ? digits.slice(2) : digits.slice(-10);
+  });
   const [localError, setLocalError] = useState("");
   const [noOtpLoading, setNoOtpLoading] = useState(false);
+  const isSubmittingRef = useRef(false);
 
+  const sanitizePhoneInput = (val) => {
+    let digits = String(val).replace(/\D/g, "");
+    if (digits.startsWith("91") && digits.length > 10) {
+      digits = digits.slice(2);
+    } else if (digits.startsWith("0") && digits.length > 10) {
+      digits = digits.slice(1);
+    }
+    return digits.slice(0, 10);
+  };
+
+  const handlePhoneChange = (e) => {
+    setLocalError("");
+    setModalError(null);
+    setPhone(sanitizePhoneInput(e.target.value));
+  };
+
+  const handlePhonePaste = (e) => {
+    e.preventDefault();
+    setLocalError("");
+    setModalError(null);
+    const pasted = (e.clipboardData || window.clipboardData)?.getData("text") || "";
+    setPhone(sanitizePhoneInput(pasted));
+  };
 
   const handlePhoneSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmittingRef.current || modalLoading || noOtpLoading) return;
     setLocalError("");
     setModalError(null);
 
@@ -34,6 +65,7 @@ export default function LoginModal() {
     }
 
     const fullPhoneNumber = `+91${trimmedPhone}`;
+    isSubmittingRef.current = true;
 
     try {
       const verifier = getOrCreateRecaptchaVerifier("recaptcha-container", () => {
@@ -49,6 +81,8 @@ export default function LoginModal() {
       console.error("Failed to send OTP:", err);
       resetRecaptchaVerifier("recaptcha-container");
       setModalError(formatAuthError(err));
+    } finally {
+      isSubmittingRef.current = false;
     }
   };
 
@@ -105,14 +139,11 @@ export default function LoginModal() {
               type="tel"
               id="login-phone-field"
               name="phone"
-              maxLength="10"
+              maxLength="14"
               placeholder="Enter mobile number"
               value={phone}
-              onChange={(e) => {
-                setLocalError("");
-                setModalError(null);
-                setPhone(e.target.value.replace(/\D/g, ""));
-              }}
+              onChange={handlePhoneChange}
+              onPaste={handlePhonePaste}
               disabled={modalLoading || noOtpLoading}
               className="login-phone-input"
               autoFocus
@@ -159,7 +190,7 @@ export default function LoginModal() {
         </button> */}
 
         {/* Secondary Action Button: Continue with Google (Dark Pill with Google Icon) */}
-        <button
+        {/* <button
           type="button"
           className="login-action-btn login-btn-google"
           onClick={handleGoogleSignIn}
@@ -172,7 +203,7 @@ export default function LoginModal() {
             <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.37 0 3.29 2.61 1.26 6.58l4.02 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
           </svg>
           <span>Continue with Google</span>
-        </button>
+        </button> */}
 
         {/* Footer Link */}
         <p className="login-footer-text">
@@ -186,9 +217,6 @@ export default function LoginModal() {
             Sign Up
           </span>
         </p>
-
-        {/* Hidden reCAPTCHA anchor */}
-        <div id="recaptcha-container"></div>
       </form>
     </div>
   );

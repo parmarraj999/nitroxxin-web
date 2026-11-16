@@ -17,6 +17,30 @@ export default function GooglePhoneModal() {
   const [localError, setLocalError] = useState("");
   const [noOtpLoading, setNoOtpLoading] = useState(false);
 
+  const sanitizePhoneInput = (val) => {
+    let digits = String(val).replace(/\D/g, "");
+    if (digits.startsWith("91") && digits.length > 10) {
+      digits = digits.slice(2);
+    } else if (digits.startsWith("0") && digits.length > 10) {
+      digits = digits.slice(1);
+    }
+    return digits.slice(0, 10);
+  };
+
+  const handlePhoneChange = (e) => {
+    setLocalError("");
+    setModalError(null);
+    setPhone(sanitizePhoneInput(e.target.value));
+  };
+
+  const handlePhonePaste = (e) => {
+    e.preventDefault();
+    setLocalError("");
+    setModalError(null);
+    const pasted = (e.clipboardData || window.clipboardData)?.getData("text") || "";
+    setPhone(sanitizePhoneInput(pasted));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLocalError("");
@@ -111,14 +135,11 @@ export default function GooglePhoneModal() {
               type="tel"
               id="google-phone-field"
               name="phone"
-              maxLength="10"
+              maxLength="14"
               placeholder="Enter 10-digit mobile number"
               value={phone}
-              onChange={(e) => {
-                setLocalError("");
-                setModalError(null);
-                setPhone(e.target.value.replace(/\D/g, ""));
-              }}
+              onChange={handlePhoneChange}
+              onPaste={handlePhonePaste}
               disabled={modalLoading || noOtpLoading}
               className="login-phone-input"
               autoFocus

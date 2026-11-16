@@ -1,0 +1,135 @@
+/* =========================================================
+   WELCOME MODAL (First-time visitor popup)
+   ========================================================= */
+
+.welcome-modal-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  z-index: 99990;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+/* Card Container (Desktop View: Centered popup card) */
+.welcome-modal-card {
+  position: relative;
+  background-color: #101216;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 24px;
+  width: 100%;
+  width: 490px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9), 0 0 40px rgba(239, 83, 80, 0.15);
+  box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Image Container */
+.welcome-modal-image-wrap {
+  width: 100%;
+  max-height: 82vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #0b0d10;
+}
+
+.welcome-modal-img {
+  width: 100%;
+  height: auto;
+  max-height: 82vh;
+  object-fit: contain;
+  display: block;
+}
+
+/* Close Button */
+.welcome-modal-close-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 10;
+  outline: none;
+  padding: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.welcome-modal-close-btn:hover {
+  background: rgba(239, 83, 80, 0.45);
+  border-color: #ef5350;
+  transform: scale(1.08);
+}
+
+.welcome-modal-close-btn:active {
+  transform: scale(0.92);
+}
+
+/* =========================================================
+   MOBILE RESPONSIVENESS: Bottom-center placement
+   ========================================================= */
+@media screen and (max-width: 768px) {
+  .welcome-modal-overlay {
+    padding: 0 14px calc(14px + env(safe-area-inset-bottom, 0px));
+    align-items: flex-end;
+    justify-content: center;
+  }
+
+  .welcome-modal-card {
+    max-width: 390px;
+    border-radius: 22px;
+    margin-bottom: 8px;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.85), 0 0 30px rgba(239, 83, 80, 0.12);
+  }
+
+  .welcome-modal-image-wrap {
+    max-height: 72vh;
+  }
+
+  .welcome-modal-img {
+    max-height: 72vh;
+  }
+
+  .welcome-modal-close-btn {
+    top: 12px;
+    right: 12px;
+    width: 34px;
+    height: 34px;
+  }
+}
+
+@media screen and (max-width: 420px) {
+  .welcome-modal-card {
+    max-width: 350px;
+    border-radius: 18px;
+  }
+
+  .welcome-modal-image-wrap {
+    max-height: 68vh;
+  }
+
+  .welcome-modal-img {
+    max-height: 68vh;
+  }
+}
