@@ -276,7 +276,7 @@
 .ed-event-location {
   font-weight: 400;
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: 16px;
 }
 
 /* ════════════════════════════════════════════════════
@@ -920,8 +920,7 @@
 }
 
 .ed-event-location--clickable:hover .ed-event-location-icon {
-  transform: translate(1px, -1px);
-  stroke: #ff1f1f;
+  stroke: #fff;
   opacity: 1 !important;
 }
 
@@ -998,6 +997,7 @@
 .ed-book-btn:active {
   transform: translateY(0);
 }
+
 
 /* ════════════════════════════════════════════════════
    Organizer card
@@ -1308,7 +1308,7 @@
 
   /* Main Title & Meta */
   .ed-event-title {
-    font-size: 21px;
+    font-size: 24px;
     line-height: 1.25;
     margin: 0 0 8px;
     letter-spacing: -0.015em;
@@ -1323,13 +1323,20 @@
 
   .ed-event-date,
   .ed-event-category {
-    font-size: 12px;
+    font-size: 13px;
     padding: 2.5px 9px;
   }
 
   .ed-event-location {
     font-size: 13px;
   }
+  .ed-event-location svg{
+    width: 32px;
+    height: 32px;
+    margin-right: 2px;
+    color: rgb(103, 103, 103);
+  }
+
 
   /* Gallery */
   .ed-gallery-wrap {
@@ -2262,6 +2269,10 @@
   background: rgba(245, 158, 11, 0.12) !important;
   color: #fcd34d !important;
   border: 1px solid rgba(245, 158, 11, 0.28) !important;
+  text-wrap: nowrap;
+}
+.ed-status--soldout span{
+  text-wrap: nowrap;
 }
 .ed-status--soldout .ed-status-tag-dot,
 .ed-status-tag--soldout .ed-status-tag-dot {

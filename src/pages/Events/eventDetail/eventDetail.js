@@ -763,38 +763,13 @@ export default function EventDetail() {
                 <span
                   className={`ed-event-location ${venueMapUrl ? "ed-event-location--clickable" : ""}`}
                   onClick={venueMapUrl ? handleOpenMap : undefined}
-                  title={venueMapUrl ? "View venue in Google Maps" : undefined}
-                  role={venueMapUrl ? "button" : undefined}
-                  tabIndex={venueMapUrl ? 0 : undefined}
+
                 >
-                  {" "}| {event.location}
-                  {venueMapUrl && (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="12"
-                      height="12"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="ed-event-location-icon"
-                      style={{ marginLeft: 4, verticalAlign: "middle", opacity: 0.8 }}
-                    >
-                      <path d="M7 17L17 7" />
-                      <polyline points="7 7 17 7 17 17" />
-                    </svg>
-                  )}
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin preview-icon"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" /><circle cx="12" cy="10" r="3" /></svg>
+                  {" "}  {event.location}
                 </span>
               )}
             </p>
-            {/* {!statusInfo.canBook && (
-              <span className={`ed-header-status-badge ${statusInfo.badgeClass}`}>
-                <span className="ed-status-tag-dot" />
-                {statusInfo.badgeText}
-              </span>
-            )} */}
           </div>
 
           <div className="ed-body-row">
@@ -965,11 +940,11 @@ export default function EventDetail() {
                   onKeyDown={
                     venueMapUrl
                       ? (e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            handleOpenMap();
-                          }
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          handleOpenMap();
                         }
+                      }
                       : undefined
                   }
                   title={venueMapUrl ? "Open venue in Google Maps" : undefined}
