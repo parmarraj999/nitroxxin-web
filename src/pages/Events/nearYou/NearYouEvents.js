@@ -4,7 +4,6 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useEventsContext } from "../../../context/EventsContext";
 import { toDate } from "../../../utils/dataFormatters";
 import { EVENT_CATEGORY_CONFIG } from "../eventCategoryConfig";
-import { useDocument } from "../../../hooks/useFirestore";
 import { useAuth } from "../../../context/AuthContext";
 import { useAuthModal } from "../../../components/AuthModal/useAuthModal";
 import { COLLECTIONS, db } from "../../../services/firebase";
@@ -56,7 +55,7 @@ function SlidersIcon({ color = "currentColor", size = 18 }) {
 export default function NearYouEvents() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { events, eventsLoading, categories } = useEventsContext();
+  const { events, eventsLoading, categories, displayedCategories, liveEvents } = useEventsContext();
   const { user } = useAuth();
   const { openLogin } = useAuthModal();
 
@@ -67,40 +66,6 @@ export default function NearYouEvents() {
       navigate("/events");
     }
   };
-
-  // Layout Categories from Firestore
-  const { data: eventsLayoutDoc } = useDocument("page_layouts", "events_layout");
-  const rawCategories = eventsLayoutDoc?.categories || eventsLayoutDoc?.data?.categories;
-
-  const displayedCategories = useMemo(() => {
-    if (rawCategories && Array.isArray(rawCategories) && rawCategories.length > 0) {
-      return rawCategories.map((cat, idx) => {
-        let slug = "";
-        if (cat.redirectUrl && cat.redirectUrl.includes("category=")) {
-          slug = cat.redirectUrl.split("category=")[1].split("&")[0];
-        } else if (cat.slug) {
-          slug = cat.slug;
-        } else if (cat.title || cat.label) {
-          slug = (cat.title || cat.label).toLowerCase().replace(/\s+/g, "_");
-        } else {
-          slug = `cat-${idx}`;
-        }
-        return {
-          id: slug,
-          label: cat.title || cat.label || "Category",
-        };
-      });
-    }
-
-    if (categories && categories.length > 0) {
-      return categories;
-    }
-
-    return EVENT_CATEGORY_CONFIG.map((cfg) => ({
-      id: cfg.slug,
-      label: cfg.category,
-    }));
-  }, [rawCategories, categories]);
 
   // Read URL params
   const paramSearch = searchParams.get("search") || searchParams.get("q") || "";
@@ -283,13 +248,6 @@ export default function NearYouEvents() {
       setBookmarkedEventIds(bookmarkedEventIds);
     }
   };
-
-  // Base live events
-  const liveEvents = useMemo(() => {
-    return (events || [])
-      .filter(isVisibleEvent)
-      .sort((a, b) => eventSortTime(a) - eventSortTime(b));
-  }, [events]);
 
   // Filtered local events
   const filteredEvents = useMemo(() => {

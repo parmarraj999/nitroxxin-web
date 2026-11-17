@@ -68,14 +68,30 @@ export const DEFAULT_FALLBACK_COMBOS = [
   },
 ];
 
+const CACHE_KEY = "nx_foryou_cache_v2";
+
+const loadCachedForYou = () => {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(CACHE_KEY) || localStorage.getItem(CACHE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") return parsed;
+    }
+  } catch (_) {}
+  return null;
+};
+
 const ForYouContext = createContext(null);
 
 export function ForYouProvider({ children }) {
+  const initialCache = useMemo(() => loadCachedForYou(), []);
+
   // 1. Fetch page_layouts > for_you document
   const layoutQuery = useDocument("page_layouts", "for_you");
 
   // Keep cached copy of layout data so it persists seamlessly even during transitions
-  const [cachedLayout, setCachedLayout] = useState(null);
+  const [cachedLayout, setCachedLayout] = useState(() => initialCache?.layoutData || null);
 
   useEffect(() => {
     if (layoutQuery.data) {
@@ -83,8 +99,12 @@ export function ForYouProvider({ children }) {
     }
   }, [layoutQuery.data]);
 
-  const layoutData = cachedLayout || layoutQuery.data;
-  const banners = useMemo(() => layoutData?.banners || [], [layoutData]);
+  const layoutData = cachedLayout || layoutQuery.data || initialCache?.layoutData;
+  const banners = useMemo(() => {
+    if (layoutData?.banners && layoutData.banners.length > 0) return layoutData.banners;
+    if (initialCache?.banners && initialCache.banners.length > 0) return initialCache.banners;
+    return [];
+  }, [layoutData, initialCache]);
 
   // Query event categories from events_layout
   const eventsLayoutQuery = useDocument("page_layouts", "events_layout");
@@ -231,6 +251,24 @@ export function ForYouProvider({ children }) {
   const combosLoading =
     (liveCombosQuery.loading || pluralCombosQuery.loading) && combos.length === 0;
 
+  // Persist to sessionStorage and localStorage for zero-latency hydration
+  useEffect(() => {
+    if ((banners && banners.length > 0) || (categories && categories.length > 0) || layoutData) {
+      try {
+        const payload = {
+          layoutData,
+          banners,
+          categories,
+          eventCategories,
+          combos: combos.slice(0, 20),
+          savedAt: Date.now(),
+        };
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify(payload));
+        localStorage.setItem(CACHE_KEY, JSON.stringify(payload));
+      } catch (_) {}
+    }
+  }, [layoutData, banners, categories, eventCategories, combos]);
+
   const refetchLayout = useCallback(() => {
     if (layoutQuery.retry) {
       layoutQuery.retry();
@@ -245,7 +283,7 @@ export function ForYouProvider({ children }) {
       eventCategories,
       combos,
       combosLoading,
-      loading: layoutQuery.loading && !layoutData,
+      loading: layoutQuery.loading && !layoutData && banners.length === 0,
       layoutLoading: layoutQuery.loading,
       layoutError: layoutQuery.error,
       refetchLayout,

@@ -4,14 +4,12 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useEventsContext } from "../../context/EventsContext";
 import { toDate } from "../../utils/dataFormatters";
 import { EVENT_CATEGORY_CONFIG } from "./eventCategoryConfig";
-import { useDocument } from "../../hooks/useFirestore";
 import { useAuth } from "../../context/AuthContext";
 import { useAuthModal } from "../../components/AuthModal/useAuthModal";
 import { COLLECTIONS, db } from "../../services/firebase";
 import { saveFavoriteEvent, removeFavoriteEvent } from "../../services/commerceService";
 import LocationModal from "../../components/layout/bottomNav/LocationModal";
 import EventPartners from "../../components/EventPartners/EventPartners";
-import { useEventCategoryContext } from "../../context/EventCategoryContext";
 import { getEventStatusInfo } from "../../utils/eventStatus";
 import ImageWithLoader from "../../components/common/ImageWithLoader";
 
@@ -252,58 +250,16 @@ function EmptyState({ title, text, image = "/assets/images/no-matching.png" }) {
 
 export default function Events() {
   const navigate = useNavigate();
-  const { events, eventsLoading, categories } = useEventsContext();
-
-  // Fetch dynamic page layout config from Firestore (page_layouts > events_layout)
-  const { data: eventsLayoutDoc } = useDocument("page_layouts", "events_layout");
-  const { data: fallbackEventsDoc } = useDocument("page_layouts", "events");
-  const layoutData = eventsLayoutDoc || fallbackEventsDoc;
-
-  const rawSlides =
-    layoutData?.heroSlides ||
-    layoutData?.data?.heroSlides ||
-    layoutData?.banners ||
-    layoutData?.data?.banners ||
-    (Array.isArray(layoutData?.data) ? layoutData.data : null);
-
-  const { categories: contextCategories } = useEventCategoryContext();
-  const rawCategories = layoutData?.categories || layoutData?.data?.categories;
-
-  const displayedCategories = useMemo(() => {
-    if (contextCategories && Array.isArray(contextCategories) && contextCategories.length > 0) {
-      return contextCategories;
-    }
-
-    if (rawCategories && Array.isArray(rawCategories) && rawCategories.length > 0) {
-      return rawCategories.map((cat, idx) => {
-        let slug = "";
-        if (cat.redirectUrl && cat.redirectUrl.includes("category=") && cat.redirectUrl.split("category=")[1].split("&")[0]) {
-          slug = cat.redirectUrl.split("category=")[1].split("&")[0];
-        } else if (cat.slug) {
-          slug = cat.slug;
-        } else if (cat.title || cat.label) {
-          slug = (cat.title || cat.label).toLowerCase().replace(/\s+/g, "_");
-        } else {
-          slug = `cat-${idx}`;
-        }
-        return {
-          id: slug,
-          label: cat.title || cat.label || "Category",
-          image: cat.imageUrl || cat.image || "",
-          redirectUrl: cat.redirectUrl,
-        };
-      });
-    }
-
-    if (categories && categories.length > 0) {
-      return categories;
-    }
-    return EVENT_CATEGORY_CONFIG.map((cfg) => ({
-      id: cfg.slug,
-      label: cfg.category,
-      image: "",
-    }));
-  }, [contextCategories, rawCategories, categories]);
+  const {
+    events,
+    eventsLoading,
+    categories,
+    layoutData,
+    rawSlides,
+    displayedCategories,
+    liveEvents,
+    heroEvents,
+  } = useEventsContext();
 
   const [query] = useState("");
   const [activeSlide, setActiveSlide] = useState(0);
@@ -434,14 +390,6 @@ export default function Events() {
 
   const activeCategory = searchParams.get("category") || "All";
 
-  const liveEvents = useMemo(
-    () =>
-      events
-        .filter(isVisibleEvent)
-        .sort((first, second) => eventSortTime(first) - eventSortTime(second)),
-    [events]
-  );
-
   const eventCategories = displayedCategories;
 
   // Category event counts for drawer filter
@@ -488,96 +436,6 @@ export default function Events() {
     newParams.delete("city");
     setSearchParams(newParams);
   };
-
-  // Map dynamic hero slides from page_layouts or fallback to upcoming live events
-  const heroEvents = useMemo(() => {
-    if (rawSlides && Array.isArray(rawSlides) && rawSlides.length > 0) {
-      const validSlides = rawSlides.filter((slide) => {
-        return (
-          (slide.imageUrl && String(slide.imageUrl).trim()) ||
-          slide.eventId ||
-          (slide.title && String(slide.title).trim()) ||
-          (slide.eventName && String(slide.eventName).trim())
-        );
-      });
-
-      if (validSlides.length > 0) {
-        return validSlides.map((slide, index) => {
-          const matchedEvent = slide.eventId
-            ? events.find((e) => String(e.id) === String(slide.eventId))
-            : null;
-
-          const title =
-            slide.title ||
-            slide.eventName ||
-            matchedEvent?.title ||
-            matchedEvent?.name ||
-            `Featured Event ${index + 1}`;
-
-          const image =
-            slide.imageUrl ||
-            slide.bannerImage ||
-            slide.banner ||
-            matchedEvent?.bannerImage ||
-            matchedEvent?.banner ||
-            "";
-
-          const dateText =
-            slide.date ||
-            matchedEvent?.dateTimeText ||
-            matchedEvent?.dateText ||
-            "";
-
-          const location =
-            slide.venue ||
-            matchedEvent?.location ||
-            "";
-
-          let priceText = "";
-          if (slide.price !== undefined && slide.price !== null && String(slide.price).trim() !== "") {
-            const p = String(slide.price).trim();
-            priceText = p.toLowerCase() === "free" || p.startsWith("₹") ? p : `₹${p}`;
-          } else if (matchedEvent?.priceText) {
-            priceText = matchedEvent.priceText;
-          } else if (matchedEvent?.price !== undefined && matchedEvent?.price !== null) {
-            priceText = matchedEvent.price === 0 ? "Free" : `₹${matchedEvent.price}`;
-          } else {
-            priceText = "Free";
-          }
-
-          const eventId = slide.eventId || matchedEvent?.id || slide.id || `slide-${index}`;
-          const redirectUrl =
-            slide.redirectUrl ||
-            (slide.eventId ? `/event/${slide.eventId}` : matchedEvent?.id ? `/event/${matchedEvent.id}` : "");
-
-          return {
-            id: eventId,
-            eventId: slide.eventId || matchedEvent?.id,
-            title,
-            name: title,
-            subtitle: slide.subtitle || "",
-            badge: slide.badge || "",
-            bannerImage: image,
-            banner: image,
-            dateTimeText: dateText,
-            dateText: dateText,
-            location,
-            priceText,
-            redirectUrl,
-            rawEvent: matchedEvent,
-          };
-        });
-      }
-    }
-
-    // Fallback: If no custom layout is configured, use upcoming live events
-    let upcomingEvents = liveEvents.filter((event) => {
-      const startsAt = toDate(event.date || event.eventDate || event.startsAt || event.startDate);
-      return !startsAt || startsAt.setHours(0, 0, 0, 0) >= new Date().setHours(0, 0, 0, 0);
-    });
-    if (upcomingEvents.length === 0) upcomingEvents = liveEvents;
-    return upcomingEvents.slice(0, 5);
-  }, [rawSlides, events, liveEvents]);
 
   // Section 1: Events Near Me
   const nearMeEvents = useMemo(() => {
