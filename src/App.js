@@ -52,6 +52,7 @@ import Wallet from './pages/profile/pages/Wallet';
 import ThrottleList from './pages/profile/pages/ThrottleList';
 import ShareFeedback from './pages/profile/pages/ShareFeedback';
 import PrivacyPolicy from './pages/Privacy/PrivacyPolicy';
+import Affiliate from './pages/affiliate/affiliate';
 import ScreenLoader from './components/ScreenLoader/ScreenLoader';
 
 import AuthModalContainer from './components/AuthModal/AuthModalContainer';
@@ -190,6 +191,8 @@ const AppShell = () => {
           <Route path="/accessories/combo/:comboId" element={<ComboDetailPage />} />
         </Route>
         <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
+        <Route path="/affiliate" element={<Affiliate />} />
+        <Route path="/affiliate-program" element={<Affiliate />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 

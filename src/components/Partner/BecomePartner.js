@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import './BecomePartner.css';
 import { useAuth } from '../../context/AuthContext';
 import { submitPartnerQuery } from '../../services/queryService';
-import { uploadPartnerScreenshot } from '../../services/storageService';
 
 // ── 3 Partnership Options ──
 export const PARTNER_OPTIONS = [
@@ -185,6 +185,7 @@ function NotchedField({
 }
 
 export default function BecomePartner({ theme = 'dark', className = '' }) {
+  const navigate = useNavigate();
   const { user } = useAuth() || {};
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -204,23 +205,6 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
     annualRevenueRange: '',
     briefDescription: '',
   });
-
-  // Creator Affiliate Program form state
-  const [creatorData, setCreatorData] = useState({
-    name: '',
-    instagramUsername: '',
-    socialLinks: [''],
-    viralVideoLink: '',
-    shortDescription: '',
-  });
-
-  // Instagram Professional Dashboard Screenshot state
-  const [screenshotFile, setScreenshotFile] = useState(null);
-  const [screenshotPreview, setScreenshotPreview] = useState(null);
-  const [isDragOverScreenshot, setIsDragOverScreenshot] = useState(false);
-  const [screenshotError, setScreenshotError] = useState(null);
-  const [showScreenshotModal, setShowScreenshotModal] = useState(false);
-  const screenshotInputRef = useRef(null);
 
   // Event Host / Organizer form state
   const [organizerData, setOrganizerData] = useState({
@@ -292,84 +276,6 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleCreatorChange = (e) => {
-    const { name, value } = e.target;
-    if (name === 'shortDescription' && value.length > 500) return;
-    setCreatorData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSocialLinkChange = (index, value) => {
-    setCreatorData((prev) => {
-      const nextLinks = [...prev.socialLinks];
-      nextLinks[index] = value;
-      return { ...prev, socialLinks: nextLinks };
-    });
-  };
-
-  const handleAddSocialLink = () => {
-    if (creatorData.socialLinks.length >= 8) return;
-    setCreatorData((prev) => ({
-      ...prev,
-      socialLinks: [...prev.socialLinks, ''],
-    }));
-  };
-
-  const handleRemoveSocialLink = (index) => {
-    setCreatorData((prev) => {
-      const nextLinks = prev.socialLinks.filter((_, i) => i !== index);
-      return {
-        ...prev,
-        socialLinks: nextLinks.length > 0 ? nextLinks : [''],
-      };
-    });
-  };
-
-  // Screenshot handlers for Creator Affiliate Program
-  const handleScreenshotSelect = (file) => {
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      setScreenshotError('Please upload an image file (PNG, JPG, JPEG, WEBP).');
-      return;
-    }
-
-    if (file.size > 15 * 1024 * 1024) {
-      setScreenshotError('Screenshot size exceeds 15MB. Please choose a smaller image.');
-      return;
-    }
-
-    setScreenshotError(null);
-    setScreenshotFile(file);
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      setScreenshotPreview(reader.result);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleScreenshotInputChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) handleScreenshotSelect(file);
-  };
-
-  const handleRemoveScreenshot = (e) => {
-    if (e) e.stopPropagation();
-    setScreenshotFile(null);
-    setScreenshotPreview(null);
-    setScreenshotError(null);
-    if (screenshotInputRef.current) {
-      screenshotInputRef.current.value = '';
-    }
-  };
-
-  const handleScreenshotDrop = (e) => {
-    e.preventDefault();
-    setIsDragOverScreenshot(false);
-    const file = e.dataTransfer?.files?.[0];
-    if (file) handleScreenshotSelect(file);
-  };
-
   // Organizer change handlers
   const handleOrganizerChange = (e) => {
     const { name, value } = e.target;
@@ -403,12 +309,7 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
   };
 
   const handleSaveAndClose = () => {
-    if (selectedOption.id === 'creator') {
-      console.log('Creator draft saved:', {
-        type: selectedOption.id,
-        ...creatorData,
-      });
-    } else if (selectedOption.id === 'organizer') {
+    if (selectedOption.id === 'organizer') {
       console.log('Event Host draft saved:', {
         type: selectedOption.id,
         ...organizerData,
@@ -430,49 +331,7 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
     try {
       let queryPayload = {};
 
-      if (selectedOption.id === 'creator') {
-        // Affiliate Program (Creator)
-        let uploadedScreenshotUrl = null;
-        if (screenshotFile) {
-          try {
-            uploadedScreenshotUrl = await uploadPartnerScreenshot(user?.uid || 'guest', screenshotFile);
-          } catch (uploadErr) {
-            console.warn('Firebase Storage screenshot upload failed, using data URL fallback:', uploadErr);
-            uploadedScreenshotUrl = screenshotPreview;
-          }
-        }
-
-        const activeSocials = (creatorData.socialLinks || [])
-          .map((s) => s.trim())
-          .filter(Boolean);
-
-        queryPayload = {
-          type: 'affiliate',
-          role: 'affiliate',
-          partnerType: 'creator',
-          partnerTitle: selectedOption.title,
-          badge: selectedOption.badge,
-          name: (creatorData.name || '').trim(),
-          instagramUsername: (creatorData.instagramUsername || '').trim(),
-          instagramDashboardScreenshot: uploadedScreenshotUrl || null,
-          socialLinks: activeSocials,
-          viralVideoLink: (creatorData.viralVideoLink || '').trim(),
-          shortDescription: (creatorData.shortDescription || '').trim(),
-          userId: user?.uid || null,
-          userEmail: user?.email || null,
-          userName: (creatorData.name || '').trim() || user?.displayName || null,
-          userPhone: user?.phoneNumber || null,
-          details: {
-            name: (creatorData.name || '').trim(),
-            instagramUsername: (creatorData.instagramUsername || '').trim(),
-            instagramDashboardScreenshot: uploadedScreenshotUrl || null,
-            screenshotFileName: screenshotFile?.name || null,
-            socialLinks: activeSocials,
-            viralVideoLink: (creatorData.viralVideoLink || '').trim(),
-            shortDescription: (creatorData.shortDescription || '').trim(),
-          },
-        };
-      } else if (selectedOption.id === 'organizer') {
+      if (selectedOption.id === 'organizer') {
         // Event Host / Organizer
         const activeSocials = (organizerData.socialLinks || [])
           .map((s) => s.trim())
@@ -646,14 +505,25 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
                 )}
                 {!submitted ? (
                   selectedOption.id === 'creator' ? (
-                    /* ── CREATOR AFFILIATE PROGRAM FORM ── */
-                    <form className="bp-form-content" onSubmit={handleFormSubmit}>
-                      {/* Creator Perks Strip */}
+                    /* ── CREATOR AFFILIATE PROGRAM INTRO POPUP ── */
+                    <div className="bp-creator-intro">
+                      <div className="bp-creator-intro-banner">
+                        <img
+                          src="/assets/images/affiliate-banner.png"
+                          alt="Nitroxx Affiliate Creators Showcase"
+                          className="bp-creator-intro-img"
+                        />
+                      </div>
+
+                      <p className="bp-creator-intro-desc">
+                        {selectedOption.shortDesc} Join for free in minutes, share products &amp; rides you love with your unique link, track performance in real time, and earn commissions on every sale.
+                      </p>
+
                       {selectedOption.highlights && (
-                        <div className="bp-creator-perks-strip">
+                        <div className="bp-creator-perks-strip bp-creator-perks-strip--creator">
                           {selectedOption.highlights.map((h, i) => (
                             <div key={i} className="bp-creator-perk-item">
-                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ff2d20" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                 <polyline points="20 6 9 17 4 12" />
                               </svg>
                               <span>{h}</span>
@@ -662,324 +532,50 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
                         </div>
                       )}
 
-                      {/* Row 1: Full Name & Instagram Username */}
-                      <div className="bp-field-row-2">
-                        <NotchedField label="Full Name" required>
-                          <input
-                            id="bp-creator-name"
-                            type="text"
-                            name="name"
-                            className="bp-notched-input"
-                            required
-                            placeholder="e.g. Alex Rivera"
-                            value={creatorData.name}
-                            onChange={handleCreatorChange}
-                          />
-                        </NotchedField>
-
-                        <NotchedField label="Instagram Username" required prefix="@" subtag="Social">
-                          <input
-                            id="bp-creator-instagram"
-                            type="text"
-                            name="instagramUsername"
-                            className="bp-notched-input"
-                            required
-                            placeholder="username"
-                            value={creatorData.instagramUsername}
-                            onChange={(e) => {
-                              const cleanVal = e.target.value.replace(/^@+/, '');
-                              setCreatorData((prev) => ({ ...prev, instagramUsername: cleanVal }));
-                            }}
-                          />
-                        </NotchedField>
+                      <div className="bp-creator-stats-row">
+                        <div className="bp-creator-stat-box">
+                          <span className="bp-creator-stat-val">500+</span>
+                          <span className="bp-creator-stat-lbl">Events</span>
+                        </div>
+                        <div className="bp-creator-stat-box">
+                          <span className="bp-creator-stat-val">1200+</span>
+                          <span className="bp-creator-stat-lbl">Products</span>
+                        </div>
+                        <div className="bp-creator-stat-box">
+                          <span className="bp-creator-stat-val">4.5%</span>
+                          <span className="bp-creator-stat-lbl">Commission</span>
+                        </div>
                       </div>
 
-                      {/* Instagram Professional Dashboard Screenshot Upload (Current Stats) */}
-                      <div className="bp-screenshot-field-group">
-                        <div className="bp-screenshot-label-row">
-                          <div className="bp-screenshot-label-left">
-                            <span className="bp-screenshot-label">Instagram Professional Dashboard Screenshot</span>
-                            <span className="bp-field-subtag">Current Stats</span>
-                          </div>
-                          {screenshotPreview && (
-                            <span className="bp-screenshot-attached-badge">
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="20 6 9 17 4 12" />
-                              </svg>
-                              Screenshot Attached
-                            </span>
-                          )}
-                        </div>
-
-                        <p className="bp-screenshot-hint">
-                          Upload a screenshot from your Instagram app showing your Professional Dashboard insights (Accounts Reached, Engaged & Total Followers).
-                        </p>
-
-                        <input
-                          ref={screenshotInputRef}
-                          type="file"
-                          accept="image/png,image/jpeg,image/webp,image/jpg"
-                          className="bp-screenshot-hidden-input"
-                          onChange={handleScreenshotInputChange}
-                        />
-
-                        {screenshotPreview ? (
-                          <div className="bp-screenshot-preview-card">
-                            <div
-                              className="bp-screenshot-thumb-wrap"
-                              onClick={() => setShowScreenshotModal(true)}
-                              title="Click to view full screenshot"
-                            >
-                              <img
-                                src={screenshotPreview}
-                                alt="Instagram Professional Dashboard Screenshot"
-                                className="bp-screenshot-thumb-img"
-                              />
-                              <div className="bp-screenshot-zoom-overlay">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                                  <circle cx="11" cy="11" r="8" />
-                                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                                  <line x1="11" y1="8" x2="11" y2="14" />
-                                  <line x1="8" y1="11" x2="14" y2="11" />
-                                </svg>
-                                <span>Tap to preview full screenshot</span>
-                              </div>
-                            </div>
-
-                            <div className="bp-screenshot-meta-row">
-                              <div className="bp-screenshot-file-info">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e1306c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-                                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-                                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-                                </svg>
-                                <span className="bp-screenshot-file-name" title={screenshotFile?.name}>
-                                  {screenshotFile?.name || "dashboard_screenshot.jpg"}
-                                </span>
-                                {screenshotFile?.size && (
-                                  <span className="bp-screenshot-file-size">
-                                    ({(screenshotFile.size / (1024 * 1024)).toFixed(2)} MB)
-                                  </span>
-                                )}
-                              </div>
-
-                              <div className="bp-screenshot-actions">
-                                <button
-                                  type="button"
-                                  className="bp-screenshot-action-btn bp-screenshot-action-btn--change"
-                                  onClick={() => screenshotInputRef.current?.click()}
-                                >
-                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M12 20h9" />
-                                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                                  </svg>
-                                  <span>Change</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  className="bp-screenshot-action-btn bp-screenshot-action-btn--remove"
-                                  onClick={handleRemoveScreenshot}
-                                  title="Remove screenshot"
-                                >
-                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <line x1="18" y1="6" x2="6" y2="18" />
-                                    <line x1="6" y1="6" x2="18" y2="18" />
-                                  </svg>
-                                  <span>Remove</span>
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <div
-                            className={`bp-screenshot-dropzone ${isDragOverScreenshot ? 'is-dragover' : ''} ${screenshotError ? 'has-error' : ''}`}
-                            onClick={() => screenshotInputRef.current?.click()}
-                            onDragOver={(e) => {
-                              e.preventDefault();
-                              setIsDragOverScreenshot(true);
-                            }}
-                            onDragLeave={() => setIsDragOverScreenshot(false)}
-                            onDrop={handleScreenshotDrop}
-                            role="button"
-                            tabIndex={0}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                screenshotInputRef.current?.click();
-                              }
-                            }}
-                          >
-                            <div className="bp-screenshot-dropzone-icon">
-                              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-                                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-                                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-                              </svg>
-                            </div>
-                            <div className="bp-screenshot-dropzone-content">
-                              <span className="bp-screenshot-dropzone-title">
-                                Upload Instagram Professional Dashboard Screenshot
-                              </span>
-                              <span className="bp-screenshot-dropzone-desc">
-                                Attach screenshot showing accounts reached, engaged & follower analytics
-                              </span>
-                              <span className="bp-screenshot-dropzone-formats">
-                                Supports PNG, JPG, JPEG, WEBP (Max 15MB)
-                              </span>
-                            </div>
-                          </div>
-                        )}
-
-                        {screenshotError && (
-                          <span className="bp-field-error" style={{ marginTop: '6px' }}>{screenshotError}</span>
-                        )}
-                      </div>
-
-                      {/* Viral Video Link */}
-                      <NotchedField
-                        label="Viral Video Link"
-                        hint="Best-performing Reel, Short, or Video (optional)"
-                        icon={
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <polygon points="5 3 19 12 5 21 5 3" />
-                          </svg>
-                        }
-                      >
-                        <input
-                          id="bp-creator-viral"
-                          type="url"
-                          name="viralVideoLink"
-                          className="bp-notched-input"
-                          placeholder="https://instagram.com/reel/... or https://youtube.com/shorts/..."
-                          value={creatorData.viralVideoLink}
-                          onChange={handleCreatorChange}
-                        />
-                      </NotchedField>
-
-                      {/* Social Media Profile URLs (Multiple) */}
-                      <div className="bp-social-section">
-                        <div className="bp-section-subhead">
-                          <span className="bp-section-label">Social Media Profile URLs</span>
-                          <span className="bp-section-hint">YouTube, TikTok, X, Twitch, etc.</span>
-                        </div>
-
-                        <div className="bp-social-links-list">
-                          {creatorData.socialLinks.map((url, idx) => (
-                            <div key={idx} className="bp-social-link-row">
-                              <NotchedField
-                                label={`Profile URL ${idx + 1}`}
-                                icon={getSocialIcon(url)}
-                                className="bp-social-notched-wrap"
-                              >
-                                <input
-                                  type="url"
-                                  className="bp-notched-input"
-                                  placeholder={idx === 0 ? "https://youtube.com/@channel or tiktok.com/@user" : "https://..."}
-                                  value={url}
-                                  onChange={(e) => handleSocialLinkChange(idx, e.target.value)}
-                                />
-                              </NotchedField>
-                              {creatorData.socialLinks.length > 1 && (
-                                <button
-                                  type="button"
-                                  className="bp-remove-social-btn"
-                                  onClick={() => handleRemoveSocialLink(idx)}
-                                  title="Remove profile link"
-                                  aria-label="Remove profile link"
-                                >
-                                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <line x1="18" y1="6" x2="6" y2="18" />
-                                    <line x1="6" y1="6" x2="18" y2="18" />
-                                  </svg>
-                                </button>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-
-                        {creatorData.socialLinks.length < 8 && (
-                          <button
-                            type="button"
-                            className="bp-add-social-btn"
-                            onClick={handleAddSocialLink}
-                          >
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                              <line x1="12" y1="5" x2="12" y2="19" />
-                              <line x1="5" y1="12" x2="19" y2="12" />
-                            </svg>
-                            <span>Add another profile URL</span>
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Short Description */}
-                      <NotchedField
-                        label="Short Description"
-                        required
-                        isTextarea
-                        hint="Content style, motorcycle build/riding niche & reach"
-                      >
-                        <div className="bp-notched-textarea-wrapper">
-                          <textarea
-                            id="bp-creator-desc"
-                            name="shortDescription"
-                            className="bp-notched-textarea"
-                            rows="3"
-                            maxLength={500}
-                            required
-                            placeholder="Tell us about your content, motorcycle riding style, current audience reach, and how you want to collaborate with Nitroxx..."
-                            value={creatorData.shortDescription}
-                            onChange={handleCreatorChange}
-                          />
-                          <span className="bp-notched-char-counter">
-                            {creatorData.shortDescription.length} / 500
-                          </span>
-                        </div>
-                      </NotchedField>
-
-                      {/* Bottom Action Row */}
                       <div className="bp-bottom-action-bar">
                         <button
                           type="button"
-                          className="bp-btn-save-close"
-                          onClick={handleSaveAndClose}
+                          className="bp-btn-back"
+                          onClick={() => {
+                            setIsFormOpen(false);
+                            setIsDropdownOpen(true);
+                          }}
                         >
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                            <polyline points="17 21 17 13 7 13 7 21" />
-                            <polyline points="7 3 7 8 15 8" />
-                          </svg>
-                          <span>Save and close</span>
+                          &lsaquo; Back
                         </button>
 
-                        <div className="bp-btn-right-group">
-                          <button
-                            type="button"
-                            className="bp-btn-back"
-                            onClick={() => {
-                              setIsFormOpen(false);
-                              setIsDropdownOpen(true);
-                            }}
-                          >
-                            &lsaquo; Back
-                          </button>
-                          <button
-                            type="submit"
-                            className="bp-btn-next"
-                            disabled={isSubmitting}
-                          >
-                            {isSubmitting ? (
-                              <>
-                                <span className="bp-btn-spinner" />
-                                <span>Submitting...</span>
-                              </>
-                            ) : (
-                              <span>Submit Application &rsaquo;</span>
-                            )}
-                          </button>
-                        </div>
+                        <button
+                          type="button"
+                          className="bp-btn-affiliate-cta"
+                          onClick={() => {
+                            setIsFormOpen(false);
+                            setIsDropdownOpen(false);
+                            navigate('/affiliate');
+                          }}
+                        >
+                          <span>Join Affiliate For Free</span>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M5 12h14" />
+                            <path d="m12 5 7 7-7 7" />
+                          </svg>
+                        </button>
                       </div>
-                    </form>
+                    </div>
                   ) : selectedOption.id === 'organizer' ? (
                     /* ── EVENT HOST / ORGANIZER FORM ── */
                     <form className="bp-form-content" onSubmit={handleFormSubmit}>
@@ -1492,20 +1088,7 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
                       <strong>{selectedOption.title}</strong>. Our partnerships team will review your application and get in touch within 24–48 hours.
                     </p>
 
-                    {selectedOption.id === 'creator' ? (
-                      <div className="bp-success-details">
-                        <div><span>Name:</span> {creatorData.name || 'N/A'}</div>
-                        <div><span>Instagram:</span> {creatorData.instagramUsername ? `@${creatorData.instagramUsername}` : 'N/A'}</div>
-                        <div><span>Track:</span> {selectedOption.badge}</div>
-                        {screenshotPreview && (
-                          <div><span>Stats Screenshot:</span> Attached (Verified)</div>
-                        )}
-                        <div><span>Social Profiles:</span> {creatorData.socialLinks.filter(l => l.trim().length > 0).length || 0} linked</div>
-                        {creatorData.viralVideoLink && (
-                          <div style={{ wordBreak: 'break-all' }}><span>Viral Video:</span> {creatorData.viralVideoLink}</div>
-                        )}
-                      </div>
-                    ) : selectedOption.id === 'organizer' ? (
+                    {selectedOption.id === 'organizer' ? (
                       <div className="bp-success-details">
                         <div><span>Company:</span> {organizerData.companyName || 'N/A'}</div>
                         <div><span>Legal Name:</span> {organizerData.legalName || 'N/A'}</div>
@@ -1534,43 +1117,6 @@ export default function BecomePartner({ theme = 'dark', className = '' }) {
                 )}
               </div>
             </div>
-
-            {/* Lightbox Fullscreen Preview for Instagram Screenshot */}
-            {showScreenshotModal && screenshotPreview && (
-              <div
-                className="bp-lightbox-overlay"
-                onClick={() => setShowScreenshotModal(false)}
-              >
-                <div
-                  className="bp-lightbox-modal"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="bp-lightbox-header">
-                    <div className="bp-lightbox-title-group">
-                      <span className="bp-lightbox-title">
-                        Instagram Professional Dashboard Screenshot
-                      </span>
-                      <span className="bp-field-subtag">Current Stats</span>
-                    </div>
-                    <button
-                      type="button"
-                      className="bp-lightbox-close-btn"
-                      onClick={() => setShowScreenshotModal(false)}
-                      aria-label="Close preview"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                  <div className="bp-lightbox-img-wrap">
-                    <img
-                      src={screenshotPreview}
-                      alt="Instagram Stats Dashboard Full Screenshot"
-                      className="bp-lightbox-img"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
           </div>,
           document.body
         )}

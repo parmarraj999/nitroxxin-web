@@ -23,6 +23,10 @@ body,
   overflow-x: hidden;
 }
 
+.app-container:has(.aff-page) {
+  background: #000000 !important;
+}
+
 .app-container::-webkit-scrollbar {
   display: none;
 }
