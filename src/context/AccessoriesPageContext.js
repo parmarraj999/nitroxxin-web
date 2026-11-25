@@ -15,6 +15,15 @@ import { isFeatureForYou } from "../services/normalizers";
 
 const CACHE_KEY = "nx_accessories_page_cache_v1";
 
+const HIDDEN_STATUSES = new Set(["archived", "deleted", "inactive", "draft", "removed"]);
+
+export const isVisibleProduct = (p) => {
+  if (!p) return false;
+  const st = String(p.status || "").toLowerCase().trim();
+  if (HIDDEN_STATUSES.has(st)) return false;
+  return true;
+};
+
 // Default fallback hero slides if database is empty or loading
 export const DEFAULT_SLIDES = [
   {
@@ -174,12 +183,39 @@ export function AccessoriesPageProvider({ children }) {
   // Compute live active products
   const liveProducts = useMemo(() => {
     if (products && products.length > 0) {
-      return products.filter((p) =>
-        ["published", "active", "approved"].includes(p.status)
-      );
+      return products.filter(isVisibleProduct);
     }
     return cachedState.liveProducts || [];
   }, [products, cachedState.liveProducts]);
+
+  // Compute suggested / featured products for the Suggestion Section
+  const suggestedProducts = useMemo(() => {
+    const featuredIds =
+      layoutData?.featuredProductIds ||
+      layoutData?.data?.featuredProductIds ||
+      cachedState.featuredProductIds ||
+      [];
+
+    if (!liveProducts || liveProducts.length === 0) {
+      return cachedState.suggestedProducts || [];
+    }
+
+    if (Array.isArray(featuredIds) && featuredIds.length > 0) {
+      const featuredSet = new Set(featuredIds.map(String));
+      const matched = [];
+      // 1. First add the admin-selected featured products in their designated order
+      featuredIds.forEach((id) => {
+        const found = liveProducts.find((p) => String(p.id) === String(id));
+        if (found) matched.push(found);
+      });
+      // 2. Fill remaining slots with top live products not already included
+      const remaining = liveProducts.filter((p) => !featuredSet.has(String(p.id)));
+      return [...matched, ...remaining].slice(0, 16);
+    }
+
+    // If no specific featuredIds configured by admin, spotlight live products from catalog
+    return liveProducts.slice(0, 16);
+  }, [layoutData, liveProducts, cachedState]);
 
   // Compute display categories
   const displayCategories = useMemo(() => {
@@ -235,10 +271,12 @@ export function AccessoriesPageProvider({ children }) {
         displayBikeBrands,
         displayBrands,
         liveProducts,
+        suggestedProducts,
         slides,
         banners,
         combos,
         layoutData,
+        featuredProductIds: layoutData?.featuredProductIds || [],
         timestamp: Date.now(),
       };
       inMemoryCache = nextCache;
@@ -294,6 +332,7 @@ export function AccessoriesPageProvider({ children }) {
       heroSlides: slides,
       layoutData,
       liveProducts,
+      suggestedProducts,
       products,
       combos,
 
@@ -311,6 +350,7 @@ export function AccessoriesPageProvider({ children }) {
       slides,
       layoutData,
       liveProducts,
+      suggestedProducts,
       products,
       combos,
       loading,

@@ -55,6 +55,7 @@ import PrivacyPolicy from './pages/Privacy/PrivacyPolicy';
 import ScreenLoader from './components/ScreenLoader/ScreenLoader';
 
 import AuthModalContainer from './components/AuthModal/AuthModalContainer';
+import ProfileReminder from './components/ProfileReminder/ProfileReminder';
 import ScrollToTop from './components/common/ScrollToTop';
 
 const Navigation = () => {
@@ -217,6 +218,7 @@ const AppShell = () => {
         </Route>
       </Routes>
       <FooterWrapper />
+      <ProfileReminder />
       <AuthModalContainer />
     </div>
   );

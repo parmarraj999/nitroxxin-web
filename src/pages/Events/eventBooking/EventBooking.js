@@ -121,10 +121,10 @@ const getBestEmergency = (prof) => {
     (typeof prof?.emergencyContact === 'string' && isNaN(Number(prof.emergencyContact)) ? prof.emergencyContact : '') ||
     '';
   const rawPhone =
+    prof?.emergencyContactNumber ||
     prof?.emergencyNumber ||
     prof?.emergencyPhone ||
     prof?.emergencyContactPhone ||
-    prof?.emergencyContactNumber ||
     prof?.emergencyContact?.phone ||
     prof?.emergencyContact?.number ||
     prof?.emergencyContact?.mobile ||

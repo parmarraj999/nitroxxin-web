@@ -1,11 +1,13 @@
 import { useEffect, useState, useRef } from "react";
 import "./AccessoriesPage.css";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAccessoriesPageContext } from "../../context/AccessoriesPageContext";
 import AccessoriesHeader from "./accessoriesNav/AccessoriesHeader";
 import AccessoriesHeroSlider from "./accessoriesBanner/AccessoriesHeroSlider";
 import SuggestedForYou from "./suggestedForYou/SuggestedForYou";
 import ComboSection from "../../components/ComboSection/ComboSection";
+import { BsArrowRight } from "react-icons/bs";
+import { LuArrowRight } from "react-icons/lu";
 
 function ChevronLeftIcon() {
   return (
@@ -60,9 +62,13 @@ export default function AccessoriesPage() {
     slides,
     layoutData,
     liveProducts,
+    suggestedProducts,
+    loading: pageLoading,
     combos,
   } = useAccessoriesPageContext();
   const [search, setSearch] = useState("");
+
+  const navigate = useNavigate();
 
   return (
     <div className="ap-page">
@@ -71,7 +77,7 @@ export default function AccessoriesPage() {
       {/* ═══ MARQUEE & HERO SLIDER SECTION ═══ */}
       <AccessoriesHeroSlider banners={banners} slides={slides} layoutData={layoutData} />
 
-      <img src={'/assets/images/strip-banner.png'}  alt='stripe-banner' className="stripe-banner" />
+      <img src={'/assets/images/strip-banner.png'} alt='stripe-banner' className="stripe-banner" />
 
       {displayCategories.length > 0 && (
         <div className="ap-section">
@@ -149,7 +155,17 @@ export default function AccessoriesPage() {
       />
 
       {/* ═══ SUGGESTED FOR YOU SECTION ═══ */}
-      <SuggestedForYou liveProducts={liveProducts} />
+      <SuggestedForYou
+        liveProducts={liveProducts}
+        suggestedProducts={suggestedProducts}
+        loading={pageLoading && (!suggestedProducts || suggestedProducts.length === 0)}
+      />
+      <button className="ap-explore-btn"
+        onClick={()=>navigate('/shop')}
+      >
+        Explore Shop
+        <LuArrowRight size={20} />
+      </button>
     </div>
   );
 }

@@ -10,10 +10,25 @@ import {
 
 const PAGE_SIZE = 20;
 const CATALOG_LIMIT = 80;
+const CACHE_KEY = "nx_accessories_cache_v2";
+
+const loadCachedAccessories = () => {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(CACHE_KEY) || localStorage.getItem(CACHE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") return parsed;
+    }
+  } catch (_) {}
+  return null;
+};
 
 const AccessoriesContext = createContext();
 
 export function AccessoriesProvider({ children }) {
+  const initialCache = useMemo(() => loadCachedAccessories(), []);
+
   // Collections for categories, subcategories, brands, bike brands, and banners
   const categoriesQuery = useCollection(COLLECTIONS.categories, { limit: 60 });
   const subcategoriesQuery = useCollection(COLLECTIONS.subcategories, { limit: 100 });
@@ -24,14 +39,27 @@ export function AccessoriesProvider({ children }) {
   // ── Product Collection (Loads catalog items progressively) ──
   const [productLimit, setProductLimit] = useState(CATALOG_LIMIT);
   const productsQuery = useCollection(COLLECTIONS.products, { limit: productLimit });
+  const fallbackProductsQuery = useCollection("products", { limit: productLimit });
 
-  const rawProducts = useMemo(
-    () => (productsQuery.data || []).map(normalizeProduct),
-    [productsQuery.data]
-  );
+  const rawProducts = useMemo(() => {
+    const list =
+      productsQuery.data && productsQuery.data.length > 0
+        ? productsQuery.data
+        : fallbackProductsQuery.data && fallbackProductsQuery.data.length > 0
+        ? fallbackProductsQuery.data
+        : [];
+
+    if (list.length > 0) {
+      return list.map(normalizeProduct);
+    }
+    if (initialCache?.products && initialCache.products.length > 0) {
+      return initialCache.products;
+    }
+    return [];
+  }, [productsQuery.data, fallbackProductsQuery.data, initialCache]);
 
   // Cache products in state so that context preserves items seamlessly
-  const [cachedProducts, setCachedProducts] = useState([]);
+  const [cachedProducts, setCachedProducts] = useState(() => initialCache?.products || []);
 
   useEffect(() => {
     if (rawProducts && rawProducts.length > 0) {
@@ -40,44 +68,83 @@ export function AccessoriesProvider({ children }) {
   }, [rawProducts]);
 
   const products = cachedProducts.length > 0 ? cachedProducts : rawProducts;
-  const productsLoading = productsQuery.loading && products.length === 0;
-  const loadingMore = productsQuery.loading && products.length > 0;
-  const productsError = productsQuery.error;
-  const hasMore = (productsQuery.data || []).length >= productLimit;
+  const productsLoading = (productsQuery.loading || fallbackProductsQuery.loading) && products.length === 0;
+  const loadingMore = (productsQuery.loading || fallbackProductsQuery.loading) && products.length > 0;
+  const productsError = productsQuery.error || fallbackProductsQuery.error;
+  const hasMore = (productsQuery.data || []).length >= productLimit || (fallbackProductsQuery.data || []).length >= productLimit;
 
   // Fetch more products if catalog exceeds current limit
   const fetchMoreProducts = useCallback(() => {
-    if (productsQuery.loading || !hasMore) {
+    if (productsQuery.loading || fallbackProductsQuery.loading || !hasMore) {
       return;
     }
     setProductLimit((prev) => prev + 80);
-  }, [productsQuery.loading, hasMore]);
+  }, [productsQuery.loading, fallbackProductsQuery.loading, hasMore]);
 
   // Refetch / reset products if needed
   const refetchProducts = useCallback(() => {
     if (productsQuery.retry) {
       productsQuery.retry();
     }
-  }, [productsQuery]);
+    if (fallbackProductsQuery.retry) {
+      fallbackProductsQuery.retry();
+    }
+  }, [productsQuery, fallbackProductsQuery]);
 
   // Normalize other collections
-  const categories = useMemo(
-    () => (categoriesQuery.data || []).map(normalizeCategory),
-    [categoriesQuery.data]
-  );
+  const categories = useMemo(() => {
+    if (categoriesQuery.data && categoriesQuery.data.length > 0) {
+      return categoriesQuery.data.map(normalizeCategory);
+    }
+    if (initialCache?.categories && initialCache.categories.length > 0) {
+      return initialCache.categories;
+    }
+    return [];
+  }, [categoriesQuery.data, initialCache]);
+
   const subcategories = useMemo(
     () => (subcategoriesQuery.data || []).map(normalizeSubcategory),
     [subcategoriesQuery.data]
   );
-  const brands = useMemo(
-    () => (brandsQuery.data || []).map(normalizeBrand),
-    [brandsQuery.data]
-  );
-  const bikeBrands = useMemo(
-    () => (bikeBrandsQuery.data || []).map(normalizeBrand),
-    [bikeBrandsQuery.data]
-  );
+
+  const brands = useMemo(() => {
+    if (brandsQuery.data && brandsQuery.data.length > 0) {
+      return brandsQuery.data.map(normalizeBrand);
+    }
+    if (initialCache?.brands && initialCache.brands.length > 0) {
+      return initialCache.brands;
+    }
+    return [];
+  }, [brandsQuery.data, initialCache]);
+
+  const bikeBrands = useMemo(() => {
+    if (bikeBrandsQuery.data && bikeBrandsQuery.data.length > 0) {
+      return bikeBrandsQuery.data.map(normalizeBrand);
+    }
+    if (initialCache?.bikeBrands && initialCache.bikeBrands.length > 0) {
+      return initialCache.bikeBrands;
+    }
+    return [];
+  }, [bikeBrandsQuery.data, initialCache]);
+
   const banners = useMemo(() => bannersQuery.data || [], [bannersQuery.data]);
+
+  // Cache synchronization to sessionStorage and localStorage
+  useEffect(() => {
+    if (products.length > 0 || categories.length > 0 || brands.length > 0) {
+      try {
+        const payload = {
+          products,
+          categories,
+          brands,
+          bikeBrands,
+          savedAt: Date.now(),
+        };
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify(payload));
+        localStorage.setItem(CACHE_KEY, JSON.stringify(payload));
+      } catch (_) {}
+    }
+  }, [products, categories, brands, bikeBrands]);
 
   const value = useMemo(
     () => ({

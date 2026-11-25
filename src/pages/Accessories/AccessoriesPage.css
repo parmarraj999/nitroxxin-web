@@ -574,6 +574,25 @@
   margin: auto 0;
 }
 
+.ap-explore-btn{
+  padding: 14px 30px;
+  background-color: black;
+  color: white;
+  border: none;
+  font-size: 18px;
+  border-radius: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 auto;
+  cursor: pointer;
+  transition: .3s all;
+}
+.ap-explore-btn:hover{
+  transform: scale(1.05);
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1200px) {
 

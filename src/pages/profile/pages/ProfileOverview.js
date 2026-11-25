@@ -108,8 +108,8 @@ export default function ProfileOverview() {
         : "";
 
       const bestEmergencyName =
-        profile?.emergencyContactPerson ||
         profile?.emergencyContactName ||
+        profile?.emergencyContactPerson ||
         profile?.emergencyName ||
         profile?.emergencyPerson ||
         profile?.emergencyContact?.name ||
@@ -117,10 +117,10 @@ export default function ProfileOverview() {
         "";
 
       const bestEmergencyPhone =
+        profile?.emergencyContactNumber ||
         profile?.emergencyNumber ||
         profile?.emergencyPhone ||
         profile?.emergencyContactPhone ||
-        profile?.emergencyContactNumber ||
         profile?.emergencyContact?.phone ||
         profile?.emergencyContact?.mobile ||
         profile?.emergencyContact?.number ||
@@ -352,20 +352,11 @@ export default function ProfileOverview() {
 
       await updateProfile({
         fullName: trimmedName,
-        name: trimmedName,
-        displayName: trimmedName,
         username: cleanUsername ? `@${cleanUsername}` : "",
         phone: trimmedPhone,
-        phoneNumber: trimmedPhone,
         email: trimmedEmail,
         drivingLicense: trimmedLicense,
-        emergencyContactPerson: trimmedEmergencyPerson,
         emergencyContactName: trimmedEmergencyPerson,
-        emergencyPerson: trimmedEmergencyPerson,
-        emergencyName: trimmedEmergencyPerson,
-        emergencyNumber: trimmedEmergencyNumber,
-        emergencyPhone: trimmedEmergencyNumber,
-        emergencyContactPhone: trimmedEmergencyNumber,
         emergencyContactNumber: trimmedEmergencyNumber,
         ...(finalAvatarUrl ? { profilePhoto: finalAvatarUrl } : {}),
         ...(finalLicenseUrl ? { drivingLicenseImage: finalLicenseUrl } : {}),

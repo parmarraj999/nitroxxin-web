@@ -385,12 +385,9 @@ export const FirebaseAuthProvider = ({ children }) => {
         const profileUpdate = {
           uid: targetUid,
           phone: verifiedPhone,
-          phoneNumber: verifiedPhone,
           fullName: resolvedName,
-          displayName: resolvedName,
           email: finalUser.email || "",
           profilePhoto: finalUser.photoURL || "",
-          photoURL: finalUser.photoURL || "",
           isPhoneVerified: true,
           updatedAt: serverTimestamp(),
         };
@@ -522,17 +519,12 @@ export const FirebaseAuthProvider = ({ children }) => {
         localStorage.setItem("nitroxxin_auth_uid", targetUid);
 
         const profileUpdate = {
-          id: targetUid,
           uid: targetUid,
           phone: fullPhoneNumber,
-          phoneNumber: fullPhoneNumber,
           fullName: pendingGoogleUser.displayName || `Rider ${trimmed.slice(-4)}`,
-          displayName: pendingGoogleUser.displayName || `Rider ${trimmed.slice(-4)}`,
           email: pendingGoogleUser.email || "",
           profilePhoto: pendingGoogleUser.photoURL || "",
-          photoURL: pendingGoogleUser.photoURL || "",
           isPhoneVerified: true,
-          isProfileComplete: true,
           updatedAt: serverTimestamp(),
         };
 
@@ -544,11 +536,12 @@ export const FirebaseAuthProvider = ({ children }) => {
           ...profileUpdate,
         };
 
+        const finalProfile = { id: targetUid, ...profileUpdate };
         localStorage.setItem("nitroxxin_user", JSON.stringify(mockUser));
-        localStorage.setItem("nitroxxin_profile", JSON.stringify(profileUpdate));
+        localStorage.setItem("nitroxxin_profile", JSON.stringify(finalProfile));
 
         setUser(mockUser);
-        setProfile(profileUpdate);
+        setProfile(finalProfile);
         setPendingGoogleUser(null);
         pendingGoogleLoginRef.current = false;
         setIsAuthOpen(false);
@@ -569,20 +562,17 @@ export const FirebaseAuthProvider = ({ children }) => {
         targetUid = `dev_user_${trimmed}`;
         const userRef = doc(firestoreInstance, "users", targetUid);
         const newProfile = {
-          id: targetUid,
           uid: targetUid,
           phone: fullPhoneNumber,
-          phoneNumber: fullPhoneNumber,
           fullName: `Rider ${trimmed.slice(-4)}`,
-          displayName: `Rider ${trimmed.slice(-4)}`,
           email: `rider${trimmed.slice(-4)}@test.nitroxxin.com`,
-          isProfileComplete: true,
+          isProfileComplete: false,
           isPhoneVerified: true,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         };
         await setDoc(userRef, newProfile, { merge: true });
-        existing = newProfile;
+        existing = { id: targetUid, ...newProfile };
       }
 
       localStorage.setItem("nitroxxin_dev_test_uid", targetUid);
